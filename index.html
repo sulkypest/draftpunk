@@ -1,72 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRAFT PUNK | Story Terminal</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="app">
-        <div id="setup">
-            <h1>DRAFT PUNK</h1>
-            <p class="subtitle">// HARDER. BETTER. FASTER. WRITER.</p>
-            <input type="text" id="nameIn" placeholder="Enter Hero Name...">
-            <select id="genreIn">
-                <option value="urbanFantasy">Urban Fantasy</option>
-                <option value="fantasy">High Fantasy</option>
-                <option value="sciFi">Science Fiction</option>
-                <option value="thriller">Thriller</option>
-                <option value="horror">Horror</option>
-                <option value="romance">Romance</option>
-                <option value="crime">Crime/Noir</option>
-            </select>
-            <input type="number" id="goalIn" value="80000">
-            <label style="font-size: 10px; color: var(--text); display: block; margin-top: 10px;">TARGET DEADLINE:</label>
-            <input type="date" id="deadlineIn">
-            <button onclick="startQuest()">INITIALIZE SYSTEM</button>
-        </div>
+<div id="game" class="hidden">
+    <div id="inspirationPanel" class="glitch-panel" style="display:none;"></div>
+    <div id="combatLog" class="combat-text">SYSTEM ONLINE...</div>
 
-        <div id="game" class="hidden">
-            <div id="inspirationPanel" class="glitch-panel" style="display:none;"></div>
-            <div id="combatLog" class="combat-text">SYSTEM ONLINE...</div>
+    <h2 id="beatName" style="color: var(--text); margin: 0;">Opening Image</h2>
+    
+    <div class="hp-container">
+        <div id="hpBar" class="hp-bar"></div>
+        <div id="hpText" class="hp-text">0 / 80,000 WORDS</div>
+    </div>
 
-            <h2 id="beatName">Initializing...</h2>
-            
-            <div class="hp-container">
-                <div id="hpBar" class="hp-bar"></div>
-                <div id="hpText">0 / 80,000 WORDS</div>
-            </div>
-
-            <h3 id="bossName">Milestone: Deep Scan...</h3>
-
-            <div class="input-group">
-                <input type="number" id="wordIn" placeholder="Words to sync...">
-                <button onclick="addWords()">LOG PROGRESS</button>
-            </div>
-
-            <div class="stats-row">
-                <div class="stat-box">CREDITS: <span id="goldVal">0</span></div>
-                <div class="stat-box">XP: <span id="xpVal">0</span></div>
-            </div>
-
-            <div class="graph-wrapper">
-                <canvas id="velocityChart"></canvas>
-            </div>
-
-            <div class="action-grid">
-                <button onclick="toggleSTC()" id="stcBtn" class="btn-alt">STORY BEAT TIPS</button>
-                <button onclick="triggerInspiration()" class="btn-inspire">GET INSPIRATION</button>
-            </div>
-            
-            <div id="stcAnalysis" class="hidden">
-                <div id="stcList"></div>
-            </div>
-
-            <button onclick="resetGame()" class="btn-reset">SYSTEM RESET</button>
+    <div class="boss-ui">
+        <h3 id="bossName" style="color: var(--accent); margin: 5px 0;">BOSS: THE DUSTY CAFE</h3>
+        <div class="boss-hp-container">
+            <div id="bossHPBar" class="boss-hp-bar"></div>
+            <div id="bossHPText" class="boss-hp-text">BOSS HP: 100%</div>
         </div>
     </div>
-    <script type="module" src="script.js"></script>
-</body>
-</html>
+
+    <div class="input-group">
+        <input type="number" id="wordIn" placeholder="Enter word hit...">
+        <button onclick="addWords()">ATTACK</button>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; font-size: 9px; color: #555; margin-bottom: -15px; padding: 0 10px;">
+        <span>VELOCITY MATRIX</span>
+        <span>WHITE: TARGET | CYAN: YOU</span>
+    </div>
+    <div class="graph-wrapper">
+        <canvas id="velocityChart"></canvas>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-box">CREDITS: <span id="goldVal">0</span></div>
+        <div class="stat-box">XP: <span id="xpVal">0</span></div>
+    </div>
+
+    <div class="action-grid">
+        <button onclick="toggleSTC()" id="stcBtn" class="btn-alt">STREET SMARTS</button>
+        <button onclick="triggerInspiration()" class="btn-inspire">NEURAL SPIKE</button>
+    </div>
+    
+    <div id="stcAnalysis" class="hidden">
+        <div id="stcList"></div>
+    </div>
+
+    <button onclick="resetGame()" class="btn-reset">SYSTEM RESET</button>
+</div>
