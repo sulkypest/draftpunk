@@ -6,10 +6,13 @@ let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
     gold: 0, xp: 0, logs: [], stcMode: false, deadline: ""
 };
 
-const genreBtnNames = {
-    fantasy: "SCROLL OF GUIDANCE", sciFi: "DATA UPLINK", urbanFantasy: "STREET SMARTS",
-    thriller: "INTELLIGENCE BRIEF", horror: "FORBIDDEN LORE", romance: "HEART'S ADVICE", crime: "CASE FILES"
-};
+const STC_BEATS = [
+    { pct: 0, name: "Opening Image" }, { pct: 1, name: "Theme Stated" }, { pct: 10, name: "Setup" },
+    { pct: 12, name: "The Catalyst" }, { pct: 20, name: "The Debate" }, { pct: 25, name: "Break into Two" },
+    { pct: 30, name: "B Story" }, { pct: 35, name: "Fun & Games" }, { pct: 50, name: "The Midpoint" },
+    { pct: 65, name: "Bad Guys Close In" }, { pct: 75, name: "All Is Lost" }, { pct: 80, name: "Dark Night" },
+    { pct: 85, name: "Break into Three" }, { pct: 90, name: "The Finale" }, { pct: 100, name: "Final Image" }
+];
 
 window.onload = () => { if (state.active) showGame(); };
 
@@ -19,7 +22,6 @@ window.startQuest = () => {
     state.goal = parseInt(document.getElementById('goalIn').value) || 80000;
     state.deadline = document.getElementById('deadlineIn').value;
     state.active = true;
-    // Set start date log
     state.logs = [{ date: new Date().toISOString().split('T')[0], total: 0 }];
     save();
     showGame();
@@ -28,7 +30,6 @@ window.startQuest = () => {
 function showGame() {
     document.getElementById('setup').classList.add('hidden');
     document.getElementById('game').classList.remove('hidden');
-    document.getElementById('stcBtn').innerText = genreBtnNames[state.genre] || "STORY BEAT TIPS";
     initGraph();
     updateUI();
 }
@@ -36,136 +37,75 @@ function showGame() {
 window.addWords = () => {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
-
-    const combat = document.getElementById('combatLog');
-    combat.innerText = `HIT LANDED! -${val} BOSS HP`;
-    combat.classList.add('pulse');
-    setTimeout(() => combat.classList.remove('pulse'), 500);
-
     state.total += val;
     state.xp += val;
-    state.gold += Math.floor(val / 10);
-    
-    const today = new Date().toISOString().split('T')[0];
-    state.logs.push({ date: today, total: state.total });
-
+    state.logs.push({ date: new Date().toISOString().split('T')[0], total: state.total });
     document.getElementById('wordIn').value = "";
     save();
     updateUI();
     updateGraph();
 };
 
-function getIdealData() {
-    if (!state.deadline) return [];
-    const start = new Date(state.logs[0].date);
-    const end = new Date(state.deadline);
-    const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) || 1;
-    const wordsPerDay = state.goal / totalDays;
-
-    return state.logs.map((log, index) => {
-        const currentDay = Math.ceil((new Date(log.date) - start) / (1000 * 60 * 60 * 24));
-        return Math.min(state.goal, Math.floor(currentDay * wordsPerDay));
-    });
-}
-
 function initGraph() {
     const ctx = document.getElementById('velocityChart').getContext('2d');
     if (chart) chart.destroy();
-    
-    const idealPath = getIdealData();
-
     chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: state.logs.map(l => l.date),
             datasets: [
-                {
-                    label: 'Actual',
-                    data: state.logs.map(l => l.total),
-                    borderColor: '#00ffff',
-                    borderWidth: 3,
-                    tension: 0.3,
-                    fill: false
-                },
-                {
-                    label: 'Target Path',
-                    data: idealPath,
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
-                    borderDash: [5, 5],
-                    borderWidth: 1,
-                    pointRadius: 0,
-                    fill: false
-                }
+                { label: 'Your Progress', data: state.logs.map(l => l.total), borderColor: '#00ffff', borderWidth: 2, tension: 0.3 },
+                { label: 'Target Progress', data: getTargetData(), borderColor: 'rgba(255,255,255,0.2)', borderDash: [5,5] }
             ]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: { 
-                y: { grid: { color: '#222' }, ticks: { color: '#555', font: { size: 9 } } },
-                x: { ticks: { display: false }, grid: { display: false } }
-            },
-            plugins: { legend: { display: false } }
+        options: { 
+            responsive: true, maintainAspectRatio: false, 
+            plugins: { legend: { display: true, labels: { color: '#fff', size: 10, boxWidth: 10 } } },
+            scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } }
         }
     });
 }
 
-function updateGraph() {
-    if(!chart) return;
-    chart.data.labels = state.logs.map(l => l.date);
-    chart.data.datasets[0].data = state.logs.map(l => l.total);
-    chart.data.datasets[1].data = getIdealData();
-    chart.update();
+function getTargetData() {
+    if (!state.deadline) return [];
+    const start = new Date(state.logs[0].date);
+    const end = new Date(state.deadline);
+    const totalDays = Math.ceil((end - start) / 86400000) || 1;
+    const dailyRate = state.goal / totalDays;
+    return state.logs.map(l => {
+        const elapsed = Math.ceil((new Date(l.date) - start) / 86400000);
+        return Math.floor(elapsed * dailyRate);
+    });
 }
-
-window.toggleSTC = () => { state.stcMode = !state.stcMode; save(); updateUI(); };
 
 function updateUI() {
     const progress = (state.total / state.goal) * 100;
-    const sortedCheckpoints = [...CONFIG.checkpoints].sort((a, b) => a.pct - b.pct);
     
-    let currentBeatIndex = sortedCheckpoints.findLastIndex(c => progress >= c.pct);
-    if (currentBeatIndex === -1) currentBeatIndex = 0;
+    // 1. SAVE THE CAT LEVELS (The "Bosses")
+    const stcIndex = STC_BEATS.findLastIndex(b => progress >= b.pct);
+    const currentSTC = STC_BEATS[stcIndex] || STC_BEATS[0];
+    const nextSTC = STC_BEATS[stcIndex + 1] || { pct: 100, name: "Victory" };
     
-    const currentData = sortedCheckpoints[currentBeatIndex];
-    const nextData = sortedCheckpoints[currentBeatIndex + 1] || { pct: 100 };
-    
-    // Boss HP Logic: Progress within the current milestone
-    const beatRange = nextData.pct - currentData.pct;
-    const progressInBeat = progress - currentData.pct;
-    const bossHPPercent = Math.max(0, 100 - (progressInBeat / beatRange * 100));
+    // Boss HP is progress toward the next Level Up
+    const bossRange = nextSTC.pct - currentSTC.pct;
+    const bossProgress = progress - currentSTC.pct;
+    const bossHP = Math.max(0, 100 - (bossProgress / bossRange * 100));
 
-    const currentBoss = CONFIG.genreBosses[state.genre][currentBeatIndex] || "The Unknown";
+    // 2. MICRO-MILESTONES (The "Lore")
+    const loreIndex = [...CONFIG.checkpoints].reverse().findLastIndex(c => progress >= c.pct);
+    const currentLore = CONFIG.genreBosses[state.genre][loreIndex] || "The Unknown";
 
-    document.getElementById('beatName').innerText = currentData.name;
-    document.getElementById('bossName').innerText = `BOSS: ${currentBoss}`;
+    // Update DOM
+    document.getElementById('lvlName').innerText = `LEVEL: ${currentSTC.name}`;
+    document.getElementById('bossName').innerText = `BOSS: ${nextSTC.name}`;
+    document.getElementById('bossHPBar').style.width = bossHP + "%";
+    document.getElementById('bossHPText').innerText = `HP: ${Math.floor(bossHP)}%`;
     
-    // Main Progress Bar
-    document.getElementById('hpBar').style.width = `${Math.min(progress, 100)}%`;
-    document.getElementById('hpText').innerText = `${state.total.toLocaleString()} / ${state.goal.toLocaleString()} WORDS`;
-    
-    // Boss HP Bar
-    document.getElementById('bossHPBar').style.width = `${bossHPPercent}%`;
-    document.getElementById('bossHPText').innerText = `BOSS HP: ${Math.floor(bossHPPercent)}%`;
-
-    document.getElementById('goldVal').innerText = state.gold;
-    document.getElementById('xpVal').innerText = state.xp;
-
-    const stc = document.getElementById('stcAnalysis');
-    if (state.stcMode) {
-        stc.classList.remove('hidden');
-        document.getElementById('stcList').innerHTML = currentData.tasks
-            .map(t => `<div class='check-item'><input type='checkbox'> <span><strong>${t.label}:</strong> ${t.desc}</span></div>`).join('');
-    } else { stc.classList.add('hidden'); }
+    document.getElementById('loreText').innerText = `LOCATION: ${currentLore}`;
+    document.getElementById('hpBar').style.width = progress + "%";
+    document.getElementById('hpText').innerText = `${state.total.toLocaleString()} / ${state.goal.toLocaleString()} TOTAL WORDS`;
 }
 
-window.triggerInspiration = () => {
-    const msg = CONFIG.inspiration[Math.floor(Math.random() * CONFIG.inspiration.length)];
-    const panel = document.getElementById('inspirationPanel');
-    panel.innerText = msg;
-    panel.style.display = 'block';
-    setTimeout(() => { panel.style.display = 'none'; }, 8000);
-};
-
+function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.data.datasets[1].data = getTargetData(); chart.update(); } }
 function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
-window.resetGame = () => { if(confirm("WIPE SYSTEM?")) { localStorage.clear(); location.reload(); }};
+window.resetGame = () => { if(confirm("WIPE DATA?")) { localStorage.clear(); location.reload(); }};
