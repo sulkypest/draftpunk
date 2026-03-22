@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRAFT PUNK | Terminal</title>
+    <title>DRAFT PUNK</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,65 +10,44 @@
     <div class="app">
         <div id="setup">
             <h1>DRAFT PUNK</h1>
-            <p class="subtitle">// PHASE 1: INITIALIZE</p>
-            <input type="text" id="nameIn" placeholder="Hero Name...">
+            <input type="text" id="nameIn" placeholder="Enter Name...">
             <select id="genreIn">
                 <option value="urbanFantasy">Urban Fantasy</option>
-                <option value="fantasy">High Fantasy</option>
-                <option value="sciFi">Science Fiction</option>
-                <option value="thriller">Thriller</option>
+                <option value="sciFi">Sci-Fi</option>
+                <option value="fantasy">Fantasy</option>
                 <option value="horror">Horror</option>
-                <option value="romance">Romance</option>
-                <option value="crime">Crime/Noir</option>
+                <option value="thriller">Thriller</option>
             </select>
             <input type="number" id="goalIn" value="80000">
-            <label class="label-tiny">DEADLINE:</label>
             <input type="date" id="deadlineIn">
-            <button onclick="startQuest()">SYNC NEURAL LINK</button>
+            <button onclick="startQuest()">SYNC SYSTEM</button>
         </div>
 
         <div id="game" class="hidden">
-            <div id="inspirationPanel" class="glitch-panel" style="display:none;"></div>
-            <div id="combatLog" class="combat-text">READY...</div>
+            <div id="lvlName" class="level-indicator">LEVEL: OPENING IMAGE</div>
+            <div id="loreText" class="lore-indicator">LOCATION: THE DUSTY CAFE</div>
 
-            <h2 id="beatName">Opening Image</h2>
-            
-            <div class="hp-container">
-                <div id="hpBar" class="hp-bar"></div>
-                <div id="hpText" class="hp-text">0 / 80,000 WORDS</div>
+            <div class="boss-hud">
+                <div id="bossName" class="boss-label">BOSS: THE CATALYST</div>
+                <div class="boss-hp-bg"><div id="bossHPBar" class="boss-hp-fill"></div></div>
+                <div id="bossHPText" class="boss-hp-text">HP: 100%</div>
             </div>
 
-            <div class="boss-ui">
-                <h3 id="bossName">BOSS: LOADING...</h3>
-                <div class="boss-hp-container">
-                    <div id="bossHPBar" class="boss-hp-bar"></div>
-                    <div id="bossHPText" class="boss-hp-text">HP: 100%</div>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <input type="number" id="wordIn" placeholder="Words to Attack...">
-                <button onclick="addWords()">ATTACK</button>
-            </div>
-
-            <div class="graph-header">
-                <span>VELOCITY MATRIX</span>
-                <span>TARGET (DASH) vs YOU (SOLID)</span>
-            </div>
-            <div class="graph-wrapper">
+            <div class="graph-container">
                 <canvas id="velocityChart"></canvas>
             </div>
 
-            <div class="action-grid">
-                <button onclick="toggleSTC()" id="stcBtn" class="btn-alt">STORY TIPS</button>
-                <button onclick="triggerInspiration()" class="btn-inspire">INSPIRATION</button>
-            </div>
-            
-            <div id="stcAnalysis" class="hidden">
-                <div id="stcList"></div>
+            <div class="total-progress-box">
+                <div class="hp-bg"><div id="hpBar" class="hp-fill"></div></div>
+                <div id="hpText" class="total-text">0 / 80,000 WORDS</div>
             </div>
 
-            <button onclick="resetGame()" class="btn-reset">SYSTEM RESET</button>
+            <div class="input-panel">
+                <input type="number" id="wordIn" placeholder="Words to strike...">
+                <button onclick="addWords()">ATTACK</button>
+            </div>
+
+            <button onclick="resetGame()" class="btn-reset">RESET CAMPAIGN</button>
         </div>
     </div>
     <script type="module" src="script.js"></script>
