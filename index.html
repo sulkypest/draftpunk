@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRAFT PUNK</title>
+    <title>DRAFT PUNK | Author Command</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -21,19 +21,21 @@
         <div id="setup">
             <h1>DRAFT PUNK</h1>
             <p class="subtitle">// SYNC NEURAL INTERFACE</p>
-            <input type="text" id="nameIn" placeholder="Enter Name...">
-            <select id="genreIn">
-                <option value="urbanFantasy">Urban Fantasy</option>
-                <option value="sciFi">Sci-Fi</option>
-                <option value="fantasy">High Fantasy</option>
-                <option value="horror">Horror</option>
-                <option value="thriller">Thriller</option>
-                <option value="romance">Romance</option>
-                <option value="crime">Crime/Noir</option>
-            </select>
-            <input type="number" id="goalIn" value="80000">
-            <input type="date" id="deadlineIn">
-            <button onclick="startQuest()">INITIALIZE SYSTEM</button>
+            <div class="setup-fields">
+                <input type="text" id="nameIn" placeholder="Author Name...">
+                <select id="genreIn">
+                    <option value="urbanFantasy">Urban Fantasy</option>
+                    <option value="sciFi">Sci-Fi</option>
+                    <option value="fantasy">High Fantasy</option>
+                    <option value="horror">Horror</option>
+                    <option value="thriller">Thriller</option>
+                    <option value="romance">Romance</option>
+                    <option value="crime">Crime/Noir</option>
+                </select>
+                <input type="number" id="goalIn" value="80000">
+                <input type="date" id="deadlineIn">
+                <button onclick="startQuest()">INITIALIZE SYSTEM</button>
+            </div>
         </div>
 
         <div id="game" class="hidden">
@@ -42,8 +44,10 @@
                 <span>CREDITS: <b id="goldVal">0</b></span>
             </div>
 
-            <div id="lvlName" class="level-indicator">STAGE: OPENING IMAGE</div>
-            <div id="loreText" class="lore-indicator">LORE: INITIALIZING...</div>
+            <div class="header-info">
+                <div id="lvlName" class="level-indicator">STAGE: OPENING IMAGE</div>
+                <div id="loreText" class="lore-indicator">LORE: INITIALIZING...</div>
+            </div>
 
             <div class="boss-hud">
                 <div class="boss-visual-container">
@@ -54,17 +58,28 @@
                 <div id="bossHPText" class="boss-hp-text">HP: 100%</div>
             </div>
 
-            <div class="graph-container">
+            <div class="graph-box">
                 <canvas id="velocityChart"></canvas>
             </div>
 
             <div class="total-progress-box">
-                <div class="hp-bg"><div id="hpBar" class="hp-fill"></div><div id="hpText" class="total-text">0 / 80k WORDS</div></div>
+                <div class="hp-bg">
+                    <div id="hpBar" class="hp-fill"></div>
+                    <div id="hpText" class="total-text">0 / 80,000 WORDS</div>
+                </div>
             </div>
 
-            <div class="input-panel">
-                <input type="number" id="wordIn" placeholder="Strike...">
-                <button onclick="addWords()">ATTACK</button>
+            <div class="input-area">
+                <label for="wordIn">Today's Word Count:</label>
+                <div class="input-row">
+                    <input type="number" id="wordIn" placeholder="e.g. 1500">
+                    <button onclick="addWords()">ADD WORDS</button>
+                </div>
+            </div>
+
+            <div id="stcAnalysis" class="stc-box">
+                <h3>STORY BEAT GUIDANCE</h3>
+                <div id="stcList"></div>
             </div>
 
             <button onclick="resetGame()" class="btn-reset">RESET CAMPAIGN</button>
