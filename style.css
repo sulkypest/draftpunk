@@ -1,77 +1,30 @@
-:root { 
-    --bg: #0d0221; 
-    --text: #00ffff; 
-    --accent: #ff00ff; 
-    --panel: #1a1a2e; 
-    --gold: #f9d423;
-}
+:root { --neon: #00ffff; --pink: #ff00ff; --bg: #050510; }
+body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace; display: flex; justify-content: center; padding: 20px; }
+.app { width: 100%; max-width: 400px; border: 2px solid var(--neon); background: #0a0a15; padding: 20px; box-shadow: 0 0 15px rgba(0, 255, 255, 0.2); }
+.hidden { display: none; }
 
-body { 
-    font-family: 'Courier New', monospace; 
-    background: var(--bg); 
-    color: #fff; 
-    margin: 0; 
-    display: flex; 
-    justify-content: center; 
-    padding: 20px;
-}
+/* INDICATORS */
+.level-indicator { color: gold; font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+.lore-indicator { color: var(--neon); font-size: 11px; margin-bottom: 20px; text-transform: uppercase; border-bottom: 1px solid #222; padding-bottom: 10px; }
 
-.app { 
-    max-width: 480px; 
-    width: 100%; 
-    background: var(--panel); 
-    padding: 20px; 
-    border: 2px solid var(--text); 
-    box-shadow: 0 0 15px var(--text);
-    text-align: center;
-}
+/* BOSS HUD */
+.boss-hud { background: rgba(255, 0, 255, 0.1); border: 1px solid var(--pink); padding: 15px; margin-bottom: 15px; text-align: center; }
+.boss-label { font-weight: bold; font-size: 13px; color: var(--pink); margin-bottom: 8px; }
+.boss-hp-bg { height: 12px; background: #200; border: 1px solid var(--pink); position: relative; }
+.boss-hp-fill { height: 100%; background: var(--pink); width: 100%; transition: 0.4s; }
+.boss-hp-text { font-size: 9px; color: #fff; margin-top: 5px; }
 
-.hidden { display: none !important; }
-h1 { color: var(--accent); margin: 0; letter-spacing: 4px; text-shadow: 0 0 8px var(--accent); }
-.subtitle { font-size: 10px; color: var(--text); margin-bottom: 20px; }
-.label-tiny { font-size: 10px; color: var(--text); display: block; margin-top: 10px; }
+/* GRAPH */
+.graph-container { height: 140px; margin-bottom: 20px; background: #000; padding: 5px; }
 
-/* BARS */
-.hp-container, .boss-hp-container { 
-    background: #000; 
-    border: 1px solid #fff; 
-    position: relative; 
-    margin: 10px 0; 
-    overflow: hidden; 
-}
-.hp-container { height: 30px; border-radius: 4px; }
-.boss-hp-container { height: 15px; border-color: var(--accent); }
+/* TOTAL PROGRESS */
+.total-progress-box { margin-bottom: 20px; }
+.hp-bg { height: 20px; background: #111; border: 1px solid #fff; position: relative; }
+.hp-fill { height: 100%; background: linear-gradient(90deg, var(--neon), var(--pink)); width: 0%; transition: 0.5s; }
+.total-text { font-size: 11px; text-align: center; margin-top: 5px; font-weight: bold; }
 
-.hp-bar { background: linear-gradient(90deg, var(--text), var(--accent)); height: 100%; width: 0%; transition: width 0.5s; }
-.boss-hp-bar { background: var(--accent); height: 100%; width: 100%; transition: width 0.3s; }
-
-.hp-text, .boss-hp-text { 
-    position: absolute; width: 100%; text-align: center; 
-    font-weight: bold; color: #fff; text-shadow: 1px 1px #000; 
-}
-.hp-text { top: 6px; font-size: 13px; }
-.boss-hp-text { top: 2px; font-size: 9px; }
-
-/* UI ELEMENTS */
-.boss-ui { background: rgba(255, 0, 255, 0.1); padding: 10px; margin: 10px 0; border: 1px solid var(--accent); }
-.combat-text { color: var(--accent); font-weight: bold; height: 20px; margin-bottom: 10px; }
-.graph-wrapper { height: 150px; background: #000; padding: 5px; margin-bottom: 15px; }
-.graph-header { display: flex; justify-content: space-between; font-size: 8px; color: #666; padding: 0 5px; }
-
-input, select, button { 
-    width: 100%; padding: 12px; margin: 5px 0; 
-    background: #000; border: 1px solid var(--text); color: var(--text); 
-    font-family: inherit; font-size: 14px;
-}
-button { background: var(--accent); color: #fff; border: none; cursor: pointer; font-weight: bold; }
-.btn-alt { background: #222; font-size: 11px; }
-.btn-inspire { background: var(--gold); color: #000; font-size: 11px; }
-.btn-reset { border: none; background: none; color: #444; font-size: 10px; margin-top: 20px; }
-
-.glitch-panel { 
-    position: fixed; top: 10%; left: 50%; transform: translateX(-50%);
-    background: var(--gold); color: #000; padding: 15px; z-index: 100;
-    border: 3px solid #000; font-weight: bold; width: 80%;
-}
-.check-item { text-align: left; font-size: 12px; margin: 10px 0; display: flex; }
-.check-item input { width: 18px; margin-right: 10px; }
+/* INPUT */
+.input-panel { display: flex; gap: 8px; }
+input { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; flex-grow: 1; font-family: inherit; }
+button { background: var(--neon); color: #000; border: none; padding: 0 20px; font-weight: bold; cursor: pointer; }
+.btn-reset { background: none; border: none; color: #444; font-size: 10px; margin-top: 30px; width: 100%; cursor: pointer; }
