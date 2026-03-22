@@ -14,23 +14,10 @@ const STC_BEATS = [
     { pct: 85, name: "Break into Three" }, { pct: 90, name: "The Finale" }, { pct: 100, name: "Final Image" }
 ];
 
-const genreBtnNames = {
-    fantasy: "SCROLL OF GUIDANCE", sciFi: "DATA UPLINK", urbanFantasy: "STREET SMARTS",
-    thriller: "INTEL BRIEF", horror: "FORBIDDEN LORE", romance: "HEART'S ADVICE", crime: "CASE FILES"
-};
-
 window.onload = () => { if (state.active) showGame(); };
 
-// AUDIO ENGINE
-function playVictorySound() {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    [261, 329, 392, 523].forEach((f, i) => {
-        const o = ctx.createOscillator(); const g = ctx.createGain();
-        o.frequency.value = f; g.gain.setValueAtTime(0.1, ctx.currentTime + i*0.1);
-        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i*0.1 + 0.1);
-        o.connect(g); g.connect(ctx.destination);
-        o.start(ctx.currentTime + i*0.1); o.stop(ctx.currentTime + i*0.1 + 0.1);
-    });
+function applyGenreSkin() {
+    document.body.className = `skin-${state.genre}`;
 }
 
 window.startQuest = () => {
@@ -44,9 +31,9 @@ window.startQuest = () => {
 };
 
 function showGame() {
+    applyGenreSkin();
     document.getElementById('setup').classList.add('hidden');
     document.getElementById('game').classList.remove('hidden');
-    document.getElementById('stcBtn').innerText = genreBtnNames[state.genre] || "STORY TIPS";
     initGraph();
     updateUI();
 }
@@ -78,22 +65,12 @@ window.addWords = () => {
 };
 
 function triggerLevelUp(levelName) {
-    playVictorySound();
     const overlay = document.getElementById('levelOverlay');
     document.getElementById('newLevelName').innerText = levelName;
     overlay.classList.remove('hidden');
     state.gold += 500; 
     setTimeout(() => overlay.classList.add('hidden'), 3500);
 }
-
-window.toggleSTC = () => { state.stcMode = !state.stcMode; save(); updateUI(); };
-
-window.triggerInspiration = () => {
-    const p = document.getElementById('inspirationPanel');
-    p.innerText = CONFIG.inspiration[Math.floor(Math.random() * CONFIG.inspiration.length)];
-    p.style.display = 'block';
-    setTimeout(() => p.style.display = 'none', 6000);
-};
 
 function initGraph() {
     const ctx = document.getElementById('velocityChart').getContext('2d');
@@ -103,14 +80,14 @@ function initGraph() {
         data: {
             labels: state.logs.map(l => l.date),
             datasets: [
-                { label: 'Your Progress', data: state.logs.map(l => l.total), borderColor: '#00ffff', borderWidth: 2, tension: 0.3, pointRadius: 0 },
-                { label: 'Target Progress', data: getTargetData(), borderColor: 'rgba(255,255,255,0.1)', borderDash: [5,5], pointRadius: 0 }
+                { label: 'Your Progress', data: state.logs.map(l => l.total), borderColor: 'white', borderWidth: 3, tension: 0.3, pointRadius: 4, pointBackgroundColor: 'white' },
+                { label: 'Target', data: getTargetData(), borderColor: 'rgba(255,255,255,0.2)', borderDash: [10,5], pointRadius: 0 }
             ]
         },
         options: { 
             responsive: true, maintainAspectRatio: false, 
-            plugins: { legend: { display: true, labels: { color: '#555', font: { size: 9 } } } },
-            scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#111' }, ticks: { color: '#444' } } }
+            plugins: { legend: { display: false } },
+            scales: { x: { grid: { display: false }, ticks: { color: '#888' } }, y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888' } } }
         }
     });
 }
@@ -131,16 +108,15 @@ function updateUI() {
     const progress = (state.total / state.goal) * 100;
     const stcIndex = STC_BEATS.findLastIndex(b => progress >= b.pct);
     const currentSTC = STC_BEATS[stcIndex] || STC_BEATS[0];
-    const nextSTC = STC_BEATS[stcIndex + 1] || { pct: 100, name: "The End" };
+    const nextSTC = STC_BEATS[stcIndex + 1] || { pct: 100, name: "Victory" };
     
     const bossHP = Math.max(0, 100 - ((progress - currentSTC.pct) / (nextSTC.pct - currentSTC.pct) * 100));
     const loreIndex = CONFIG.checkpoints.findLastIndex(c => progress >= c.pct);
-    const loreData = CONFIG.checkpoints[loreIndex === -1 ? 0 : loreIndex];
     const currentLore = CONFIG.genreBosses[state.genre][loreIndex === -1 ? 0 : loreIndex] || "The Abyss";
 
     // Visual Updates
     document.getElementById('lvlName').innerText = `STAGE: ${currentSTC.name}`;
-    document.getElementById('loreText').innerText = `LORE: ${currentLore}`;
+    document.getElementById('loreText').innerText = `CURRENT LORE: ${currentLore}`;
     document.getElementById('bossName').innerText = `BOSS: ${nextSTC.name}`;
     document.getElementById('bossHPBar').style.width = bossHP + "%";
     document.getElementById('bossHPText').innerText = `HP: ${Math.floor(bossHP)}%`;
@@ -150,15 +126,8 @@ function updateUI() {
     document.getElementById('xpVal').innerText = state.xp;
 
     const sprite = document.getElementById('bossSprite');
-    sprite.style.borderRadius = `${stcIndex * 6}%`;
-    sprite.style.filter = `hue-rotate(${stcIndex * 24}deg) brightness(1.2)`;
-
-    const stc = document.getElementById('stcAnalysis');
-    if (state.stcMode) {
-        stc.classList.remove('hidden');
-        document.getElementById('stcList').innerHTML = loreData.tasks
-            .map(t => `<div class='check-item'><input type='checkbox'><span><strong>${t.label}</strong>: ${t.desc}</span></div>`).join('');
-    } else { stc.classList.add('hidden'); }
+    sprite.style.borderRadius = `${stcIndex * 10}% ${50 - stcIndex}%`;
+    sprite.style.transform = `rotate(${stcIndex * 20}deg)`;
 }
 
 function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.data.datasets[1].data = getTargetData(); chart.update(); } }
