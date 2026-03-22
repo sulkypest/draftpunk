@@ -6,6 +6,23 @@ let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
     gold: 0, xp: 0, logs: [], lastLevel: 0, deadline: ""
 };
 
+// Expanded Inspiration List
+const INSPIRATIONS = [
+    "Kill a darling. Not a main character, just a sentence you love too much.",
+    "What is the worst possible thing that could happen to your lead right now? Do it.",
+    "Introduce a secret. Someone in this scene is lying about their past.",
+    "Change the weather. How does a sudden storm affect the mood?",
+    "A character finds an object they lost years ago. Why is it here?",
+    "Write the next 500 words using only sensory details—smell, touch, sound.",
+    "Silence a talkative character. Why have they stopped speaking?",
+    "Add a ticking clock. They have 10 minutes to finish the current task.",
+    "Someone unexpected enters the room. Who are they?",
+    "The environment becomes an obstacle. A jammed door, a broken bridge, a lost signal.",
+    "A moment of vulnerability. Let your toughest character admit a fear.",
+    "Dialogue-only stretch. Remove all 'he said/she said' for one page.",
+    "Flashback fragment. Show a 3-sentence memory that explains a current choice."
+];
+
 const STC_BEATS = [
     { pct: 0, name: "Opening Image" }, { pct: 1, name: "Theme Stated" }, { pct: 10, name: "Setup" },
     { pct: 12, name: "The Catalyst" }, { pct: 20, name: "The Debate" }, { pct: 25, name: "Break into Two" },
@@ -18,7 +35,7 @@ window.onload = () => { if (state.active) showGame(); };
 
 window.startQuest = () => {
     state.genre = document.getElementById('genreIn').value;
-    state.goal = parseInt(document.getElementById('goalIn').value);
+    state.goal = parseInt(document.getElementById('goalIn').value) || 80000;
     state.deadline = document.getElementById('deadlineIn').value;
     state.active = true;
     state.logs = [{ date: new Date().toISOString().split('T')[0], total: 0 }];
@@ -37,7 +54,6 @@ function showGame() {
 window.addWords = () => {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
-
     state.total += val;
     state.xp += val;
     state.gold += Math.floor(val / 5);
@@ -45,23 +61,29 @@ window.addWords = () => {
     
     const progress = (state.total / state.goal * 100);
     const currentSTCIndex = STC_BEATS.findLastIndex(b => progress >= b.pct);
-    
     if (currentSTCIndex > state.lastLevel) {
         state.lastLevel = currentSTCIndex;
         triggerLevelUp(STC_BEATS[currentSTCIndex].name);
     }
-
     document.getElementById('wordIn').value = "";
     save();
     updateUI();
     updateGraph();
 };
 
-function triggerLevelUp(levelName) {
+window.getInspiration = () => {
+    const tip = INSPIRATIONS[Math.floor(Math.random() * INSPIRATIONS.length)];
+    const box = document.getElementById('inspireBox');
+    box.innerText = tip;
+    box.classList.remove('hidden');
+    setTimeout(() => box.classList.add('hidden'), 8000);
+};
+
+function triggerLevelUp(name) {
     const overlay = document.getElementById('levelOverlay');
-    document.getElementById('newLevelName').innerText = levelName;
+    document.getElementById('newLevelName').innerText = name;
     overlay.classList.remove('hidden');
-    setTimeout(() => overlay.classList.add('hidden'), 3500);
+    setTimeout(() => overlay.classList.add('hidden'), 3000);
 }
 
 function initGraph() {
@@ -72,23 +94,29 @@ function initGraph() {
         data: {
             labels: state.logs.map(l => l.date),
             datasets: [
-                { label: 'Your Progress', data: state.logs.map(l => l.total), borderColor: 'white', borderWidth: 3, tension: 0.3, pointRadius: 4 },
-                { label: 'Target Progress', data: getTargetData(), borderColor: 'rgba(255,255,255,0.2)', borderDash: [10,5], pointRadius: 0 }
+                { label: 'Your Progress', data: state.logs.map(l => l.total), borderColor: 'cyan', borderWidth: 3, tension: 0.3, pointRadius: 2 },
+                { label: 'Target Progress', data: getTargetData(), borderColor: 'rgba(255,255,255,0.2)', borderDash: [5,5], pointRadius: 0 }
             ]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: '#ccc' } } } }
+        options: { 
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } }
+        }
     });
 }
 
 function getTargetData() {
-    if (!state.deadline) return [];
+    if (!state.deadline) return state.logs.map(() => 0);
     const start = new Date(state.logs[0].date);
     const end = new Date(state.deadline);
-    const days = Math.max(1, Math.ceil((end - start) / 86400000));
-    const rate = state.goal / days;
+    const totalDays = Math.max(1, Math.ceil((end - start) / 86400000));
+    const dailyRate = state.goal / totalDays;
+    
     return state.logs.map(l => {
-        const elapsed = Math.ceil((new Date(l.date) - start) / 86400000);
-        return Math.floor(elapsed * rate);
+        const currentDay = new Date(l.date);
+        const elapsed = Math.ceil((currentDay - start) / 86400000);
+        return Math.floor(elapsed * dailyRate);
     });
 }
 
@@ -96,25 +124,23 @@ function updateUI() {
     const progress = (state.total / state.goal) * 100;
     const stcIndex = STC_BEATS.findLastIndex(b => progress >= b.pct);
     const currentSTC = STC_BEATS[stcIndex] || STC_BEATS[0];
-    const nextSTC = STC_BEATS[stcIndex + 1] || { pct: 100, name: "Victory" };
+    const nextSTC = STC_BEATS[stcIndex + 1] || { pct: 100, name: "The End" };
     
     const bossHP = Math.max(0, 100 - ((progress - currentSTC.pct) / (nextSTC.pct - currentSTC.pct) * 100));
     const loreIndex = CONFIG.checkpoints.findLastIndex(c => progress >= c.pct);
-    const loreData = CONFIG.checkpoints[loreIndex === -1 ? 0 : loreIndex];
-    const currentLore = CONFIG.genreBosses[state.genre][loreIndex === -1 ? 0 : loreIndex] || "The Abyss";
+    const currentLore = CONFIG.genreBosses[state.genre][loreIndex === -1 ? 0 : loreIndex] || "Unknown Territory";
 
-    document.getElementById('lvlName').innerText = `STAGE: ${currentSTC.name}`;
-    document.getElementById('loreText').innerText = `CURRENT LORE: ${currentLore}`;
-    document.getElementById('bossName').innerText = `BOSS: ${nextSTC.name}`;
+    document.getElementById('lvlName').innerText = currentSTC.name;
+    document.getElementById('loreText').innerText = currentLore;
+    document.getElementById('bossName').innerText = nextSTC.name;
     document.getElementById('bossHPBar').style.width = bossHP + "%";
-    document.getElementById('bossHPText').innerText = `HP: ${Math.floor(bossHP)}%`;
     document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
-    document.getElementById('hpText').innerText = `${state.total.toLocaleString()} / ${state.goal.toLocaleString()} WORDS`;
+    document.getElementById('hpText').innerText = `${state.total.toLocaleString()} / ${state.goal.toLocaleString()}`;
     document.getElementById('goldVal').innerText = state.gold;
     document.getElementById('xpVal').innerText = state.xp;
-
-    document.getElementById('stcList').innerHTML = loreData.tasks
-        .map(t => `<div class='check-item'><input type='checkbox'><span><strong>${t.label}</strong>: ${t.desc}</span></div>`).join('');
+    
+    const sprite = document.getElementById('bossSprite');
+    sprite.style.borderRadius = `${stcIndex * 10}%`;
 }
 
 function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.data.datasets[1].data = getTargetData(); chart.update(); } }
