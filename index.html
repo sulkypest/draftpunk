@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRAFT PUNK | Neural Sync</title>
+    <title>DRAFT PUNK | Story Terminal</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -23,7 +23,7 @@
                 <option value="crime">Crime/Noir</option>
             </select>
             <input type="number" id="goalIn" value="80000">
-            <label style="font-size: 10px; color: var(--text);">DEADLINE DATE:</label>
+            <label style="font-size: 10px; color: var(--text); display: block; margin-top: 10px;">TARGET DEADLINE:</label>
             <input type="date" id="deadlineIn">
             <button onclick="startQuest()">INITIALIZE SYSTEM</button>
         </div>
@@ -36,14 +36,14 @@
             
             <div class="hp-container">
                 <div id="hpBar" class="hp-bar"></div>
-                <div id="hpText" class="hp-text">0 / 80,000 WORDS</div>
+                <div id="hpText">0 / 80,000 WORDS</div>
             </div>
 
             <h3 id="bossName">Milestone: Deep Scan...</h3>
 
             <div class="input-group">
                 <input type="number" id="wordIn" placeholder="Words to sync...">
-                <button onclick="addWords()">SUBMIT HIT</button>
+                <button onclick="addWords()">LOG PROGRESS</button>
             </div>
 
             <div class="stats-row">
@@ -55,7 +55,10 @@
                 <canvas id="velocityChart"></canvas>
             </div>
 
-            <button onclick="toggleSTC()" class="btn-alt">NEURAL LINK: ANALYSIS</button>
+            <div class="action-grid">
+                <button onclick="toggleSTC()" id="stcBtn" class="btn-alt">STORY BEAT TIPS</button>
+                <button onclick="triggerInspiration()" class="btn-inspire">GET INSPIRATION</button>
+            </div>
             
             <div id="stcAnalysis" class="hidden">
                 <div id="stcList"></div>
