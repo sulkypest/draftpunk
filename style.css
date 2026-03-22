@@ -13,6 +13,7 @@ body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace
 
 .app { flex: 4; background: var(--panel); border: 1px solid var(--neon); padding: 15px; border-radius: 4px; box-shadow: 0 0 25px #000; position: relative; }
 
+/* SIDE PANELS */
 .side-container { flex: 1.2; display: flex; flex-direction: column; gap: 10px; }
 .side-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); padding: 15px; text-align: center; height: 160px; display: flex; flex-direction: column; justify-content: center; transition: 0.3s; }
 .side-box:hover { border-color: var(--neon); }
@@ -28,10 +29,22 @@ body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace
 h2 { font-size: 0.75rem; color: #ffd700; margin-top: 2px; text-transform: uppercase; letter-spacing: 2px; }
 
 .boss-zone { display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.5); padding: 12px; margin-bottom: 10px; }
-.boss-sprite { width: 60px; height: 60px; background: var(--neon); box-shadow: 0 0 20px var(--neon); transition: transform 0.1s ease-out, background 0.1s, filter 0.2s; }
+.boss-sprite { width: 60px; height: 60px; background: var(--neon); box-shadow: 0 0 20px var(--neon); animation: pulse 1.5s infinite alternate ease-in-out; }
 
-/* DYNAMIC HIT REACTION */
-.boss-hit { background: #fff !important; transform: scale(1.4) translateX(10px) !important; box-shadow: 0 0 40px #fff !important; }
+/* BOSS REACTIONS */
+.boss-hit { animation: hit-flash 0.2s cubic-bezier(0, 1.6, 0.6, 1) !important; }
+@keyframes hit-flash {
+    0% { background: #fff; transform: scale(1.5) rotate(5deg); box-shadow: 0 0 50px #fff; }
+    100% { background: var(--neon); transform: scale(1) rotate(0deg); }
+}
+
+.shake { animation: app-shake 0.3s ease-in-out !important; }
+@keyframes app-shake {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(6px, -6px); }
+    50% { transform: translate(-6px, 6px); }
+    75% { transform: translate(6px, 6px); }
+}
 
 @keyframes pulse { from { opacity: 0.5; transform: scale(0.9); } to { opacity: 1; transform: scale(1.1); } }
 @keyframes glitch-vibe { 0% { transform: translate(0); } 25% { transform: translate(-4px, 4px); } 50% { transform: translate(4px, -4px); } 100% { transform: translate(0); } }
@@ -63,5 +76,3 @@ button { background: var(--neon); color: #000; border: none; padding: 12px; font
 .rank-up h3 { color: #ffd700; font-size: 1.5rem; text-shadow: 0 0 10px #ffd700; margin-top: 10px; }
 .click-advance { margin-top: 25px; color: var(--neon); animation: blink 1s infinite; font-weight: bold; }
 @keyframes blink { 50% { opacity: 0; } }
-.shake { animation: shake 0.4s; }
-@keyframes shake { 0%, 100% { transform: translate(0); } 25% { transform: translate(6px, 6px); } 50% { transform: translate(-6px, -6px); } }
