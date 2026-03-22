@@ -10,9 +10,15 @@
 <body>
     <div id="levelOverlay" class="overlay hidden" onclick="closeOverlay()">
         <div class="congrats-box">
-            <h1>BEAT DEFEATED</h1>
+            <div class="glitch-wrapper">
+                <h1 class="glitch" data-text="BEAT DEFEATED">BEAT DEFEATED</h1>
+            </div>
             <h2 id="newLevelName">STORY BEAT</h2>
-            <p style="color:var(--neon); letter-spacing:2px;">[ CLICK TO ADVANCE ]</p>
+            <div class="rank-up">
+                <p>RANK INCREASED TO:</p>
+                <h3 id="rankTitle">LEVEL 1: WORDSMITH</h3>
+            </div>
+            <p class="click-advance">[ CLICK TO ACTIVATE NEXT STAGE ]</p>
         </div>
     </div>
 
@@ -50,7 +56,7 @@
             <div class="boss-zone">
                 <div id="bossSprite" class="boss-sprite"></div>
                 <div class="boss-meta">
-                    <p id="bossName">You are battling the THEME STATED boss!</p>
+                    <p id="bossName">You are battling the THEME STATED BEAT BOSS!</p>
                     <div class="boss-hp-container">
                         <div id="bossHPBar" class="boss-hp-fill"></div>
                         <span id="bossHPText">HP: 100%</span>
