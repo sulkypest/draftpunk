@@ -14,20 +14,21 @@ const STC_BEATS = [
     { pct: 85, name: "Break into Three" }, { pct: 90, name: "The Finale" }, { pct: 100, name: "Final Image" }
 ];
 
-const INSPIRATIONS = [
-    "A character finds a hidden weapon.", "The weather turns against the hero.", 
-    "Someone tells a lie that sounds like truth.", "A ticking clock is added to the scene.",
-    "A secondary character reveals a secret.", "The environment becomes physically dangerous.",
-    "Dialogue Only: Write the next scene with zero action beats.", "Kill a darling phrase."
-];
-
-window.onload = () => { if (state.active) showGame(); };
+window.onload = () => { 
+    if (state.active) {
+        // Ensure the overlay is hidden on load
+        document.getElementById('levelOverlay').classList.add('hidden');
+        showGame(); 
+    }
+};
 
 window.startQuest = () => {
     state.genre = document.getElementById('genreIn').value;
-    state.goal = parseInt(document.getElementById('goalIn').value);
+    state.goal = parseInt(document.getElementById('goalIn').value) || 80000;
     state.deadline = document.getElementById('deadlineIn').value;
     state.active = true;
+    state.total = 0;
+    state.lastLevel = 0; // Initialize at level 0
     state.logs = [{ date: new Date().toISOString().split('T')[0], total: 0 }];
     save();
     showGame();
@@ -45,7 +46,6 @@ window.addWords = () => {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
 
-    // --- KINETIC EFFECTS ---
     if ("vibrate" in navigator) navigator.vibrate(60); 
     document.querySelector('.app').classList.add('shake');
     setTimeout(() => document.querySelector('.app').classList.remove('shake'), 400);
@@ -58,6 +58,7 @@ window.addWords = () => {
     const progress = (state.total / state.goal * 100);
     const currentSTCIndex = STC_BEATS.findLastIndex(b => progress >= b.pct);
     
+    // CRITICAL FIX: Only trigger if the level is GREATER than the last recorded level
     if (currentSTCIndex > state.lastLevel) {
         state.lastLevel = currentSTCIndex;
         triggerLevelUp(STC_BEATS[currentSTCIndex].name);
@@ -74,8 +75,14 @@ function triggerLevelUp(name) {
     const overlay = document.getElementById('levelOverlay');
     document.getElementById('newLevelName').innerText = name;
     overlay.classList.remove('hidden');
+    // Auto-hide after 4 seconds
     setTimeout(() => overlay.classList.add('hidden'), 4000);
 }
+
+// Added manual close for safety
+window.closeOverlay = () => {
+    document.getElementById('levelOverlay').classList.add('hidden');
+};
 
 function initGraph() {
     const ctx = document.getElementById('velocityChart').getContext('2d');
@@ -85,11 +92,19 @@ function initGraph() {
         data: {
             labels: state.logs.map(l => l.date),
             datasets: [
-                { label: 'Words Written', data: state.logs.map(l => l.total), borderColor: '#00ffff', borderWidth: 3 },
+                { label: 'Written', data: state.logs.map(l => l.total), borderColor: '#00ffff', borderWidth: 3, tension: 0.2 },
                 { label: 'Target', data: getTargetData(), borderColor: 'rgba(255,255,255,0.2)', borderDash: [5,5], pointRadius: 0 }
             ]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { 
+                y: { beginAtZero: true, grid: { color: '#222' } },
+                x: { ticks: { color: '#555' } }
+            }
+        }
     });
 }
 
@@ -112,9 +127,11 @@ function updateUI() {
     const currentSTC = STC_BEATS[stcIndex] || STC_BEATS[0];
     const nextSTC = STC_BEATS[stcIndex + 1] || { pct: 100, name: "THE END" };
     
-    const bossHP = Math.max(0, 100 - ((progress - currentSTC.pct) / (nextSTC.pct - currentSTC.pct) * 100));
+    const beatRange = nextSTC.pct - currentSTC.pct;
+    const bossHP = Math.max(0, 100 - ((progress - currentSTC.pct) / beatRange * 100));
+
     const loreIndex = CONFIG.checkpoints.findLastIndex(c => progress >= c.pct);
-    const currentLore = CONFIG.genreBosses[state.genre][loreIndex === -1 ? 0 : loreIndex] || "Unknown Intel";
+    const currentLore = CONFIG.genreBosses[state.genre][loreIndex === -1 ? 0 : loreIndex] || "N/A";
     const loreData = CONFIG.checkpoints[loreIndex === -1 ? 0 : loreIndex];
 
     document.getElementById('lvlName').innerText = currentSTC.name;
@@ -122,27 +139,20 @@ function updateUI() {
     document.getElementById('bossName').innerText = nextSTC.name;
     document.getElementById('bossHPBar').style.width = bossHP + "%";
     document.getElementById('bossHPText').innerText = Math.floor(bossHP) + "%";
+    
     document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
     document.getElementById('hpText').innerText = `${state.total.toLocaleString()} / ${state.goal.toLocaleString()} WORDS`;
+    
     document.getElementById('goldVal').innerText = state.gold;
     document.getElementById('xpVal').innerText = state.xp;
 
-    // Visual Boss Change
     const sprite = document.getElementById('bossSprite');
     sprite.style.borderRadius = `${stcIndex * 10}%`;
-    sprite.style.transform = `scale(${0.4 + (bossHP/150)}) rotate(${stcIndex * 20}deg)`;
+    sprite.style.transform = `scale(${0.5 + (bossHP/200)}) rotate(${stcIndex * 15}deg)`;
 
-    // Lore Checklist
     document.getElementById('stcList').innerHTML = loreData.tasks
         .map(t => `<div class='check-item'><input type='checkbox'><span><b>${t.label}</b>: ${t.desc}</span></div>`).join('');
 }
-
-window.getInspiration = () => {
-    const box = document.getElementById('inspireBox');
-    box.innerText = INSPIRATIONS[Math.floor(Math.random() * INSPIRATIONS.length)];
-    box.classList.remove('hidden');
-    setTimeout(() => box.classList.add('hidden'), 6000);
-};
 
 function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.data.datasets[1].data = getTargetData(); chart.update(); } }
 function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
