@@ -1,56 +1,41 @@
-:root { 
-    --neon: #00ffff; --pink: #ff00ff; --bg: #050510; --panel: #0a0a15; --gold: #ffd700; --text: #ffffff;
-}
-
-/* GENRE SKINS */
+:root { --neon: #00ffff; --pink: #ff00ff; --bg: #050510; --panel: #0a0a15; --gold: #ffd700; }
 .skin-urbanFantasy { --neon: #00ffff; --pink: #ff00ff; --bg: #0d0221; }
 .skin-fantasy { --neon: #7cfc00; --pink: #daa520; --bg: #1a1305; --panel: #2a2210; }
 .skin-sciFi { --neon: #0080ff; --pink: #00ffff; --bg: #00050a; }
 .skin-horror { --neon: #ff0000; --pink: #550000; --bg: #0a0000; }
-.skin-romance { --neon: #ff69b4; --pink: #ff1493; --bg: #1a050d; }
-.skin-thriller { --neon: #f9d423; --pink: #ff4e50; --bg: #121212; }
-.skin-crime { --neon: #ffffff; --pink: #444444; --bg: #000000; --panel: #111; }
 
-body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; padding: 40px 20px; transition: 0.5s; }
-
-.app { width: 100%; max-width: 650px; background: var(--panel); border: 2px solid var(--neon); padding: 30px; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; height: 100vh; display: flex; justify-content: center; overflow: hidden; }
+.app { width: 100%; max-width: 900px; background: var(--panel); border: 2px solid var(--neon); padding: 15px; display: flex; flex-direction: column; border-radius: 8px; box-shadow: 0 0 20px #000; }
 .hidden { display: none !important; }
 
-/* SPACING & TYPOGRAPHY */
-h1 { color: var(--neon); letter-spacing: 3px; margin: 0; }
-.subtitle { opacity: 0.5; margin-bottom: 30px; font-size: 0.8rem; }
+/* TOP BAR */
+.dashboard-header { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+.stat-box { font-size: 0.8rem; line-height: 1.4; }
+.stat-box b { color: var(--gold); }
 
-.setup-fields { display: flex; flex-direction: column; gap: 15px; }
+/* GRID LAYOUT FOR NO SCROLL */
+.main-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 15px; flex-grow: 1; min-height: 0; }
+.left-col, .right-col { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 
-.header-info { margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
-.level-indicator { color: var(--gold); font-weight: bold; font-size: 1.2rem; }
-.lore-indicator { color: var(--neon); font-size: 0.9rem; text-transform: uppercase; margin-top: 5px; }
+/* BOSS AREA */
+.boss-card { background: rgba(0,0,0,0.4); border: 1px solid var(--pink); padding: 10px; text-align: center; border-radius: 5px; }
+.boss-sprite { width: 40px; height: 40px; background: var(--pink); margin: 0 auto 5px; box-shadow: 0 0 15px var(--pink); }
+.hp-bg-mini { height: 8px; background: #200; border: 1px solid var(--pink); border-radius: 4px; overflow: hidden; }
+.hp-fill-pink { background: var(--pink); height: 100%; transition: 0.5s; }
 
-/* BOSS HUD */
-.boss-hud { background: rgba(0,0,0,0.3); border: 1px solid var(--pink); padding: 20px; border-radius: 8px; margin-bottom: 30px; text-align: center; }
-.boss-sprite { width: 60px; height: 60px; background: var(--pink); margin: 0 auto 15px; box-shadow: 0 0 20px var(--pink); animation: float 3s infinite ease-in-out; }
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-.boss-hp-bg { height: 12px; background: #000; border-radius: 6px; margin-top: 10px; border: 1px solid var(--pink); overflow: hidden; }
-.boss-hp-fill { height: 100%; background: var(--pink); transition: 0.5s; }
+/* GRAPH AREA */
+.graph-container { flex-grow: 1; background: #000; border-radius: 5px; min-height: 150px; }
 
-/* GRAPH */
-.graph-box { height: 220px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin-bottom: 30px; }
+/* INPUT & ACTION */
+.action-card { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; }
+.input-group { display: flex; flex-direction: column; gap: 5px; }
+input { background: #000; border: 1px solid var(--neon); color: #fff; padding: 8px; border-radius: 4px; }
+button { background: var(--neon); color: #000; border: none; padding: 8px; font-weight: bold; cursor: pointer; border-radius: 4px; }
 
-/* INPUT */
-.input-area { margin-bottom: 30px; display: flex; flex-direction: column; gap: 10px; }
-.input-area label { font-weight: bold; color: var(--neon); font-size: 0.9rem; }
-.input-row { display: flex; gap: 10px; }
-input, select { background: #000; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 5px; flex-grow: 1; }
-button { background: var(--neon); color: #000; font-weight: bold; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; }
+/* INSPIRATION POPUP */
+#inspireBox { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--gold); color: #000; padding: 20px; border: 3px solid #000; z-index: 100; font-weight: bold; max-width: 300px; text-align: center; box-shadow: 0 0 50px var(--gold); }
 
-/* STORY BEAT BOX */
-.stc-box { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; border-left: 4px solid var(--gold); }
-.stc-box h3 { margin-top: 0; color: var(--gold); font-size: 1rem; }
-.check-item { display: flex; gap: 10px; margin-bottom: 12px; font-size: 0.9rem; line-height: 1.4; }
-.check-item input { flex-shrink: 0; width: 18px; height: 18px; }
-
-.hp-bg { height: 24px; background: #000; border: 1px solid #444; border-radius: 12px; position: relative; overflow: hidden; margin-bottom: 30px; }
-.hp-fill { height: 100%; background: linear-gradient(90deg, var(--neon), var(--pink)); transition: 1s; }
-.total-text { position: absolute; width: 100%; text-align: center; top: 4px; font-size: 0.8rem; font-weight: bold; }
-
-.btn-reset { background: none; color: #555; margin-top: 40px; width: 100%; font-size: 0.7rem; }
+/* TOTAL PROGRESS BOTTOM BAR */
+.total-bar { height: 20px; background: #111; border: 1px solid #444; position: relative; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+.total-fill { height: 100%; background: linear-gradient(90deg, var(--neon), var(--pink)); transition: 1s; }
+.total-label { position: absolute; width: 100%; text-align: center; font-size: 0.7rem; top: 2px; font-weight: bold; }
