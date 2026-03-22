@@ -28,3 +28,28 @@ body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace
 input { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; flex-grow: 1; font-family: inherit; }
 button { background: var(--neon); color: #000; border: none; padding: 0 20px; font-weight: bold; cursor: pointer; }
 .btn-reset { background: none; border: none; color: #444; font-size: 10px; margin-top: 30px; width: 100%; cursor: pointer; }
+
+/* SCREEN SHAKE ANIMATION */
+.shake {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    transform: translate3d(0, 0, 0);
+    border-color: var(--pink) !important;
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* GLITCH EFFECT FOR OVERLAY */
+.glitch-text {
+    animation: glitch 1s linear infinite;
+}
+
+@keyframes glitch {
+    2%, 64% { transform: translate(2px,0) skew(0deg); }
+    4%, 60% { transform: translate(-2px,0) skew(0deg); }
+    62% { transform: translate(0,0) skew(5deg); }
+}
