@@ -13,7 +13,6 @@ body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace
 
 .app { flex: 4; background: var(--panel); border: 1px solid var(--neon); padding: 15px; border-radius: 4px; box-shadow: 0 0 25px #000; position: relative; }
 
-/* SIDE PANELS */
 .side-container { flex: 1.2; display: flex; flex-direction: column; gap: 10px; }
 .side-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); padding: 15px; text-align: center; height: 160px; display: flex; flex-direction: column; justify-content: center; transition: 0.3s; }
 .side-box:hover { border-color: var(--neon); }
@@ -29,11 +28,13 @@ body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace
 h2 { font-size: 0.75rem; color: #ffd700; margin-top: 2px; text-transform: uppercase; letter-spacing: 2px; }
 
 .boss-zone { display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.5); padding: 12px; margin-bottom: 10px; }
-.boss-sprite { width: 60px; height: 60px; background: var(--neon); box-shadow: 0 0 20px var(--neon); transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-radius 1s ease; }
-.boss-hit { background: #fff !important; box-shadow: 0 0 40px #fff !important; transform: scale(1.3) !important; }
+.boss-sprite { width: 60px; height: 60px; background: var(--neon); box-shadow: 0 0 20px var(--neon); transition: transform 0.1s ease-out, background 0.1s, filter 0.2s; }
+
+/* DYNAMIC HIT REACTION */
+.boss-hit { background: #fff !important; transform: scale(1.4) translateX(10px) !important; box-shadow: 0 0 40px #fff !important; }
 
 @keyframes pulse { from { opacity: 0.5; transform: scale(0.9); } to { opacity: 1; transform: scale(1.1); } }
-@keyframes glitch-vibe { 0% { transform: translate(0); } 25% { transform: translate(-3px, 3px); } 50% { transform: translate(3px, -3px); } 100% { transform: translate(0); } }
+@keyframes glitch-vibe { 0% { transform: translate(0); } 25% { transform: translate(-4px, 4px); } 50% { transform: translate(4px, -4px); } 100% { transform: translate(0); } }
 
 .boss-hp-container { height: 14px; background: #000; border: 1px solid var(--neon); position: relative; margin-top: 5px; }
 .boss-hp-fill { height: 100%; background: var(--neon); width: 100%; transition: 0.5s; }
@@ -63,4 +64,4 @@ button { background: var(--neon); color: #000; border: none; padding: 12px; font
 .click-advance { margin-top: 25px; color: var(--neon); animation: blink 1s infinite; font-weight: bold; }
 @keyframes blink { 50% { opacity: 0; } }
 .shake { animation: shake 0.4s; }
-@keyframes shake { 0%, 100% { transform: translate(0); } 25% { transform: translate(4px, 4px); } 50% { transform: translate(-4px, -4px); } }
+@keyframes shake { 0%, 100% { transform: translate(0); } 25% { transform: translate(6px, 6px); } 50% { transform: translate(-6px, -6px); } }
