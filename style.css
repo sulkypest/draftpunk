@@ -11,68 +11,46 @@
 .skin-thriller { --neon: #f9d423; --pink: #ff4e50; --bg: #121212; }
 .skin-crime { --neon: #ffffff; --pink: #444444; --bg: #000000; --panel: #111; }
 
-body { 
-    background: var(--bg); color: var(--text); font-family: 'Segoe UI', 'Courier New', monospace; 
-    display: flex; justify-content: center; padding: 40px 20px; transition: background 0.8s ease;
-}
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; padding: 40px 20px; transition: 0.5s; }
 
-.app { 
-    width: 100%; max-width: 600px; /* Wider display */
-    border: 2px solid var(--neon); background: var(--panel); 
-    padding: 30px; border-radius: 8px;
-    box-shadow: 0 0 30px rgba(0,0,0,0.5), 0 0 10px var(--neon);
-    position: relative; transition: all 0.5s;
-}
-
+.app { width: 100%; max-width: 650px; background: var(--panel); border: 2px solid var(--neon); padding: 30px; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
 .hidden { display: none !important; }
 
-/* LAYOUT SPACING */
-h1 { font-size: 2.5rem; letter-spacing: 5px; margin-bottom: 0.5rem; color: var(--neon); text-shadow: 0 0 10px var(--neon); }
-.subtitle { margin-bottom: 2rem; opacity: 0.6; font-size: 0.9rem; }
+/* SPACING & TYPOGRAPHY */
+h1 { color: var(--neon); letter-spacing: 3px; margin: 0; }
+.subtitle { opacity: 0.5; margin-bottom: 30px; font-size: 0.8rem; }
 
-.stats-mini { display: flex; justify-content: space-around; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+.setup-fields { display: flex; flex-direction: column; gap: 15px; }
 
-.level-indicator { color: var(--gold); font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }
-.lore-indicator { color: var(--neon); font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 25px; opacity: 0.8; }
+.header-info { margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
+.level-indicator { color: var(--gold); font-weight: bold; font-size: 1.2rem; }
+.lore-indicator { color: var(--neon); font-size: 0.9rem; text-transform: uppercase; margin-top: 5px; }
 
-/* BOSS HUD REFRESH */
-.boss-hud { 
-    background: rgba(0,0,0,0.4); border: 1px solid var(--pink); 
-    padding: 25px; margin-bottom: 25px; border-radius: 10px; position: relative;
-}
-.boss-visual-container { height: 100px; margin-bottom: 15px; }
-.boss-sprite { 
-    width: 60px; height: 60px; background: var(--pink); margin: 0 auto;
-    box-shadow: 0 0 30px var(--pink); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: float 4s ease-in-out infinite;
-}
+/* BOSS HUD */
+.boss-hud { background: rgba(0,0,0,0.3); border: 1px solid var(--pink); padding: 20px; border-radius: 8px; margin-bottom: 30px; text-align: center; }
+.boss-sprite { width: 60px; height: 60px; background: var(--pink); margin: 0 auto 15px; box-shadow: 0 0 20px var(--pink); animation: float 3s infinite ease-in-out; }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.boss-hp-bg { height: 12px; background: #000; border-radius: 6px; margin-top: 10px; border: 1px solid var(--pink); overflow: hidden; }
+.boss-hp-fill { height: 100%; background: var(--pink); transition: 0.5s; }
 
-.boss-hp-bg { height: 15px; background: #000; border-radius: 10px; margin: 15px 0; overflow: hidden; border: 1px solid var(--pink); }
-.boss-hp-fill { height: 100%; background: linear-gradient(90deg, transparent, var(--pink)); transition: width 0.5s ease; }
+/* GRAPH */
+.graph-box { height: 220px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin-bottom: 30px; }
 
-/* GRAPHS & BARS */
-.graph-container { height: 200px; margin-bottom: 25px; }
-.hp-bg { height: 25px; background: #111; border: 1px solid #333; border-radius: 5px; overflow: hidden; position: relative; }
+/* INPUT */
+.input-area { margin-bottom: 30px; display: flex; flex-direction: column; gap: 10px; }
+.input-area label { font-weight: bold; color: var(--neon); font-size: 0.9rem; }
+.input-row { display: flex; gap: 10px; }
+input, select { background: #000; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 5px; flex-grow: 1; }
+button { background: var(--neon); color: #000; font-weight: bold; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; }
+
+/* STORY BEAT BOX */
+.stc-box { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; border-left: 4px solid var(--gold); }
+.stc-box h3 { margin-top: 0; color: var(--gold); font-size: 1rem; }
+.check-item { display: flex; gap: 10px; margin-bottom: 12px; font-size: 0.9rem; line-height: 1.4; }
+.check-item input { flex-shrink: 0; width: 18px; height: 18px; }
+
+.hp-bg { height: 24px; background: #000; border: 1px solid #444; border-radius: 12px; position: relative; overflow: hidden; margin-bottom: 30px; }
 .hp-fill { height: 100%; background: linear-gradient(90deg, var(--neon), var(--pink)); transition: 1s; }
-.total-text { position: absolute; width: 100%; text-align: center; top: 4px; font-weight: bold; font-size: 0.8rem; text-shadow: 1px 1px 2px #000; }
+.total-text { position: absolute; width: 100%; text-align: center; top: 4px; font-size: 0.8rem; font-weight: bold; }
 
-/* INPUTS */
-.input-panel { display: flex; gap: 10px; margin: 20px 0; }
-input, select { 
-    background: #000; border: 1px solid var(--neon); color: #fff; 
-    padding: 15px; border-radius: 5px; font-size: 1rem;
-}
-button { 
-    background: var(--neon); color: #000; border: none; 
-    padding: 15px 25px; font-weight: bold; border-radius: 5px; 
-    cursor: pointer; text-transform: uppercase; transition: 0.3s;
-}
-button:hover { filter: brightness(1.2); transform: translateY(-2px); }
-
-/* OVERLAY */
-.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 999; display: flex; align-items: center; justify-content: center; }
-.congrats-box { border: 5px solid var(--gold); padding: 50px; background: #000; text-align: center; border-radius: 20px; box-shadow: 0 0 50px var(--gold); }
-
-@keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-15px) rotate(5deg); } }
-.shake { animation: shakeEffect 0.4s ease-in-out; }
-@keyframes shakeEffect { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.98); } }
+.btn-reset { background: none; color: #555; margin-top: 40px; width: 100%; font-size: 0.7rem; }
