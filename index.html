@@ -3,95 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRAFT PUNK | AUTHOR COMMAND</title>
+    <title>DRAFT PUNK</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="skin-urbanFantasy">
-    <div id="levelOverlay" class="overlay hidden" onclick="window.closeOverlay()">
-    <div class="congrats-box">
-        <h1 style="color:#ffd700; margin:0;">BOSS DEFEATED</h1>
-        <h2 id="newLevelName" style="color:#fff; margin:10px 0;">...</h2>
-        <p style="color:#00ffff;">+500 CREDITS | +1000 XP</p>
-        <div style="margin-top:30px; border:1px solid #fff; padding:10px; color:#fff; cursor:pointer;">
-            [ CLICK ANYWHERE TO CLOSE ]
+<body>
+    <div id="levelOverlay" class="overlay hidden" onclick="closeOverlay()">
+        <div class="congrats-box">
+            <h1>BOSS DEFEATED</h1>
+            <h2 id="newLevelName">BEAT</h2>
+            <p>[ CLICK TO CONTINUE ]</p>
         </div>
     </div>
-</div>
 
     <div id="inspireBox" class="hidden"></div>
 
     <div class="app">
         <div id="setup">
             <h1>DRAFT PUNK</h1>
-            <p class="subtitle">// SYNC NEURAL INTERFACE</p>
             <div class="setup-grid">
                 <select id="genreIn">
                     <option value="urbanFantasy">Urban Fantasy</option>
                     <option value="sciFi">Sci-Fi</option>
                     <option value="fantasy">High Fantasy</option>
                     <option value="horror">Horror</option>
+                    <option value="thriller">Thriller</option>
+                    <option value="romance">Romance</option>
+                    <option value="crime">Crime/Noir</option>
                 </select>
                 <input type="number" id="goalIn" value="80000">
                 <input type="date" id="deadlineIn">
-                <button onclick="startQuest()">INITIALIZE LINK</button>
+                <button onclick="startQuest()">INITIALIZE</button>
             </div>
         </div>
 
         <div id="game" class="hidden">
-            <div class="top-row">
-                <div class="stat-group">
-                    <div>XP: <b id="xpVal">0</b></div>
-                    <div>CREDITS: <b id="goldVal">0</b></div>
-                </div>
-                <div class="header-main">
-                    <h2 id="lvlName">OPENING IMAGE</h2>
-                    <p id="loreText">INTEL: INITIALIZING...</p>
-                </div>
-                <button id="inspireBtn" onclick="getInspiration()">INSPIRATION</button>
+            <div class="header">
+                <h2 id="lvlName">OPENING IMAGE</h2>
+                <button onclick="getInspiration()" class="insp-btn">INSPIRATION</button>
             </div>
 
-            <div class="mid-row">
-                <div class="module boss-module">
-                    <div class="boss-display">
-                        <div id="bossSprite" class="boss-sprite"></div>
-                        <h3 id="bossName">THE CATALYST</h3>
+            <div class="boss-zone">
+                <div id="bossSprite" class="boss-sprite"></div>
+                <div class="boss-meta">
+                    <p id="bossName">NEXT BEAT</p>
+                    <div class="boss-hp-container">
+                        <div id="bossHPBar" class="boss-hp-fill"></div>
+                        <span id="bossHPText">HP: 100%</span>
                     </div>
-                    <div class="hp-container">
-                        <div class="hp-label">BOSS HP: <span id="bossHPText">100%</span></div>
-                        <div class="hp-bar-bg"><div id="bossHPBar" class="hp-bar-fill"></div></div>
-                    </div>
-                </div>
-
-                <div class="module lore-module">
-                    <h3>MISSION INTEL (STC CHECKLIST)</h3>
-                    <div id="stcList" class="checklist"></div>
                 </div>
             </div>
 
-            <div class="module graph-module">
+            <div id="loreBox" class="lore-container"></div>
+
+            <div class="graph-container">
                 <canvas id="velocityChart"></canvas>
             </div>
 
-            <div class="input-strip">
-                <div class="input-wrap">
-                    <label>Today's Word Count:</label>
-                    <div class="input-row">
-                        <input type="number" id="wordIn" placeholder="Enter word count...">
-                        <button id="attackBtn" onclick="addWords()">ATTACK BOSS</button>
-                    </div>
+            <div class="progress-zone">
+                <div class="bar-container">
+                    <div id="hpBar" class="bar-fill"></div>
+                    <span id="hpText">0 / 80,000 WORDS</span>
                 </div>
             </div>
 
-            <div class="footer-bar">
-                <div class="total-progress-container">
-                    <div id="hpBar" class="total-progress-fill"></div>
-                    <span id="hpText">0 / 80,000 WORDS</span>
-                </div>
-                <button onclick="resetGame()" class="reset-link">REBOOT SYSTEM</button>
+            <div class="input-zone">
+                <input type="number" id="wordIn" placeholder="Words today...">
+                <button onclick="addWords()">ATTACK</button>
             </div>
+
+            <button onclick="resetGame()" class="reset-btn">REBOOT SYSTEM</button>
         </div>
     </div>
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
