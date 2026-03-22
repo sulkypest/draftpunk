@@ -3,86 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRAFT PUNK | Author Command</title>
+    <title>DRAFT PUNK DASHBOARD</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="skin-urbanFantasy">
-    <div id="levelOverlay" class="overlay hidden">
-        <div class="congrats-box">
-            <h1 class="glitch-text">LEVEL UP!</h1>
-            <p>MAJOR BEAT REACHED</p>
-            <h2 id="newLevelName">THE CATALYST</h2>
-            <p class="reward">+500 CREDITS | +1000 XP</p>
-        </div>
-    </div>
+    <div id="levelOverlay" class="overlay hidden"><div class="congrats-box"><h1 id="newLevelName">LEVEL UP</h1></div></div>
+    <div id="inspireBox" class="hidden"></div>
 
     <div class="app">
         <div id="setup">
             <h1>DRAFT PUNK</h1>
-            <p class="subtitle">// SYNC NEURAL INTERFACE</p>
-            <div class="setup-fields">
-                <input type="text" id="nameIn" placeholder="Author Name...">
-                <select id="genreIn">
-                    <option value="urbanFantasy">Urban Fantasy</option>
-                    <option value="sciFi">Sci-Fi</option>
-                    <option value="fantasy">High Fantasy</option>
-                    <option value="horror">Horror</option>
-                    <option value="thriller">Thriller</option>
-                    <option value="romance">Romance</option>
-                    <option value="crime">Crime/Noir</option>
-                </select>
-                <input type="number" id="goalIn" value="80000">
-                <input type="date" id="deadlineIn">
-                <button onclick="startQuest()">INITIALIZE SYSTEM</button>
-            </div>
+            <input type="text" id="nameIn" placeholder="Name...">
+            <select id="genreIn">
+                <option value="urbanFantasy">Urban Fantasy</option>
+                <option value="sciFi">Sci-Fi</option>
+                <option value="fantasy">High Fantasy</option>
+                <option value="horror">Horror</option>
+            </select>
+            <input type="number" id="goalIn" value="80000">
+            <input type="date" id="deadlineIn">
+            <button onclick="startQuest()">INITIALIZE</button>
         </div>
 
-        <div id="game" class="hidden">
-            <div class="stats-mini">
-                <span>XP: <b id="xpVal">0</b></span>
-                <span>CREDITS: <b id="goldVal">0</b></span>
-            </div>
-
-            <div class="header-info">
-                <div id="lvlName" class="level-indicator">STAGE: OPENING IMAGE</div>
-                <div id="loreText" class="lore-indicator">LORE: INITIALIZING...</div>
-            </div>
-
-            <div class="boss-hud">
-                <div class="boss-visual-container">
-                    <div id="bossSprite" class="boss-sprite"></div>
+        <div id="game" class="hidden" style="display:flex; flex-direction:column; height:100%;">
+            <div class="dashboard-header">
+                <div class="stat-box">XP: <b id="xpVal">0</b><br>GOLD: <b id="goldVal">0</b></div>
+                <div class="stat-box" style="text-align:center">
+                    STAGE: <b id="lvlName">...</b><br>
+                    <span id="loreText" style="color:var(--neon); font-size:0.7rem;">...</span>
                 </div>
-                <div id="bossName" class="boss-label">BOSS: THE CATALYST</div>
-                <div class="boss-hp-bg"><div id="bossHPBar" class="boss-hp-fill"></div></div>
-                <div id="bossHPText" class="boss-hp-text">HP: 100%</div>
+                <div style="text-align:right"><button onclick="getInspiration()" style="background:var(--gold); font-size:0.7rem;">INSPIRATION</button></div>
             </div>
 
-            <div class="graph-box">
-                <canvas id="velocityChart"></canvas>
-            </div>
-
-            <div class="total-progress-box">
-                <div class="hp-bg">
-                    <div id="hpBar" class="hp-fill"></div>
-                    <div id="hpText" class="total-text">0 / 80,000 WORDS</div>
+            <div class="main-grid">
+                <div class="left-col">
+                    <div class="boss-card">
+                        <div id="bossSprite" class="boss-sprite"></div>
+                        <div style="font-size:0.7rem; color:var(--pink)">NEXT BOSS: <span id="bossName">...</span></div>
+                        <div class="hp-bg-mini"><div id="bossHPBar" class="hp-fill-pink" style="width:100%"></div></div>
+                    </div>
+                    
+                    <div class="action-card">
+                        <div class="input-group">
+                            <label style="font-size:0.7rem; color:var(--neon)">Today's Word Count:</label>
+                            <input type="number" id="wordIn" placeholder="Enter count...">
+                            <button onclick="addWords()">ATTACK BOSS</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="input-area">
-                <label for="wordIn">Today's Word Count:</label>
-                <div class="input-row">
-                    <input type="number" id="wordIn" placeholder="e.g. 1500">
-                    <button onclick="addWords()">ADD WORDS</button>
+                <div class="right-col">
+                    <div class="graph-container">
+                        <canvas id="velocityChart"></canvas>
+                    </div>
                 </div>
             </div>
 
-            <div id="stcAnalysis" class="stc-box">
-                <h3>STORY BEAT GUIDANCE</h3>
-                <div id="stcList"></div>
+            <div class="total-bar">
+                <div id="hpBar" class="total-fill" style="width:0%"></div>
+                <div id="hpText" class="total-label">0 / 80,000 WORDS</div>
             </div>
-
-            <button onclick="resetGame()" class="btn-reset">RESET CAMPAIGN</button>
+            
+            <button onclick="resetGame()" style="background:none; color:#444; font-size:0.6rem; border:none; margin-top:5px;">RESET SYSTEM</button>
         </div>
     </div>
     <script type="module" src="script.js"></script>
