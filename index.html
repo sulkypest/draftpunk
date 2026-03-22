@@ -2,15 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>DRAFT PUNK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRAFT PUNK | Terminal</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="levelOverlay" class="overlay hidden">
+        <div class="congrats-box">
+            <h1 class="glitch-text">LEVEL UP!</h1>
+            <p>BOSS DEFEATED</p>
+            <h2 id="newLevelName">THE CATALYST</h2>
+            <p class="reward">+500 CREDITS | +1000 XP</p>
+        </div>
+    </div>
+
     <div class="app">
         <div id="setup">
             <h1>DRAFT PUNK</h1>
-            <input type="text" id="nameIn" placeholder="Enter Name...">
+            <p class="subtitle">// SYNC NEURAL INTERFACE</p>
+            <input type="text" id="nameIn" placeholder="Enter Hero Name...">
             <select id="genreIn">
                 <option value="urbanFantasy">Urban Fantasy</option>
                 <option value="sciFi">Sci-Fi</option>
@@ -20,14 +31,22 @@
             </select>
             <input type="number" id="goalIn" value="80000">
             <input type="date" id="deadlineIn">
-            <button onclick="startQuest()">SYNC SYSTEM</button>
+            <button onclick="startQuest()">INITIALIZE SYSTEM</button>
         </div>
 
         <div id="game" class="hidden">
-            <div id="lvlName" class="level-indicator">LEVEL: OPENING IMAGE</div>
-            <div id="loreText" class="lore-indicator">LOCATION: THE DUSTY CAFE</div>
+            <div class="stats-mini">
+                <span>XP: <b id="xpVal" style="color:gold">0</b></span>
+                <span>CREDITS: <b id="goldVal" style="color:var(--neon)">0</b></span>
+            </div>
+
+            <div id="lvlName" class="level-indicator">STAGE: OPENING IMAGE</div>
+            <div id="loreText" class="lore-indicator">LORE: THE DUSTY CAFE</div>
 
             <div class="boss-hud">
+                <div class="boss-visual-container">
+                    <div id="bossSprite" class="boss-sprite"></div>
+                </div>
                 <div id="bossName" class="boss-label">BOSS: THE CATALYST</div>
                 <div class="boss-hp-bg"><div id="bossHPBar" class="boss-hp-fill"></div></div>
                 <div id="bossHPText" class="boss-hp-text">HP: 100%</div>
@@ -43,7 +62,7 @@
             </div>
 
             <div class="input-panel">
-                <input type="number" id="wordIn" placeholder="Words to strike...">
+                <input type="number" id="wordIn" placeholder="Strike...">
                 <button onclick="addWords()">ATTACK</button>
             </div>
 
