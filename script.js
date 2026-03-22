@@ -14,10 +14,16 @@ const STC_BEATS = [
     { pct: 85, name: "Break into Three" }, { pct: 90, name: "The Finale" }, { pct: 100, name: "Final Image" }
 ];
 
+const INSPIRATIONS = [
+    "Introduce a secret: Someone is lying.", "Change the weather: Make it an obstacle.",
+    "The character finds an object they lost long ago.", "A ticking clock: They have 5 minutes left.",
+    "Kill a darling: Delete the most 'beautiful' sentence you wrote today.",
+    "Silence a character: Why have they stopped speaking?", "An unexpected visitor knocks."
+];
+
 window.onload = () => { 
     if (state.active) {
-        // Ensure the overlay is hidden on load
-        document.getElementById('levelOverlay').classList.add('hidden');
+        document.getElementById('levelOverlay').classList.add('hidden'); // Force hide on load
         showGame(); 
     }
 };
@@ -28,7 +34,7 @@ window.startQuest = () => {
     state.deadline = document.getElementById('deadlineIn').value;
     state.active = true;
     state.total = 0;
-    state.lastLevel = 0; // Initialize at level 0
+    state.lastLevel = 0;
     state.logs = [{ date: new Date().toISOString().split('T')[0], total: 0 }];
     save();
     showGame();
@@ -58,7 +64,6 @@ window.addWords = () => {
     const progress = (state.total / state.goal * 100);
     const currentSTCIndex = STC_BEATS.findLastIndex(b => progress >= b.pct);
     
-    // CRITICAL FIX: Only trigger if the level is GREATER than the last recorded level
     if (currentSTCIndex > state.lastLevel) {
         state.lastLevel = currentSTCIndex;
         triggerLevelUp(STC_BEATS[currentSTCIndex].name);
@@ -75,11 +80,9 @@ function triggerLevelUp(name) {
     const overlay = document.getElementById('levelOverlay');
     document.getElementById('newLevelName').innerText = name;
     overlay.classList.remove('hidden');
-    // Auto-hide after 4 seconds
     setTimeout(() => overlay.classList.add('hidden'), 4000);
 }
 
-// Added manual close for safety
 window.closeOverlay = () => {
     document.getElementById('levelOverlay').classList.add('hidden');
 };
@@ -92,19 +95,11 @@ function initGraph() {
         data: {
             labels: state.logs.map(l => l.date),
             datasets: [
-                { label: 'Written', data: state.logs.map(l => l.total), borderColor: '#00ffff', borderWidth: 3, tension: 0.2 },
+                { label: 'Actual', data: state.logs.map(l => l.total), borderColor: '#00ffff', borderWidth: 3, tension: 0.2 },
                 { label: 'Target', data: getTargetData(), borderColor: 'rgba(255,255,255,0.2)', borderDash: [5,5], pointRadius: 0 }
             ]
         },
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { 
-                y: { beginAtZero: true, grid: { color: '#222' } },
-                x: { ticks: { color: '#555' } }
-            }
-        }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 }
 
@@ -152,6 +147,13 @@ function updateUI() {
 
     document.getElementById('stcList').innerHTML = loreData.tasks
         .map(t => `<div class='check-item'><input type='checkbox'><span><b>${t.label}</b>: ${t.desc}</span></div>`).join('');
+}
+
+window.getInspiration = () => {
+    const box = document.getElementById('inspireBox');
+    box.innerText = INSPIRATIONS[Math.floor(Math.random() * INSPIRATIONS.length)];
+    box.classList.remove('hidden');
+    setTimeout(() => box.classList.add('hidden'), 5000);
 }
 
 function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.data.datasets[1].data = getTargetData(); chart.update(); } }
