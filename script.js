@@ -3,7 +3,7 @@ import { CONFIG } from './data.js';
 let chart;
 let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
     active: false, genre: "urbanFantasy", goal: 80000, total: 0, 
-    gold: 0, xp: 0, logs: [], lastLevel: 0, stcMode: false, deadline: ""
+    gold: 0, xp: 0, logs: [], lastLevel: 0, deadline: ""
 };
 
 const STC_BEATS = [
@@ -16,13 +16,9 @@ const STC_BEATS = [
 
 window.onload = () => { if (state.active) showGame(); };
 
-function applyGenreSkin() {
-    document.body.className = `skin-${state.genre}`;
-}
-
 window.startQuest = () => {
     state.genre = document.getElementById('genreIn').value;
-    state.goal = parseInt(document.getElementById('goalIn').value) || 80000;
+    state.goal = parseInt(document.getElementById('goalIn').value);
     state.deadline = document.getElementById('deadlineIn').value;
     state.active = true;
     state.logs = [{ date: new Date().toISOString().split('T')[0], total: 0 }];
@@ -31,7 +27,7 @@ window.startQuest = () => {
 };
 
 function showGame() {
-    applyGenreSkin();
+    document.body.className = `skin-${state.genre}`;
     document.getElementById('setup').classList.add('hidden');
     document.getElementById('game').classList.remove('hidden');
     initGraph();
@@ -41,9 +37,6 @@ function showGame() {
 window.addWords = () => {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
-
-    document.querySelector('.app').classList.add('shake');
-    setTimeout(() => document.querySelector('.app').classList.remove('shake'), 400);
 
     state.total += val;
     state.xp += val;
@@ -68,7 +61,6 @@ function triggerLevelUp(levelName) {
     const overlay = document.getElementById('levelOverlay');
     document.getElementById('newLevelName').innerText = levelName;
     overlay.classList.remove('hidden');
-    state.gold += 500; 
     setTimeout(() => overlay.classList.add('hidden'), 3500);
 }
 
@@ -80,15 +72,11 @@ function initGraph() {
         data: {
             labels: state.logs.map(l => l.date),
             datasets: [
-                { label: 'Your Progress', data: state.logs.map(l => l.total), borderColor: 'white', borderWidth: 3, tension: 0.3, pointRadius: 4, pointBackgroundColor: 'white' },
-                { label: 'Target', data: getTargetData(), borderColor: 'rgba(255,255,255,0.2)', borderDash: [10,5], pointRadius: 0 }
+                { label: 'Your Progress', data: state.logs.map(l => l.total), borderColor: 'white', borderWidth: 3, tension: 0.3, pointRadius: 4 },
+                { label: 'Target Progress', data: getTargetData(), borderColor: 'rgba(255,255,255,0.2)', borderDash: [10,5], pointRadius: 0 }
             ]
         },
-        options: { 
-            responsive: true, maintainAspectRatio: false, 
-            plugins: { legend: { display: false } },
-            scales: { x: { grid: { display: false }, ticks: { color: '#888' } }, y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888' } } }
-        }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: '#ccc' } } } }
     });
 }
 
@@ -112,9 +100,9 @@ function updateUI() {
     
     const bossHP = Math.max(0, 100 - ((progress - currentSTC.pct) / (nextSTC.pct - currentSTC.pct) * 100));
     const loreIndex = CONFIG.checkpoints.findLastIndex(c => progress >= c.pct);
+    const loreData = CONFIG.checkpoints[loreIndex === -1 ? 0 : loreIndex];
     const currentLore = CONFIG.genreBosses[state.genre][loreIndex === -1 ? 0 : loreIndex] || "The Abyss";
 
-    // Visual Updates
     document.getElementById('lvlName').innerText = `STAGE: ${currentSTC.name}`;
     document.getElementById('loreText').innerText = `CURRENT LORE: ${currentLore}`;
     document.getElementById('bossName').innerText = `BOSS: ${nextSTC.name}`;
@@ -125,9 +113,8 @@ function updateUI() {
     document.getElementById('goldVal').innerText = state.gold;
     document.getElementById('xpVal').innerText = state.xp;
 
-    const sprite = document.getElementById('bossSprite');
-    sprite.style.borderRadius = `${stcIndex * 10}% ${50 - stcIndex}%`;
-    sprite.style.transform = `rotate(${stcIndex * 20}deg)`;
+    document.getElementById('stcList').innerHTML = loreData.tasks
+        .map(t => `<div class='check-item'><input type='checkbox'><span><strong>${t.label}</strong>: ${t.desc}</span></div>`).join('');
 }
 
 function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.data.datasets[1].data = getTargetData(); chart.update(); } }
