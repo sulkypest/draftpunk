@@ -1,23 +1,45 @@
-// Adding the Tips from the PDF to the Beats
+let chart;
+let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
+    active: false, title: "", genre: "urbanFantasy", goal: 80000, total: 0, 
+    logs: [], lastLevel: -1, deadline: "" 
+};
+
 const STC_BEATS = [
-    { pct: 0, name: "Opening Image", lore: "The 'Before' snapshot. Establish the hero's world.", tips: "TIP: Show, don't tell the hero's frustration. What is the one thing they can't change yet?" },
-    { pct: 1, name: "Theme Stated", lore: "A character mentions the lesson the hero needs.", tips: "TIP: Keep this subtle. It shouldn't sound like a sermon, just a casual observation." },
-    { pct: 10, name: "Setup", lore: "Explore the hero’s world and the 'A Story' cast.", tips: "TIP: Every character introduced here must represent a piece of the world that will eventually change." },
-    { pct: 12, name: "The Catalyst", lore: "The telegram, the knock at the door, the change.", tips: "TIP: This must be an external event. The hero shouldn't choose this; it happens TO them." },
-    { pct: 20, name: "The Debate", lore: "The hero hesitates. Can I do this? Is it safe?", tips: "TIP: Use this to show the stakes. If they don't go, what exactly do they lose?" },
-    { pct: 25, name: "Break into Two", lore: "The hero chooses to enter the 'upside-down' world.", tips: "TIP: This is a proactive step. The hero must physically leave their comfort zone here." },
-    { pct: 30, name: "B Story", lore: "Introduce the 'helper' or love interest.", tips: "TIP: This character should be the opposite of the 'A Story' characters in terms of philosophy." },
-    { pct: 35, name: "Fun & Games", lore: "The hero explores the new world. Promise of the premise.", tips: "TIP: Give the reader what they bought the book for. If it's a detective story, show them sleuthing." },
-    { pct: 50, name: "The Midpoint", lore: "Stakes are raised. A false victory or defeat.", tips: "TIP: Move from 'wanting' to 'needing.' The clock starts ticking louder here." },
-    { pct: 65, name: "Bad Guys Close In", lore: "Internal or external pressure mounts.", tips: "TIP: This is where the hero's internal flaws start causing external disasters." },
-    { pct: 75, name: "All Is Lost", lore: "The 'whiff of death.' Total defeat.", tips: "TIP: Remove the hero's support system. They must feel completely alone." },
-    { pct: 80, name: "Dark Night", lore: "The hero wallows and finally realizes the theme.", tips: "TIP: This is the lowest point. Let them fail before they can truly learn." },
-    { pct: 85, name: "Break into Three", lore: "The hero chooses to act one last time.", tips: "TIP: Combine the A and B stories. The lesson learned in B solves the problem in A." },
-    { pct: 90, name: "The Finale", lore: "The hero executes the plan. Old flaws gone.", tips: "TIP: This isn't just a fight; it's a proof of change. Show how they handle things differently now." },
-    { pct: 100, name: "Final Image", lore: "The 'After' snapshot. The changed world.", tips: "TIP: Mirror the Opening Image. Show the growth through visual contrast." }
+    { pct: 0, name: "Opening Image", lore: "The 'Before' snapshot. Establish the hero's world and the 'stasis monster'.", tips: "MICROBEAT: Show the protagonist's day-to-day. Contrast this later with the Final Image." },
+    { pct: 1, name: "Theme Stated", lore: "A secondary character mentions the life lesson the hero must learn.", tips: "MICROBEAT: The hero should dismiss this advice immediately. They aren't ready to hear it." },
+    { pct: 10, name: "Setup", lore: "Explore the hero’s world and introduce the 'A Story' characters.", tips: "MICROBEAT: Plant the seeds of every problem that will blow up in Act 2." },
+    { pct: 12, name: "The Catalyst", lore: "The life-changing event that knocks the hero out of their routine.", tips: "MICROBEAT: This must be an external shock. The hero doesn't choose this yet." },
+    { pct: 20, name: "The Debate", lore: "The hero hesitates. Can I do this? Is it safe?", tips: "MICROBEAT: Show the fear. This makes the eventual choice to go much more powerful." },
+    { pct: 25, name: "Break into Two", lore: "The hero leaves the old world and enters Act 2.", tips: "MICROBEAT: This is a proactive choice. Crossing the threshold into the unknown." },
+    { pct: 30, name: "B Story", lore: "Introduce the character who will help the hero learn the theme.", tips: "MICROBEAT: Often a love interest or mentor who sees the world differently than the hero." },
+    { pct: 35, name: "Fun & Games", lore: "The 'promise of the premise.' The hero explores the new world.", tips: "MICROBEAT: High energy scenes. This is why the reader picked up the book." },
+    { pct: 50, name: "The Midpoint", lore: "Stakes are raised. A false victory or a false defeat.", tips: "MICROBEAT: The 'A' and 'B' stories cross. The hero moves from reacting to acting." },
+    { pct: 65, name: "Bad Guys Close In", lore: "The hero's internal flaws begin to cause external disasters.", tips: "MICROBEAT: The pressure mounts. The hero tries to use old habits to solve new problems." },
+    { pct: 75, name: "All Is Lost", lore: "The 'whiff of death.' Total defeat.", tips: "MICROBEAT: The hero loses their support system. Everything feels hopeless." },
+    { pct: 80, name: "Dark Night", lore: "The hero wallows and finally realizes the lesson (Theme).", tips: "MICROBEAT: The epiphany. The 'aha!' moment where the hero learns how to truly change." },
+    { pct: 85, name: "Break into Three", lore: "The hero chooses to act one last time with their new knowledge.", tips: "MICROBEAT: Combining the lesson learned in 'B' to solve the problem in 'A'." },
+    { pct: 90, name: "The Finale", lore: "The hero executes the plan. The old flaws are gone.", tips: "MICROBEAT: A multi-step process where the hero proves they have changed." },
+    { pct: 100, name: "Final Image", lore: "The 'After' snapshot. Show how much the world has changed.", tips: "MICROBEAT: Visually contrast this with the Opening Image to prove growth." }
 ];
 
-// ... (PROMPTS array remains same)
+const PROMPTS = [
+    "A character refuses to cooperate.", "Introduce a strange smell or sound.", "Someone is watching from afar.", 
+    "A weapon or tool breaks.", "The weather turns hostile.", "A secret is blurted out.", "3-minute ticking clock.", 
+    "A lost object is found.", "An unexpected knock at the door.", "Sudden, eerie silence.", "Worst-case scenario happens.",
+    "A lie is revealed.", "The hero must make a sacrifice.", "Power dynamic shifts suddenly.", "A painful 5-word flashback.",
+    "A bribe is offered.", "The safe path is destroyed.", "Forced to work with an enemy.", "A misdirected message arrives.",
+    "A 'fact' is proven false.", "A physical injury slows the pace.", "An old promise is due.", "The weather raises the stakes.",
+    "A hidden door is found.", "Someone says 'No' unexpectedly.", "Being followed by a 'friend'.", "An object is a mimic/fake.",
+    "Forced truth-telling for a page.", "A key item vanishes.", "Strengths become weaknesses.", "An animal disrupts the scene.",
+    "An unwanted gift arrives.", "Lights out: sound-only writing.", "Wrong place, wrong time.", "A grudge is settled.",
+    "Choice between two evils.", "Motivation shifts suddenly.", "Hidden talent discovered.", "Facing a core fear.",
+    "Kindness from an enemy.", "Betrayal by an ally.", "Leaving everything behind.", "Physics/Reality glitches.",
+    "A letter never meant for them.", "Danger request from an old friend.", "Hiding in plain sight.", "Secret habit discovered.",
+    "Overwhelming déjà vu.", "A leap of faith.", "Not the hero of this story.", "Calm character snaps.", "A map to nowhere."
+];
+
+window.closeOverlay = () => document.getElementById('levelOverlay').classList.add('hidden');
+window.onload = () => { if (state.active) showGame(); };
 
 window.startQuest = () => {
     state.title = document.getElementById('titleIn').value || "UNTITLED WIP";
@@ -44,7 +66,31 @@ function showGame() {
 window.toggleIntel = () => {
     const cont = document.getElementById('intelContainer');
     cont.classList.toggle('hidden');
-    document.querySelector('.intel-btn').innerText = cont.classList.contains('hidden') ? "VIEW TACTICAL LORE ▾" : "HIDE TACTICAL LORE ▴";
+    document.querySelector('.intel-btn').innerText = cont.classList.contains('hidden') ? "VIEW MICROBEAT TIPS ▾" : "HIDE MICROBEAT TIPS ▴";
+};
+
+window.addWords = () => {
+    const val = parseInt(document.getElementById('wordIn').value) || 0;
+    if (val <= 0) return;
+    if ("vibrate" in navigator) navigator.vibrate(50);
+    document.querySelector('.app').classList.add('shake');
+    setTimeout(() => document.querySelector('.app').classList.remove('shake'), 400);
+
+    state.total += val;
+    state.logs.push({ date: new Date().toISOString().split('T')[0], total: state.total });
+    
+    const progress = (state.total / state.goal * 100);
+    const curIdx = STC_BEATS.findLastIndex(b => progress >= b.pct);
+    
+    if (curIdx > state.lastLevel && state.total > 0) {
+        state.lastLevel = curIdx;
+        document.getElementById('newLevelName').innerText = STC_BEATS[curIdx].name;
+        document.getElementById('levelOverlay').classList.remove('hidden');
+    }
+    document.getElementById('wordIn').value = "";
+    save();
+    updateUI();
+    updateGraph();
 };
 
 function updateUI() {
@@ -58,10 +104,53 @@ function updateUI() {
     document.getElementById('bossName').innerText = `You are battling the ${nxtB.name.toUpperCase()} boss!`;
     document.getElementById('bossHPBar').style.width = hp + "%";
     document.getElementById('bossHPText').innerText = `HP: ${Math.floor(hp)}%`;
-    
-    // Update Lore and Tips (hidden by default in the toggleable container)
     document.getElementById('loreBox').innerText = curB.lore;
     document.getElementById('tipsBox').innerText = curB.tips;
 
-    // ... (Boss Sprite and Progress Bar logic same as previous version)
+    const s = document.getElementById('bossSprite');
+    const animSpeed = Math.max(0.1, hp / 100);
+    s.style.animationDuration = `${animSpeed}s`;
+    s.style.transform = `rotate(${curIdx * 24}deg)`;
+    s.style.borderRadius = `${(curIdx / 15) * 50}%`;
+    if (hp < 30) s.style.marginLeft = `${(Math.random() - 0.5) * 8}px`;
+
+    document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
+    document.getElementById('hpText').innerText = `${state.total.toLocaleString()} / ${state.goal.toLocaleString()} WORDS`;
 }
+
+window.getInspiration = () => {
+    const b = document.getElementById('inspireBox');
+    b.innerText = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+    b.classList.remove('hidden');
+    setTimeout(() => b.classList.add('hidden'), 6000);
+};
+
+function initGraph() {
+    const ctx = document.getElementById('velocityChart').getContext('2d');
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: state.logs.map(l => l.date),
+            datasets: [{ label: 'Words', data: state.logs.map(l => l.total), borderColor: 'var(--neon)', tension: 0.3 },
+                       { label: 'Target', data: getTargetData(), borderColor: 'rgba(255,255,255,0.1)', borderDash: [5,5], pointRadius: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true } } }
+    });
+}
+
+function getTargetData() {
+    if (!state.deadline || state.logs.length === 0) return [];
+    const start = new Date(state.logs[0].date);
+    const end = new Date(state.deadline);
+    const days = Math.max(1, (end - start) / 86400000);
+    const rate = state.goal / days;
+    return state.logs.map(log => {
+        const diff = (new Date(log.date) - start) / 86400000;
+        return Math.floor(diff * rate);
+    });
+}
+
+function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.data.datasets[1].data = getTargetData(); chart.update(); } }
+function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
+window.resetGame = () => { if(confirm("REBOOT SYSTEM?")) { localStorage.clear(); location.reload(); }};
