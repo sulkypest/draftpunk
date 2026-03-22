@@ -3,28 +3,38 @@ import { CONFIG } from './data.js';
 let chart;
 let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
     active: false, genre: "urbanFantasy", goal: 80000, total: 0, 
-    gold: 0, xp: 0, logs: [], lastLevel: 0, deadline: ""
+    gold: 0, xp: 0, logs: [], lastLevel: -1, deadline: "" 
 };
 
 const STC_BEATS = [
-    { pct: 0, name: "Opening Image" }, { pct: 1, name: "Theme Stated" }, { pct: 10, name: "Setup" },
-    { pct: 12, name: "The Catalyst" }, { pct: 20, name: "The Debate" }, { pct: 25, name: "Break into Two" },
-    { pct: 30, name: "B Story" }, { pct: 35, name: "Fun & Games" }, { pct: 50, name: "The Midpoint" },
-    { pct: 65, name: "Bad Guys Close In" }, { pct: 75, name: "All Is Lost" }, { pct: 80, name: "Dark Night" },
-    { pct: 85, name: "Break into Three" }, { pct: 90, name: "The Finale" }, { pct: 100, name: "Final Image" }
+    { pct: 0, name: "Opening Image", tasks: ["Establish tone/mood", "Show the 'before' world", "Highlight the hero's flaw"] },
+    { pct: 1, name: "Theme Stated", tasks: ["Someone mentions the 'lesson'", "Hidden in plain dialogue", "The core philosophical question"] },
+    { pct: 10, name: "Setup", tasks: ["Introduce secondary cast", "Show the hero's 'stasis'", "Hint at what's missing"] },
+    { pct: 12, name: "The Catalyst", tasks: ["The life-changing event", "Hero's world is upended", "No going back"] },
+    { pct: 20, name: "The Debate", tasks: ["Hero doubts themselves", "Gathering supplies/info", "The final 'push' into adventure"] },
+    { pct: 25, name: "Break into Two", tasks: ["The hero chooses to act", "Leaving the ordinary world", "Entering the 'upside down'"] },
+    { pct: 30, name: "B Story", tasks: ["Introduce the love interest/mentor", "New character represents the theme", "A breather from the A-plot"] },
+    { pct: 35, name: "Fun & Games", tasks: ["Deliver on the 'premise'", "Action scenes or romantic banter", "Hero is either winning or failing spectacularly"] },
+    { pct: 50, name: "The Midpoint", tasks: ["Stakes are raised", "A false victory or false defeat", "The 'ticking clock' starts"] },
+    { pct: 65, name: "Bad Guys Close In", tasks: ["Villain gets the upper hand", "Internal team conflict", "Hero's flaw causes a mistake"] },
+    { pct: 75, name: "All Is Lost", tasks: ["The 'Whiff of Death'", "Hero loses a mentor/friend", "Everything seems impossible"] },
+    { pct: 80, name: "Dark Night", tasks: ["Hero hits rock bottom", "Mourning the loss", "The 'aha!' moment of truth"] },
+    { pct: 85, name: "Break into Three", tasks: ["A new plan is formed", "A-plot and B-plot collide", "Hero fixes their flaw"] },
+    { pct: 90, name: "The Finale", tasks: ["The final showdown", "Executing the new plan", "The villain is defeated"] },
+    { pct: 100, name: "Final Image", tasks: ["The 'after' world", "Show how the hero changed", "Close the thematic loop"] }
 ];
 
-const INSPIRATIONS = [
-    "Introduce a secret: Someone is lying.", "Change the weather: Make it an obstacle.",
-    "The character finds an object they lost long ago.", "A ticking clock: They have 5 minutes left.",
-    "Kill a darling: Delete the most 'beautiful' sentence you wrote today.",
-    "Silence a character: Why have they stopped speaking?", "An unexpected visitor knocks."
-];
+// CRITICAL: This must be window.X to be clickable from HTML
+window.closeOverlay = function() {
+    const ov = document.getElementById('levelOverlay');
+    if(ov) ov.classList.add('hidden');
+};
 
 window.onload = () => { 
     if (state.active) {
-        document.getElementById('levelOverlay').classList.add('hidden'); // Force hide on load
         showGame(); 
+        // Force hide overlay on load so it doesn't block the start
+        window.closeOverlay();
     }
 };
 
@@ -34,7 +44,7 @@ window.startQuest = () => {
     state.deadline = document.getElementById('deadlineIn').value;
     state.active = true;
     state.total = 0;
-    state.lastLevel = 0;
+    state.lastLevel = 0; // Starts at 0, won't trigger until next beat
     state.logs = [{ date: new Date().toISOString().split('T')[0], total: 0 }];
     save();
     showGame();
@@ -64,7 +74,8 @@ window.addWords = () => {
     const progress = (state.total / state.goal * 100);
     const currentSTCIndex = STC_BEATS.findLastIndex(b => progress >= b.pct);
     
-    if (currentSTCIndex > state.lastLevel) {
+    // Trigger ONLY if we pass a new threshold and words > 0
+    if (currentSTCIndex > state.lastLevel && state.total > 0) {
         state.lastLevel = currentSTCIndex;
         triggerLevelUp(STC_BEATS[currentSTCIndex].name);
     }
@@ -80,12 +91,7 @@ function triggerLevelUp(name) {
     const overlay = document.getElementById('levelOverlay');
     document.getElementById('newLevelName').innerText = name;
     overlay.classList.remove('hidden');
-    setTimeout(() => overlay.classList.add('hidden'), 4000);
 }
-
-window.closeOverlay = () => {
-    document.getElementById('levelOverlay').classList.add('hidden');
-};
 
 function initGraph() {
     const ctx = document.getElementById('velocityChart').getContext('2d');
@@ -95,8 +101,8 @@ function initGraph() {
         data: {
             labels: state.logs.map(l => l.date),
             datasets: [
-                { label: 'Actual', data: state.logs.map(l => l.total), borderColor: '#00ffff', borderWidth: 3, tension: 0.2 },
-                { label: 'Target', data: getTargetData(), borderColor: 'rgba(255,255,255,0.2)', borderDash: [5,5], pointRadius: 0 }
+                { label: 'Words', data: state.logs.map(l => l.total), borderColor: '#00ffff', backgroundColor: 'rgba(0, 255, 255, 0.1)', fill: true, tension: 0.3 },
+                { label: 'Target', data: getTargetData(), borderColor: 'rgba(255, 215, 0, 0.3)', borderDash: [5,5], pointRadius: 0 }
             ]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
@@ -104,7 +110,7 @@ function initGraph() {
 }
 
 function getTargetData() {
-    if (!state.deadline) return [];
+    if (!state.deadline || state.logs.length === 0) return [];
     const start = new Date(state.logs[0].date);
     const end = new Date(state.deadline);
     const totalDays = Math.max(1, (end - start) / 86400000);
@@ -122,22 +128,15 @@ function updateUI() {
     const currentSTC = STC_BEATS[stcIndex] || STC_BEATS[0];
     const nextSTC = STC_BEATS[stcIndex + 1] || { pct: 100, name: "THE END" };
     
-    const beatRange = nextSTC.pct - currentSTC.pct;
+    const beatRange = (nextSTC.pct - currentSTC.pct) || 1;
     const bossHP = Math.max(0, 100 - ((progress - currentSTC.pct) / beatRange * 100));
 
-    const loreIndex = CONFIG.checkpoints.findLastIndex(c => progress >= c.pct);
-    const currentLore = CONFIG.genreBosses[state.genre][loreIndex === -1 ? 0 : loreIndex] || "N/A";
-    const loreData = CONFIG.checkpoints[loreIndex === -1 ? 0 : loreIndex];
-
     document.getElementById('lvlName').innerText = currentSTC.name;
-    document.getElementById('loreText').innerText = `INTEL: ${currentLore}`;
     document.getElementById('bossName').innerText = nextSTC.name;
     document.getElementById('bossHPBar').style.width = bossHP + "%";
     document.getElementById('bossHPText').innerText = Math.floor(bossHP) + "%";
-    
     document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
     document.getElementById('hpText').innerText = `${state.total.toLocaleString()} / ${state.goal.toLocaleString()} WORDS`;
-    
     document.getElementById('goldVal').innerText = state.gold;
     document.getElementById('xpVal').innerText = state.xp;
 
@@ -145,15 +144,8 @@ function updateUI() {
     sprite.style.borderRadius = `${stcIndex * 10}%`;
     sprite.style.transform = `scale(${0.5 + (bossHP/200)}) rotate(${stcIndex * 15}deg)`;
 
-    document.getElementById('stcList').innerHTML = loreData.tasks
-        .map(t => `<div class='check-item'><input type='checkbox'><span><b>${t.label}</b>: ${t.desc}</span></div>`).join('');
-}
-
-window.getInspiration = () => {
-    const box = document.getElementById('inspireBox');
-    box.innerText = INSPIRATIONS[Math.floor(Math.random() * INSPIRATIONS.length)];
-    box.classList.remove('hidden');
-    setTimeout(() => box.classList.add('hidden'), 5000);
+    document.getElementById('stcList').innerHTML = currentSTC.tasks
+        .map(t => `<div class='check-item'><input type='checkbox'><span>${t}</span></div>`).join('');
 }
 
 function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.data.datasets[1].data = getTargetData(); chart.update(); } }
