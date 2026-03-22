@@ -1,55 +1,41 @@
-:root { --neon: #00ffff; --pink: #ff00ff; --bg: #050510; }
-body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace; display: flex; justify-content: center; padding: 20px; }
-.app { width: 100%; max-width: 400px; border: 2px solid var(--neon); background: #0a0a15; padding: 20px; box-shadow: 0 0 15px rgba(0, 255, 255, 0.2); }
-.hidden { display: none; }
+:root { --neon: #00ffff; --pink: #ff00ff; --bg: #050510; --gold: #ffd700; }
+body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace; display: flex; justify-content: center; padding: 20px; overflow-x: hidden; }
 
-/* INDICATORS */
-.level-indicator { color: gold; font-weight: bold; font-size: 14px; margin-bottom: 5px; }
-.lore-indicator { color: var(--neon); font-size: 11px; margin-bottom: 20px; text-transform: uppercase; border-bottom: 1px solid #222; padding-bottom: 10px; }
+.app { width: 100%; max-width: 400px; border: 2px solid var(--neon); background: #0a0a15; padding: 20px; box-shadow: 0 0 15px rgba(0, 255, 255, 0.2); position: relative; transition: transform 0.1s; }
+.hidden { display: none !important; }
 
-/* BOSS HUD */
-.boss-hud { background: rgba(255, 0, 255, 0.1); border: 1px solid var(--pink); padding: 15px; margin-bottom: 15px; text-align: center; }
-.boss-label { font-weight: bold; font-size: 13px; color: var(--pink); margin-bottom: 8px; }
+/* BOSS VISUALS */
+.boss-visual-container { height: 60px; display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
+.boss-sprite { width: 40px; height: 40px; background: var(--pink); border: 2px solid #fff; box-shadow: 0 0 20px var(--pink); border-radius: 10% 40% 10% 40%; animation: float 3s ease-in-out infinite; transition: all 0.5s; }
+@keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(10deg); } }
+
+/* OVERLAYS */
+.overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; justify-content: center; align-items: center; text-align: center; }
+.congrats-box { border: 4px solid var(--gold); padding: 40px; background: #000; box-shadow: 0 0 50px var(--gold); }
+.glitch-text { color: var(--gold); font-size: 2.5em; margin: 0; text-shadow: 2px 2px red, -2px -2px blue; }
+
+/* COMPONENTS */
+.stats-mini { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 10px; opacity: 0.7; }
+.level-indicator { color: var(--gold); font-weight: bold; font-size: 13px; margin-bottom: 4px; }
+.lore-indicator { color: var(--neon); font-size: 10px; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 8px; text-transform: uppercase; }
+
+.boss-hud { background: rgba(255, 0, 255, 0.05); border: 1px solid var(--pink); padding: 15px; margin-bottom: 15px; text-align: center; }
+.boss-label { font-weight: bold; font-size: 12px; color: var(--pink); margin-bottom: 8px; }
 .boss-hp-bg { height: 12px; background: #200; border: 1px solid var(--pink); position: relative; }
-.boss-hp-fill { height: 100%; background: var(--pink); width: 100%; transition: 0.4s; }
-.boss-hp-text { font-size: 9px; color: #fff; margin-top: 5px; }
+.boss-hp-fill { height: 100%; background: var(--pink); width: 100%; transition: width 0.4s; }
+.boss-hp-text { font-size: 9px; margin-top: 4px; color: #fff; }
 
-/* GRAPH */
-.graph-container { height: 140px; margin-bottom: 20px; background: #000; padding: 5px; }
-
-/* TOTAL PROGRESS */
-.total-progress-box { margin-bottom: 20px; }
+.graph-container { height: 130px; margin-bottom: 15px; background: #000; padding: 5px; }
 .hp-bg { height: 20px; background: #111; border: 1px solid #fff; position: relative; }
 .hp-fill { height: 100%; background: linear-gradient(90deg, var(--neon), var(--pink)); width: 0%; transition: 0.5s; }
-.total-text { font-size: 11px; text-align: center; margin-top: 5px; font-weight: bold; }
+.total-text { font-size: 10px; text-align: center; margin-top: 5px; color: #888; }
 
-/* INPUT */
 .input-panel { display: flex; gap: 8px; }
-input { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; flex-grow: 1; font-family: inherit; }
-button { background: var(--neon); color: #000; border: none; padding: 0 20px; font-weight: bold; cursor: pointer; }
-.btn-reset { background: none; border: none; color: #444; font-size: 10px; margin-top: 30px; width: 100%; cursor: pointer; }
+input { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; flex-grow: 1; font-family: inherit; font-size: 14px; }
+button { background: var(--neon); color: #000; border: none; padding: 0 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+button:active { transform: scale(0.9); }
+.btn-reset { background: none; border: none; color: #333; font-size: 9px; margin-top: 25px; width: 100%; cursor: pointer; }
 
-/* SCREEN SHAKE ANIMATION */
-.shake {
-    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
-    transform: translate3d(0, 0, 0);
-    border-color: var(--pink) !important;
-}
-
-@keyframes shake {
-    10%, 90% { transform: translate3d(-1px, 0, 0); }
-    20%, 80% { transform: translate3d(2px, 0, 0); }
-    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-    40%, 60% { transform: translate3d(4px, 0, 0); }
-}
-
-/* GLITCH EFFECT FOR OVERLAY */
-.glitch-text {
-    animation: glitch 1s linear infinite;
-}
-
-@keyframes glitch {
-    2%, 64% { transform: translate(2px,0) skew(0deg); }
-    4%, 60% { transform: translate(-2px,0) skew(0deg); }
-    62% { transform: translate(0,0) skew(5deg); }
-}
+/* ANIMATIONS */
+.shake { animation: shakeEffect 0.4s ease-in-out; }
+@keyframes shakeEffect { 0% { transform: translateX(0); } 25% { transform: translateX(5px); } 50% { transform: translateX(-5px); } 75% { transform: translateX(5px); } 100% { transform: translateX(0); } }
