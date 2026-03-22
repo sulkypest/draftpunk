@@ -4,39 +4,40 @@ let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
     logs: [], lastLevel: -1, deadline: "" 
 };
 
-const STC_BEATS = [
-    { pct: 0, name: "Opening Image", lore: "The 'Before' snapshot. Establish the hero's world and the 'stasis monster'.", tips: "MICROBEAT: Show the protagonist's day-to-day. Contrast this later with the Final Image." },
-    { pct: 1, name: "Theme Stated", lore: "A secondary character mentions the life lesson the hero must learn.", tips: "MICROBEAT: The hero should dismiss this advice immediately. They aren't ready to hear it." },
-    { pct: 10, name: "Setup", lore: "Explore the hero’s world and introduce the 'A Story' characters.", tips: "MICROBEAT: Plant the seeds of every problem that will blow up in Act 2." },
-    { pct: 12, name: "The Catalyst", lore: "The life-changing event that knocks the hero out of their routine.", tips: "MICROBEAT: This must be an external shock. The hero doesn't choose this yet." },
-    { pct: 20, name: "The Debate", lore: "The hero hesitates. Can I do this? Is it safe?", tips: "MICROBEAT: Show the fear. This makes the eventual choice to go much more powerful." },
-    { pct: 25, name: "Break into Two", lore: "The hero leaves the old world and enters Act 2.", tips: "MICROBEAT: This is a proactive choice. Crossing the threshold into the unknown." },
-    { pct: 30, name: "B Story", lore: "Introduce the character who will help the hero learn the theme.", tips: "MICROBEAT: Often a love interest or mentor who sees the world differently than the hero." },
-    { pct: 35, name: "Fun & Games", lore: "The 'promise of the premise.' The hero explores the new world.", tips: "MICROBEAT: High energy scenes. This is why the reader picked up the book." },
-    { pct: 50, name: "The Midpoint", lore: "Stakes are raised. A false victory or a false defeat.", tips: "MICROBEAT: The 'A' and 'B' stories cross. The hero moves from reacting to acting." },
-    { pct: 65, name: "Bad Guys Close In", lore: "The hero's internal flaws begin to cause external disasters.", tips: "MICROBEAT: The pressure mounts. The hero tries to use old habits to solve new problems." },
-    { pct: 75, name: "All Is Lost", lore: "The 'whiff of death.' Total defeat.", tips: "MICROBEAT: The hero loses their support system. Everything feels hopeless." },
-    { pct: 80, name: "Dark Night", lore: "The hero wallows and finally realizes the lesson (Theme).", tips: "MICROBEAT: The epiphany. The 'aha!' moment where the hero learns how to truly change." },
-    { pct: 85, name: "Break into Three", lore: "The hero chooses to act one last time with their new knowledge.", tips: "MICROBEAT: Combining the lesson learned in 'B' to solve the problem in 'A'." },
-    { pct: 90, name: "The Finale", lore: "The hero executes the plan. The old flaws are gone.", tips: "MICROBEAT: A multi-step process where the hero proves they have changed." },
-    { pct: 100, name: "Final Image", lore: "The 'After' snapshot. Show how much the world has changed.", tips: "MICROBEAT: Visually contrast this with the Opening Image to prove growth." }
+// 15 Major Boss Beats
+const BOSS_BEATS = [
+    { pct: 0, name: "Opening Image", lore: "The 'Before' snapshot. Establish the hero's world." },
+    { pct: 1, name: "Theme Stated", lore: "A character mentions the life lesson the hero must learn." },
+    { pct: 10, name: "Setup", lore: "Explore the hero’s world and introduce 'A Story' characters." },
+    { pct: 12, name: "The Catalyst", lore: "The life-changing event that knocks the hero out of their routine." },
+    { pct: 20, name: "The Debate", lore: "The hero hesitates. Can I do this? Is it safe?" },
+    { pct: 25, name: "Break into Two", lore: "The hero proactive choice to enter the unknown." },
+    { pct: 30, name: "B Story", lore: "Introduce the character who helps the hero learn the theme." },
+    { pct: 35, name: "Fun & Games", lore: "The 'promise of the premise.' High energy exploration." },
+    { pct: 50, name: "The Midpoint", lore: "Stakes raised. False victory or false defeat." },
+    { pct: 65, name: "Bad Guys Close In", lore: "Internal and external pressure mounts." },
+    { pct: 75, name: "All Is Lost", lore: "The lowest point. The 'whiff of death'." },
+    { pct: 80, name: "Dark Night", lore: "The epiphany. The hero learns how to truly change." },
+    { pct: 85, name: "Break into Three", lore: "The hero chooses to act with new knowledge." },
+    { pct: 90, name: "The Finale", lore: "The final push. Proving growth through action." },
+    { pct: 100, name: "Final Image", lore: "The 'After' snapshot. Mirroring the opening." }
 ];
 
-const PROMPTS = [
-    "A character refuses to cooperate.", "Introduce a strange smell or sound.", "Someone is watching from afar.", 
-    "A weapon or tool breaks.", "The weather turns hostile.", "A secret is blurted out.", "3-minute ticking clock.", 
-    "A lost object is found.", "An unexpected knock at the door.", "Sudden, eerie silence.", "Worst-case scenario happens.",
-    "A lie is revealed.", "The hero must make a sacrifice.", "Power dynamic shifts suddenly.", "A painful 5-word flashback.",
-    "A bribe is offered.", "The safe path is destroyed.", "Forced to work with an enemy.", "A misdirected message arrives.",
-    "A 'fact' is proven false.", "A physical injury slows the pace.", "An old promise is due.", "The weather raises the stakes.",
-    "A hidden door is found.", "Someone says 'No' unexpectedly.", "Being followed by a 'friend'.", "An object is a mimic/fake.",
-    "Forced truth-telling for a page.", "A key item vanishes.", "Strengths become weaknesses.", "An animal disrupts the scene.",
-    "An unwanted gift arrives.", "Lights out: sound-only writing.", "Wrong place, wrong time.", "A grudge is settled.",
-    "Choice between two evils.", "Motivation shifts suddenly.", "Hidden talent discovered.", "Facing a core fear.",
-    "Kindness from an enemy.", "Betrayal by an ally.", "Leaving everything behind.", "Physics/Reality glitches.",
-    "A letter never meant for them.", "Danger request from an old friend.", "Hiding in plain sight.", "Secret habit discovered.",
-    "Overwhelming déjà vu.", "A leap of faith.", "Not the hero of this story.", "Calm character snaps.", "A map to nowhere."
+// 100 Microbeats from PDF
+const MICRO_TIPS = [
+    "Intro protagonist's normal world; establish tone/genre.", "Show daily routine; establish surface wants.", "Intro side characters; show relationships/tension.", "Suggest deeper need; show flaws or limitations.", "Ground the reader in place, rules, and stakes.", "Plant future secrets or unanswered questions.", "Intro the theme subtly through action.", "Create friction; show the normal world can't hold.", "Protagonist feels pressure or restlessness.", "Position story for disruption; change is necessary.",
+    "Hint at story message; challenge hero's worldview.", "The Catalyst: deliver the inciting incident.", "Hero reacting emotionally to the catalyst.", "Hero resists change or doubts the path ahead.", "Explore consequences of saying yes or no.", "Add pressure from outside forces.", "Add pressure from within: fear or guilt.", "Complicate relationships during hesitation.", "Make the old life less viable.", "Push protagonist toward a decision.",
+    "Break into Two: cross the threshold.", "B-Story: Intro/deepen important relationship.", "Let the relationship reflect the theme.", "Show hero in a more personal/vulnerable light.", "Build trust or conflict with B-story character.", "Reveal something emotionally significant.", "B-story influences protagonist's choices.", "Strengthen the emotional spine of the novel.", "Contrast outer plot and inner life.", "Tie relationship firmly to protagonist's arc.",
+    "Deliver on the novel's premise/Fun & Games.", "Protagonist exploring the new situation.", "Add novelty, energy, or intrigue.", "Give hero a small win or discovery.", "Increase complications in entertaining ways.", "Develop supporters through teamwork.", "Expand world through meaningful scenes.", "Cost of the new path begins to emerge.", "Hero believes they are adapting.", "Introduce a twist, obstacle, or reversal.",
+    "Deepen stakes and sharpen goals.", "Show emotional growth or avoidance.", "Make the premise feel full and alive.", "Build momentum through cause and effect.", "Add a meaningful success or setback.", "Tighten pressure from antagonistic forces.", "Stress the hero's flaw or weakness.", "Set up the turning point to come.", "Make things feel intense and unstable.", "Bring plot/emotion together for midpoint.",
+    "Midpoint: major revelation or stake raise.", "Show the aftermath of the midpoint.", "Increase external opposition.", "Increase internal conflict.", "Damage the hero's confidence.", "Begin closing off easy options.", "Create friction among allies.", "Antagonist/Opposing force gaining ground.", "Revisit protagonist's flaw under pressure.", "Consequences become harder to avoid.",
+    "Place strain on the B-story.", "Hero chooses poorly or blindly.", "Escalate the emotional cost.", "Remove safety or comfort.", "Increase the pace of problems.", "Protagonist feels trapped.", "Allow a brief hope or clue.", "Undermine that hope or complicate it.", "Bring plot strands together toward crisis.", "Position the story for collapse.",
+    "All Is Lost: Lowest point/symbolic death.", "Hero feels the weight of failure.", "Strip away pretense, ego, or illusion.", "Hero reflects on what went wrong.", "Reconnect emotional crisis to theme.", "Show what they lose if they don't change.", "B-story offers insight or comfort.", "Give protagonist a moment of truth.", "Hero realizes what they truly need.", "Prepare the breakthrough.",
+    "Break into Three: new understanding/plan.", "Start the final push with clarity.", "Gather allies, tools, and courage.", "Put the new plan into action.", "Hero acting differently than before.", "Fresh resistance from the opposition.", "Hero applies what they've learned.", "Build momentum through difficult actions.", "Supporting characters get meaningful roles.", "Emotional and plot stakes collide.",
+    "Present the biggest challenge yet.", "Hero nearly fails again, but differently.", "Growth now matters in action, not thought.", "Drive toward the climax.", "Deliver the central confrontation.", "Resolve the external plot.", "Resolve the emotional arc.", "Show cost, gain, and what has changed.", "Tie up threads without overexplaining.", "Final Image: end with a moment of change."
 ];
+
+const PROMPTS = ["A character refuses to cooperate.", "Introduce a strange smell.", "Someone watching from afar.", "A tool breaks.", "Weather turns hostile.", "Secret blurted out.", "3-min ticking clock.", "Lost object found.", "Unexpected knock.", "Sudden silence.", "Worst case happens.", "Lie revealed.", "Hero must sacrifice.", "Power shift.", "5-word flashback.", "Bribe offered.", "Safe path destroyed.", "Work with enemy.", "Misdirected message.", "Fact is false.", "Physical injury.", "Old promise due.", "Weather stakes.", "Hidden door.", "Unexpected 'No'.", "Followed by friend.", "Object is fake.", "Truth-telling page.", "Item vanishes.", "Strength is weakness.", "Animal disruption.", "Unwanted gift.", "Sound-only writing.", "Wrong time.", "Grudge settled.", "Two evils choice.", "Motivation shift.", "Hidden talent.", "Facing fear.", "Enemy kindness.", "Ally betrayal.", "Leaving everything.", "Reality glitch.", "Letter for another.", "Friend request.", "Hidden in plain sight.", "Secret habit.", "Déjà vu.", "Leap of faith.", "Not the hero.", "Calm character snaps.", "Map to nowhere."];
 
 window.closeOverlay = () => document.getElementById('levelOverlay').classList.add('hidden');
 window.onload = () => { if (state.active) showGame(); };
@@ -80,11 +81,11 @@ window.addWords = () => {
     state.logs.push({ date: new Date().toISOString().split('T')[0], total: state.total });
     
     const progress = (state.total / state.goal * 100);
-    const curIdx = STC_BEATS.findLastIndex(b => progress >= b.pct);
+    const curIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
     
     if (curIdx > state.lastLevel && state.total > 0) {
         state.lastLevel = curIdx;
-        document.getElementById('newLevelName').innerText = STC_BEATS[curIdx].name;
+        document.getElementById('newLevelName').innerText = BOSS_BEATS[curIdx].name;
         document.getElementById('levelOverlay').classList.remove('hidden');
     }
     document.getElementById('wordIn').value = "";
@@ -95,21 +96,24 @@ window.addWords = () => {
 
 function updateUI() {
     const progress = (state.total / state.goal) * 100;
-    const curIdx = STC_BEATS.findLastIndex(b => progress >= b.pct);
-    const curB = STC_BEATS[curIdx] || STC_BEATS[0];
-    const nxtB = STC_BEATS[curIdx + 1] || { pct: 100, name: "The End" };
+    const curIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
+    const curB = BOSS_BEATS[curIdx] || BOSS_BEATS[0];
+    const nxtB = BOSS_BEATS[curIdx + 1] || { pct: 100, name: "The End" };
     const hp = Math.max(0, 100 - ((progress - curB.pct) / ((nxtB.pct - curB.pct) || 1) * 100));
+
+    // Calculate current Microbeat Tip (1 of 100)
+    const microIdx = Math.min(99, Math.floor((state.total / state.goal) * 100));
 
     document.getElementById('lvlName').innerText = curB.name;
     document.getElementById('bossName').innerText = `You are battling the ${nxtB.name.toUpperCase()} boss!`;
     document.getElementById('bossHPBar').style.width = hp + "%";
     document.getElementById('bossHPText').innerText = `HP: ${Math.floor(hp)}%`;
+    
     document.getElementById('loreBox').innerText = curB.lore;
-    document.getElementById('tipsBox').innerText = curB.tips;
+    document.getElementById('tipsBox').innerText = `STEP ${microIdx + 1}: ${MICRO_TIPS[microIdx]}`;
 
     const s = document.getElementById('bossSprite');
-    const animSpeed = Math.max(0.1, hp / 100);
-    s.style.animationDuration = `${animSpeed}s`;
+    s.style.animationDuration = `${Math.max(0.1, hp / 100)}s`;
     s.style.transform = `rotate(${curIdx * 24}deg)`;
     s.style.borderRadius = `${(curIdx / 15) * 50}%`;
     if (hp < 30) s.style.marginLeft = `${(Math.random() - 0.5) * 8}px`;
