@@ -8,11 +8,12 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="skin-urbanFantasy">
-    <div id="levelOverlay" class="overlay hidden">
+    <div id="levelOverlay" class="overlay hidden" onclick="closeOverlay()">
         <div class="congrats-box">
             <h1 class="glitch-text">BOSS DEFEATED</h1>
             <h2 id="newLevelName">THE CATALYST</h2>
             <p class="reward">+500 CREDITS | +1000 XP</p>
+            <p style="font-size: 0.7rem; margin-top: 20px; opacity: 0.5;">(CLICK TO DISMISS)</p>
         </div>
     </div>
 
@@ -23,15 +24,11 @@
             <h1>DRAFT PUNK</h1>
             <p class="subtitle">// SYNC NEURAL INTERFACE</p>
             <div class="setup-grid">
-                <input type="text" id="nameIn" placeholder="Hero Name...">
                 <select id="genreIn">
                     <option value="urbanFantasy">Urban Fantasy</option>
                     <option value="sciFi">Sci-Fi</option>
                     <option value="fantasy">High Fantasy</option>
                     <option value="horror">Horror</option>
-                    <option value="thriller">Thriller</option>
-                    <option value="romance">Romance</option>
-                    <option value="crime">Crime/Noir</option>
                 </select>
                 <input type="number" id="goalIn" value="80000">
                 <input type="date" id="deadlineIn">
@@ -47,7 +44,7 @@
                 </div>
                 <div class="header-main">
                     <h2 id="lvlName">OPENING IMAGE</h2>
-                    <p id="loreText">LORE: THE DUSTY CAFE</p>
+                    <p id="loreText">INTEL: INITIALIZING...</p>
                 </div>
                 <button id="inspireBtn" onclick="getInspiration()">INSPIRATION</button>
             </div>
@@ -89,7 +86,7 @@
                     <div id="hpBar" class="total-progress-fill"></div>
                     <span id="hpText">0 / 80,000 WORDS</span>
                 </div>
-                <button onclick="resetGame()" class="reset-link">REBOOT SYSTEM (RESET)</button>
+                <button onclick="resetGame()" class="reset-link">REBOOT SYSTEM</button>
             </div>
         </div>
     </div>
