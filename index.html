@@ -8,14 +8,16 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="skin-urbanFantasy">
-    <div id="levelOverlay" class="overlay hidden" onclick="closeOverlay()">
-        <div class="congrats-box">
-            <h1 class="glitch-text">BOSS DEFEATED</h1>
-            <h2 id="newLevelName">THE CATALYST</h2>
-            <p class="reward">+500 CREDITS | +1000 XP</p>
-            <p style="font-size: 0.7rem; margin-top: 20px; opacity: 0.5;">(CLICK TO DISMISS)</p>
+    <div id="levelOverlay" class="overlay hidden" onclick="window.closeOverlay()">
+    <div class="congrats-box">
+        <h1 style="color:#ffd700; margin:0;">BOSS DEFEATED</h1>
+        <h2 id="newLevelName" style="color:#fff; margin:10px 0;">...</h2>
+        <p style="color:#00ffff;">+500 CREDITS | +1000 XP</p>
+        <div style="margin-top:30px; border:1px solid #fff; padding:10px; color:#fff; cursor:pointer;">
+            [ CLICK ANYWHERE TO CLOSE ]
         </div>
     </div>
+</div>
 
     <div id="inspireBox" class="hidden"></div>
 
