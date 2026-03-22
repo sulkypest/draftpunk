@@ -3,7 +3,7 @@ import { CONFIG } from './data.js';
 let chart;
 let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
     active: false, name: "", genre: "urbanFantasy", goal: 80000, total: 0, 
-    gold: 0, xp: 0, logs: [], stcMode: false, deadline: ""
+    gold: 0, xp: 0, logs: [], lastLevel: 0, deadline: ""
 };
 
 const STC_BEATS = [
@@ -15,6 +15,24 @@ const STC_BEATS = [
 ];
 
 window.onload = () => { if (state.active) showGame(); };
+
+// AUDIO ENGINE: Generates a retro "Level Up" sound
+function playVictorySound() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+    notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.1 + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + i * 0.1);
+        osc.stop(ctx.currentTime + i * 0.1 + 0.1);
+    });
+}
 
 window.startQuest = () => {
     state.name = document.getElementById('nameIn').value || "Author";
@@ -37,14 +55,40 @@ function showGame() {
 window.addWords = () => {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
+    
+    // Trigger Screen Shake
+    const app = document.querySelector('.app');
+    app.classList.add('shake');
+    setTimeout(() => app.classList.remove('shake'), 400);
+
     state.total += val;
     state.xp += val;
+    state.gold += Math.floor(val / 5);
     state.logs.push({ date: new Date().toISOString().split('T')[0], total: state.total });
+    
+    const progress = (state.total / state.goal * 100);
+    const currentSTCIndex = STC_BEATS.findLastIndex(b => progress >= b.pct);
+    
+    if (currentSTCIndex > state.lastLevel) {
+        state.lastLevel = currentSTCIndex;
+        triggerLevelUp(STC_BEATS[currentSTCIndex].name);
+    }
+
     document.getElementById('wordIn').value = "";
     save();
     updateUI();
     updateGraph();
 };
+
+function triggerLevelUp(levelName) {
+    playVictorySound();
+    const overlay = document.getElementById('levelOverlay');
+    document.getElementById('newLevelName').innerText = levelName;
+    overlay.classList.remove('hidden');
+    state.gold += 500; 
+    state.xp += 1000;
+    setTimeout(() => overlay.classList.add('hidden'), 4000);
+}
 
 function initGraph() {
     const ctx = document.getElementById('velocityChart').getContext('2d');
@@ -54,14 +98,14 @@ function initGraph() {
         data: {
             labels: state.logs.map(l => l.date),
             datasets: [
-                { label: 'Your Progress', data: state.logs.map(l => l.total), borderColor: '#00ffff', borderWidth: 2, tension: 0.3 },
-                { label: 'Target Progress', data: getTargetData(), borderColor: 'rgba(255,255,255,0.2)', borderDash: [5,5] }
+                { label: 'Your Progress', data: state.logs.map(l => l.total), borderColor: '#00ffff', borderWidth: 2, tension: 0.3, pointRadius: 0 },
+                { label: 'Target Progress', data: getTargetData(), borderColor: 'rgba(255,255,255,0.1)', borderDash: [5,5], pointRadius: 0 }
             ]
         },
         options: { 
             responsive: true, maintainAspectRatio: false, 
-            plugins: { legend: { display: true, labels: { color: '#fff', size: 10, boxWidth: 10 } } },
-            scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } }
+            plugins: { legend: { display: true, labels: { color: '#555', font: { size: 9 } } } },
+            scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#111' }, ticks: { display: false } } }
         }
     });
 }
@@ -70,7 +114,7 @@ function getTargetData() {
     if (!state.deadline) return [];
     const start = new Date(state.logs[0].date);
     const end = new Date(state.deadline);
-    const totalDays = Math.ceil((end - start) / 86400000) || 1;
+    const totalDays = Math.max(1, Math.ceil((end - start) / 86400000));
     const dailyRate = state.goal / totalDays;
     return state.logs.map(l => {
         const elapsed = Math.ceil((new Date(l.date) - start) / 86400000);
@@ -80,32 +124,29 @@ function getTargetData() {
 
 function updateUI() {
     const progress = (state.total / state.goal) * 100;
-    
-    // 1. SAVE THE CAT LEVELS (The "Bosses")
     const stcIndex = STC_BEATS.findLastIndex(b => progress >= b.pct);
     const currentSTC = STC_BEATS[stcIndex] || STC_BEATS[0];
-    const nextSTC = STC_BEATS[stcIndex + 1] || { pct: 100, name: "Victory" };
+    const nextSTC = STC_BEATS[stcIndex + 1] || { pct: 100, name: "The End" };
     
-    // Boss HP is progress toward the next Level Up
     const bossRange = nextSTC.pct - currentSTC.pct;
-    const bossProgress = progress - currentSTC.pct;
-    const bossHP = Math.max(0, 100 - (bossProgress / bossRange * 100));
+    const bossHP = Math.max(0, 100 - ((progress - currentSTC.pct) / bossRange * 100));
 
-    // 2. MICRO-MILESTONES (The "Lore")
-    const loreIndex = [...CONFIG.checkpoints].reverse().findLastIndex(c => progress >= c.pct);
-    const currentLore = CONFIG.genreBosses[state.genre][loreIndex] || "The Unknown";
+    const loreCheckpoints = CONFIG.checkpoints;
+    const loreIndex = loreCheckpoints.findLastIndex(c => progress >= c.pct);
+    const safeLoreIndex = loreIndex === -1 ? 0 : loreIndex;
+    const currentLore = CONFIG.genreBosses[state.genre][safeLoreIndex] || "The Abyss";
 
-    // Update DOM
-    document.getElementById('lvlName').innerText = `LEVEL: ${currentSTC.name}`;
+    document.getElementById('lvlName').innerText = `CURRENT STAGE: ${currentSTC.name}`;
+    document.getElementById('loreText').innerText = `LORE: ${currentLore}`;
     document.getElementById('bossName').innerText = `BOSS: ${nextSTC.name}`;
     document.getElementById('bossHPBar').style.width = bossHP + "%";
     document.getElementById('bossHPText').innerText = `HP: ${Math.floor(bossHP)}%`;
-    
-    document.getElementById('loreText').innerText = `LOCATION: ${currentLore}`;
-    document.getElementById('hpBar').style.width = progress + "%";
-    document.getElementById('hpText').innerText = `${state.total.toLocaleString()} / ${state.goal.toLocaleString()} TOTAL WORDS`;
+    document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
+    document.getElementById('hpText').innerText = `${state.total.toLocaleString()} / ${state.goal.toLocaleString()} WORDS`;
+    document.getElementById('goldVal').innerText = state.gold;
+    document.getElementById('xpVal').innerText = state.xp;
 }
 
 function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.data.datasets[1].data = getTargetData(); chart.update(); } }
 function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
-window.resetGame = () => { if(confirm("WIPE DATA?")) { localStorage.clear(); location.reload(); }};
+window.resetGame = () => { if(confirm("WIPE SYSTEM?")) { localStorage.clear(); location.reload(); }};
