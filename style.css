@@ -66,3 +66,33 @@ button:hover { background: #fff; color: #000; }
 .check-item input { width: 18px; height: 18px; margin-right: 10px; flex-shrink: 0; }
 .check-item span { font-size: 13px; line-height: 1.4; }
 .check-item strong { color: var(--text); display: block; margin-bottom: 2px; }
+
+.boss-ui {
+    background: rgba(255, 0, 255, 0.05);
+    padding: 10px;
+    border: 1px solid rgba(255, 0, 255, 0.2);
+    margin-bottom: 15px;
+}
+.boss-hp-container {
+    background: #200;
+    height: 15px;
+    border: 1px solid var(--accent);
+    position: relative;
+    overflow: hidden;
+}
+.boss-hp-bar {
+    background: var(--accent);
+    height: 100%;
+    width: 100%;
+    transition: width 0.3s ease;
+}
+.boss-hp-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    top: 2px;
+    font-size: 9px;
+    color: #fff;
+    font-weight: bold;
+}
+.graph-wrapper { height: 150px !important; } /* Make graph slightly shorter to fit Boss UI */
