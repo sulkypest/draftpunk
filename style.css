@@ -7,8 +7,19 @@
 .skin-romance { --neon: #ff69b4; --bg: #1a050d; }
 .skin-crime { --neon: #fff; --bg: #000; }
 
-body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace; margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.app { width: 95%; max-width: 420px; background: var(--panel); border: 1px solid var(--neon); padding: 15px; border-radius: 4px; box-shadow: 0 0 25px #000; position: relative; }
+body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+
+.main-layout { display: flex; gap: 20px; align-items: flex-start; max-width: 600px; width: 95%; }
+
+.app { flex: 4; background: var(--panel); border: 1px solid var(--neon); padding: 15px; border-radius: 4px; box-shadow: 0 0 25px #000; position: relative; }
+
+/* SIDE PANELS */
+.side-container { flex: 1; display: flex; flex-direction: column; gap: 10px; height: 100%; }
+.side-box { background: var(--panel); border: 1px solid #333; padding: 15px; text-align: center; height: calc(500px / 2.5); display: flex; flex-direction: column; justify-content: center; }
+.side-box label { font-size: 0.55rem; color: #888; letter-spacing: 1px; display: block; margin-bottom: 5px; }
+#sideRankDisplay, #daysLeftDisplay { font-size: 1.5rem; font-weight: 900; color: var(--neon); }
+#sideRankName { font-size: 0.6rem; margin-top: 5px; color: #ffd700; }
+#deadlineLabel { font-size: 0.5rem; color: #666; margin-top: 5px; }
 
 .hidden { display: none !important; }
 
