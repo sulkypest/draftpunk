@@ -16,28 +16,24 @@ const STC_BEATS = [
 
 window.onload = () => { if (state.active) showGame(); };
 
-// AUDIO ENGINE: Generates a retro "Level Up" sound
 function playVictorySound() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+    const notes = [261.63, 329.63, 392.00, 523.25];
     notes.forEach((freq, i) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = 'square';
         osc.frequency.value = freq;
         gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.1);
         gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.1 + 0.1);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + i * 0.1);
-        osc.stop(ctx.currentTime + i * 0.1 + 0.1);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + i * 0.1); osc.stop(ctx.currentTime + i * 0.1 + 0.1);
     });
 }
 
 window.startQuest = () => {
-    state.name = document.getElementById('nameIn').value || "Author";
+    state.name = document.getElementById('nameIn').value;
     state.genre = document.getElementById('genreIn').value;
-    state.goal = parseInt(document.getElementById('goalIn').value) || 80000;
+    state.goal = parseInt(document.getElementById('goalIn').value);
     state.deadline = document.getElementById('deadlineIn').value;
     state.active = true;
     state.logs = [{ date: new Date().toISOString().split('T')[0], total: 0 }];
@@ -55,11 +51,10 @@ function showGame() {
 window.addWords = () => {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
-    
-    // Trigger Screen Shake
-    const app = document.querySelector('.app');
-    app.classList.add('shake');
-    setTimeout(() => app.classList.remove('shake'), 400);
+
+    // Shake Effect
+    document.querySelector('.app').classList.add('shake');
+    setTimeout(() => document.querySelector('.app').classList.remove('shake'), 400);
 
     state.total += val;
     state.xp += val;
@@ -86,8 +81,7 @@ function triggerLevelUp(levelName) {
     document.getElementById('newLevelName').innerText = levelName;
     overlay.classList.remove('hidden');
     state.gold += 500; 
-    state.xp += 1000;
-    setTimeout(() => overlay.classList.add('hidden'), 4000);
+    setTimeout(() => overlay.classList.add('hidden'), 3500);
 }
 
 function initGraph() {
@@ -99,14 +93,10 @@ function initGraph() {
             labels: state.logs.map(l => l.date),
             datasets: [
                 { label: 'Your Progress', data: state.logs.map(l => l.total), borderColor: '#00ffff', borderWidth: 2, tension: 0.3, pointRadius: 0 },
-                { label: 'Target Progress', data: getTargetData(), borderColor: 'rgba(255,255,255,0.1)', borderDash: [5,5], pointRadius: 0 }
+                { label: 'Target', data: getTargetData(), borderColor: 'rgba(255,255,255,0.1)', borderDash: [5,5], pointRadius: 0 }
             ]
         },
-        options: { 
-            responsive: true, maintainAspectRatio: false, 
-            plugins: { legend: { display: true, labels: { color: '#555', font: { size: 9 } } } },
-            scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#111' }, ticks: { display: false } } }
-        }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
     });
 }
 
@@ -126,17 +116,20 @@ function updateUI() {
     const progress = (state.total / state.goal) * 100;
     const stcIndex = STC_BEATS.findLastIndex(b => progress >= b.pct);
     const currentSTC = STC_BEATS[stcIndex] || STC_BEATS[0];
-    const nextSTC = STC_BEATS[stcIndex + 1] || { pct: 100, name: "The End" };
+    const nextSTC = STC_BEATS[stcIndex + 1] || { pct: 100, name: "Victory" };
     
-    const bossRange = nextSTC.pct - currentSTC.pct;
-    const bossHP = Math.max(0, 100 - ((progress - currentSTC.pct) / bossRange * 100));
+    const bossHP = Math.max(0, 100 - ((progress - currentSTC.pct) / (nextSTC.pct - currentSTC.pct) * 100));
 
-    const loreCheckpoints = CONFIG.checkpoints;
-    const loreIndex = loreCheckpoints.findLastIndex(c => progress >= c.pct);
-    const safeLoreIndex = loreIndex === -1 ? 0 : loreIndex;
-    const currentLore = CONFIG.genreBosses[state.genre][safeLoreIndex] || "The Abyss";
+    // Update Lore (40 checkpoints)
+    const loreIndex = CONFIG.checkpoints.findLastIndex(c => progress >= c.pct);
+    const currentLore = CONFIG.genreBosses[state.genre][loreIndex === -1 ? 0 : loreIndex];
 
-    document.getElementById('lvlName').innerText = `CURRENT STAGE: ${currentSTC.name}`;
+    // Update Boss Visuals
+    const sprite = document.getElementById('bossSprite');
+    sprite.style.borderRadius = `${stcIndex * 5}% ${50 - stcIndex * 2}%`;
+    sprite.style.filter = `hue-rotate(${stcIndex * 20}deg)`;
+
+    document.getElementById('lvlName').innerText = `STAGE: ${currentSTC.name}`;
     document.getElementById('loreText').innerText = `LORE: ${currentLore}`;
     document.getElementById('bossName').innerText = `BOSS: ${nextSTC.name}`;
     document.getElementById('bossHPBar').style.width = bossHP + "%";
