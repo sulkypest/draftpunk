@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRAFT PUNK | Terminal</title>
+    <title>DRAFT PUNK</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="skin-urbanFantasy">
     <div id="levelOverlay" class="overlay hidden">
         <div class="congrats-box">
             <h1 class="glitch-text">LEVEL UP!</h1>
@@ -21,13 +21,13 @@
         <div id="setup">
             <h1>DRAFT PUNK</h1>
             <p class="subtitle">// SYNC NEURAL INTERFACE</p>
-            <input type="text" id="nameIn" placeholder="Hero Name...">
+            <input type="text" id="nameIn" placeholder="Enter Name...">
             <select id="genreIn">
                 <option value="urbanFantasy">Urban Fantasy</option>
-                <option value="fantasy">High Fantasy</option>
                 <option value="sciFi">Sci-Fi</option>
-                <option value="thriller">Thriller</option>
+                <option value="fantasy">High Fantasy</option>
                 <option value="horror">Horror</option>
+                <option value="thriller">Thriller</option>
                 <option value="romance">Romance</option>
                 <option value="crime">Crime/Noir</option>
             </select>
@@ -37,15 +37,13 @@
         </div>
 
         <div id="game" class="hidden">
-            <div id="inspirationPanel" class="glitch-panel" style="display:none;"></div>
-            
             <div class="stats-mini">
-                <span>XP: <b id="xpVal" style="color:var(--gold)">0</b></span>
-                <span>CREDITS: <b id="goldVal" style="color:var(--neon)">0</b></span>
+                <span>XP: <b id="xpVal">0</b></span>
+                <span>CREDITS: <b id="goldVal">0</b></span>
             </div>
 
             <div id="lvlName" class="level-indicator">STAGE: OPENING IMAGE</div>
-            <div id="loreText" class="lore-indicator">CASE FILE: INITIALIZING...</div>
+            <div id="loreText" class="lore-indicator">LORE: INITIALIZING...</div>
 
             <div class="boss-hud">
                 <div class="boss-visual-container">
@@ -61,22 +59,12 @@
             </div>
 
             <div class="total-progress-box">
-                <div class="hp-bg"><div id="hpBar" class="hp-fill"></div></div>
-                <div id="hpText" class="total-text">0 / 80k WORDS</div>
+                <div class="hp-bg"><div id="hpBar" class="hp-fill"></div><div id="hpText" class="total-text">0 / 80k WORDS</div></div>
             </div>
 
             <div class="input-panel">
-                <input type="number" id="wordIn" placeholder="Enter word hit...">
+                <input type="number" id="wordIn" placeholder="Strike...">
                 <button onclick="addWords()">ATTACK</button>
-            </div>
-
-            <div class="action-grid">
-                <button onclick="toggleSTC()" id="stcBtn" class="btn-alt">STORY TIPS</button>
-                <button onclick="triggerInspiration()" class="btn-inspire">INSPIRATION</button>
-            </div>
-
-            <div id="stcAnalysis" class="hidden">
-                <div id="stcList"></div>
             </div>
 
             <button onclick="resetGame()" class="btn-reset">RESET CAMPAIGN</button>
