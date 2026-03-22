@@ -1,0 +1,15 @@
+:root { --bg: #0d0221; --text: #00ffff; --accent: #ff00ff; --panel: #1a1a2e; }
+body { font-family: 'Courier New', monospace; background: var(--bg); color: #fff; padding: 20px; display: flex; justify-content: center; min-height: 100vh; align-items: center; margin:0;}
+.app { max-width: 450px; width: 100%; background: var(--panel); padding: 30px; border: 2px solid var(--text); box-shadow: 0 0 20px var(--text); border-radius: 8px; text-align: center; }
+.hp-container { background: #000; height: 30px; border: 1px solid #fff; position: relative; margin: 15px 0; border-radius: 15px; overflow: hidden; }
+.hp-bar { background: linear-gradient(90deg, var(--text), var(--accent)); height: 100%; transition: width 0.5s ease-in-out; }
+.hp-text { position: absolute; width: 100%; text-align: center; top: 5px; font-weight: bold; font-size: 14px; color: #fff; text-shadow: 1px 1px #000; }
+input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 4px; box-sizing: border-box; }
+input, select { background: #000; border: 1px solid var(--text); color: var(--text); }
+button { background: var(--accent); color: white; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+button:hover { filter: brightness(1.2); }
+#stcAnalysis { max-height: 200px; overflow-y: auto; text-align: left; background: rgba(0,0,0,0.5); padding: 15px; margin-top: 10px; border-radius: 4px; border: 1px dashed var(--text); }
+.check-item { font-size: 13px; margin-bottom: 8px; line-height: 1.4; color: #ccc; display: flex; align-items: flex-start; }
+.check-item input { width: auto; margin: 3px 10px 0 0; }
+.hidden { display: none; }
+h1 { margin: 0; color: var(--accent); text-shadow: 0 0 10px var(--accent); font-size: 2.5em; }
