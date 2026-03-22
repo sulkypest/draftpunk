@@ -10,9 +10,9 @@
 <body>
     <div id="levelOverlay" class="overlay hidden" onclick="closeOverlay()">
         <div class="congrats-box">
-            <h1>BOSS DEFEATED</h1>
-            <h2 id="newLevelName">BEAT</h2>
-            <p>[ CLICK TO CONTINUE ]</p>
+            <h1>BEAT DEFEATED</h1>
+            <h2 id="newLevelName">STORY BEAT</h2>
+            <p style="color:var(--neon); letter-spacing:2px;">[ CLICK TO ADVANCE ]</p>
         </div>
     </div>
 
@@ -31,22 +31,22 @@
                     <option value="romance">Romance</option>
                     <option value="crime">Crime/Noir</option>
                 </select>
-                <input type="number" id="goalIn" value="80000">
+                <input type="number" id="goalIn" value="80000" placeholder="Word Goal">
                 <input type="date" id="deadlineIn">
-                <button onclick="startQuest()">INITIALIZE</button>
+                <button onclick="startQuest()">INITIALIZE SYSTEM</button>
             </div>
         </div>
 
         <div id="game" class="hidden">
             <div class="header">
                 <h2 id="lvlName">OPENING IMAGE</h2>
-                <button onclick="getInspiration()" class="insp-btn">INSPIRATION</button>
+                <button onclick="getInspiration()" class="insp-btn">NARRATIVE GRENADE</button>
             </div>
 
             <div class="boss-zone">
                 <div id="bossSprite" class="boss-sprite"></div>
                 <div class="boss-meta">
-                    <p id="bossName">NEXT BEAT</p>
+                    <p id="bossName">VS: THEME STATED</p>
                     <div class="boss-hp-container">
                         <div id="bossHPBar" class="boss-hp-fill"></div>
                         <span id="bossHPText">HP: 100%</span>
@@ -68,11 +68,11 @@
             </div>
 
             <div class="input-zone">
-                <input type="number" id="wordIn" placeholder="Words today...">
+                <input type="number" id="wordIn" placeholder="Words written...">
                 <button onclick="addWords()">ATTACK</button>
             </div>
 
-            <button onclick="resetGame()" class="reset-btn">REBOOT SYSTEM</button>
+            <button onclick="resetGame()" class="reset-btn">WIPE MEMORY (RESET)</button>
         </div>
     </div>
     <script src="script.js"></script>
