@@ -1,80 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRAFT PUNK</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div id="levelOverlay" class="overlay hidden" onclick="closeOverlay()">
-        <div class="congrats-box">
-            <h1>BEAT DEFEATED</h1>
-            <h2 id="newLevelName">STORY BEAT</h2>
-            <p style="color:var(--neon); letter-spacing:2px;">[ CLICK TO ADVANCE ]</p>
+<div class="app">
+    <div id="setup">
+        <h1>DRAFT PUNK</h1>
+        <div class="setup-grid">
+            <input type="text" id="titleIn" placeholder="Project Title (WIP)...">
+            <select id="genreIn">
+                <option value="urbanFantasy">Urban Fantasy</option>
+                <option value="sciFi">Sci-Fi</option>
+                <option value="fantasy">High Fantasy</option>
+                <option value="horror">Horror</option>
+                <option value="thriller">Thriller</option>
+                <option value="romance">Romance</option>
+                <option value="crime">Crime/Noir</option>
+            </select>
+            <input type="number" id="goalIn" value="80000">
+            <input type="date" id="deadlineIn">
+            <button onclick="startQuest()">INITIALIZE SYSTEM</button>
         </div>
     </div>
 
-    <div id="inspireBox" class="hidden"></div>
-
-    <div class="app">
-        <div id="setup">
-            <h1>DRAFT PUNK</h1>
-            <div class="setup-grid">
-                <select id="genreIn">
-                    <option value="urbanFantasy">Urban Fantasy</option>
-                    <option value="sciFi">Sci-Fi</option>
-                    <option value="fantasy">High Fantasy</option>
-                    <option value="horror">Horror</option>
-                    <option value="thriller">Thriller</option>
-                    <option value="romance">Romance</option>
-                    <option value="crime">Crime/Noir</option>
-                </select>
-                <input type="number" id="goalIn" value="80000" placeholder="Word Goal">
-                <input type="date" id="deadlineIn">
-                <button onclick="startQuest()">INITIALIZE SYSTEM</button>
-            </div>
-        </div>
-
-        <div id="game" class="hidden">
-            <div class="header">
+    <div id="game" class="hidden">
+        <div class="header">
+            <div class="title-block">
+                <h3 id="wipDisplay">WIP TITLE</h3>
                 <h2 id="lvlName">OPENING IMAGE</h2>
-                <button onclick="getInspiration()" class="insp-btn">NARRATIVE GRENADE</button>
             </div>
-
-            <div class="boss-zone">
-                <div id="bossSprite" class="boss-sprite"></div>
-                <div class="boss-meta">
-                    <p id="bossName">VS: THEME STATED</p>
-                    <div class="boss-hp-container">
-                        <div id="bossHPBar" class="boss-hp-fill"></div>
-                        <span id="bossHPText">HP: 100%</span>
-                    </div>
-                </div>
-            </div>
-
-            <div id="loreBox" class="lore-container"></div>
-
-            <div class="graph-container">
-                <canvas id="velocityChart"></canvas>
-            </div>
-
-            <div class="progress-zone">
-                <div class="bar-container">
-                    <div id="hpBar" class="bar-fill"></div>
-                    <span id="hpText">0 / 80,000 WORDS</span>
-                </div>
-            </div>
-
-            <div class="input-zone">
-                <input type="number" id="wordIn" placeholder="Words written...">
-                <button onclick="addWords()">ATTACK</button>
-            </div>
-
-            <button onclick="resetGame()" class="reset-btn">WIPE MEMORY (RESET)</button>
+            <button onclick="getInspiration()" class="insp-btn">NARRATIVE GRENADE</button>
         </div>
-    </div>
-    <script src="script.js"></script>
-</body>
-</html>
+
+        <div class="boss-zone">
+            <div id="bossSprite" class="boss-sprite"></div>
+            <div class="boss-meta">
+                <p id="bossName">You are battling the THEME STATED boss!</p>
+                <div class="boss-hp-container">
+                    <div id="bossHPBar" class="boss-hp-fill"></div>
+                    <span id="bossHPText">HP: 100%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="intel-controls">
+            <button onclick="toggleIntel()" class="intel-btn">VIEW TACTICAL LORE ▾</button>
+        </div>
+        <div id="intelContainer" class="hidden">
+            <div id="loreBox" class="lore-container"></div>
+            <div id="tipsBox" class="tips-container"></div>
+        </div>
+
+        <div class="graph-container">
+            <canvas id="velocityChart"></canvas>
+        </div>
+        </div>
+</div>
