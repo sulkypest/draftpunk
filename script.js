@@ -1,5 +1,5 @@
 let chart;
-let audioCtx; // Persistent Audio Context
+let audioCtx; 
 let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
     active: false, title: "", genre: "urbanFantasy", goal: 80000, total: 0, 
     logs: [], lastLevel: 0, deadline: "" 
@@ -25,7 +25,7 @@ const BOSS_BEATS = [
     { pct: 100, name: "Final Image", lore: "The 'After' world." }
 ];
 
-const MICRO_TIPS = ["Intro normal world & hint what's lacking.", "Show routine; establish surface want.", "Intro side characters & tension.", "Suggest deeper need & flaws.", "Ground reader in rules & stakes.", "Plant future conflict seeds.", "Intro theme subtly.", "Create friction in the old world.", "Protagonist feels restlessness.", "Position change as necessary.", "Hint at story's deeper message.", "The Catalyst: Deliver inciting incident.", "Reaction to catalyst.", "Resist change/doubt path.", "Explore consequences of yes/no.", "Outside force pressure.", "Inner fear/guilt pressure.", "Complicate relations.", "Old life less viable.", "Push toward decision.", "Break into Two: Cross threshold.", "B-Story: Intro relationship.", "Relationship reflects theme.", "Show hero's vulnerability.", "Build trust/conflict with B.", "Reveal emotional significance.", "B-story influence choices.", "Strengthen emotional spine.", "Outer vs Inner tension.", "Tie B to protagonist arc.", "Deliver premise; fun & games.", "Explore new situation.", "Add novelty & intrigue.", "Small discovery/win.", "Complicate in entertaining way.", "Develop supporters via team.", "Expand world meanings.", "Cost of new path emerges.", "Hero thinks they are adapting.", "Introduce twist or reversal.", "Deepen stakes & goals.", "Show emotional avoidance.", "Make premise feel full.", "Build momentum via cause.", "Setback or temptation.", "Tighten antagonistic pressure.", "Stress hero's flaw.", "Set up turning point.", "Make things feel unstable.", "Plot/Emotion ready for mid.", "Midpoint: Major revelation.", "Show midpoint aftermath.", "Increase external opposition.", "Increase internal conflict.", "Damage hero's confidence.", "Close off easy options.", "Friction among allies.", "Antagonist gains ground.", "Revisit flaw under pressure.", "Harder-to-avoid consequences.", "Strain on B story.", "Hero chooses blindly.", "Escalate emotional cost.", "Remove safety/comfort.", "Increase problem pace.", "Protagonist feels trapped.", "Allow brief hope.", "Undermine/complicate hope.", "Plot strands join for crisis.", "Position for collapse.", "All Is Lost: symbolic death.", "Feel weight of failure.", "Strip away ego/illusion.", "Reflect on what went wrong.", "Reconnect crisis to theme.", "Show stakes of no change.", "B story offers comfort.", "Moment of truth.", "Realise true need.", "Prepare breakthrough.", "Break into Three: new plan.", "Start push with clarity.", "Gather tools & allies.", "New plan in action.", "Hero acts differently.", "Opposition resistance.", "Apply what's learned.", "Build difficult momentum.", "Supporters' meaningful roles.", "Plot/Stakes collide.", "Biggest challenge yet.", "Nearly fail differently.", "Growth matters in action.", "Drive toward climax.", "Central confrontation.", "Resolve external plot.", "Resolve emotional arc.", "Cost, gain, change.", "Tie up remaining threads.", "Final Image: contrast with start."];
+const MICRO_TIPS = ["Intro normal world & hint what's lacking.", "Show routine; establish surface want.", "Intro side characters & tension.", "Suggest deeper need & flaws.", "Ground reader in rules & stakes.", "Plant future conflict seeds.", "Intro theme subtly.", "Create friction in the old world.", "Protagonist feels restlessness.", "Position change as necessary.", "Hint at story's deeper message.", "The Catalyst: Deliver inciting incident.", "Reaction to catalyst.", "Resist change/doubt path.", "Explore consequences of yes/no.", "Outside force pressure.", "Inner fear/guilt pressure.", "Complicate relations.", "Old life less viable.", "Push toward decision.", "Break into Two: Cross threshold.", "B-Story: Intro relationship.", "Relationship reflects theme.", "Show hero's vulnerability.", "Build trust/conflict with B.", "Reveal emotional significance.", "B-story influence choices.", "Strengthen emotional spine.", "Outer vs Inner tension.", "Tie B to protagonist arc.", "Deliver premise; fun & games.", "Explore new situation.", "Add novelty & intrigue.", "Small discovery/win.", "Complicate in entertaining way.", "Develop supporters via team.", "Expand world meanings.", "Cost of new path emerges.", "Hero thinks they are adapting.", "Introduce twist or reversal.", "Deepen stakes & goals.", "Show emotional avoidance.", "Make premise feel full.", "Build momentum via cause.", "Setback or temptation.", "Tighten antagonistic pressure.", "Stress hero's flaw.", "Set up turning point.", "Make things feel unstable.", "Plot/Emotion ready for mid.", "Midpoint: Major revelation.", "Show midpoint aftermath.", "Increase external opposition.", "Increase internal conflict.", "Damage hero's confidence.", "Begin closing off easy options.", "Friction among allies.", "Antagonist gains ground.", "Revisit flaw under pressure.", "Harder-to-avoid consequences.", "Strain on B story.", "Hero chooses blindly.", "Escalate emotional cost.", "Remove safety/comfort.", "Increase problem pace.", "Protagonist feels trapped.", "Allow brief hope.", "Undermine/complicate hope.", "Plot strands join for crisis.", "Position for collapse.", "All Is Lost: symbolic death.", "Feel weight of failure.", "Strip away ego/illusion.", "Reflect on what went wrong.", "Reconnect crisis to theme.", "Show stakes of no change.", "B story offers comfort.", "Moment of truth.", "Realise true need.", "Prepare breakthrough.", "Break into Three: new plan.", "Start push with clarity.", "Gather tools & allies.", "New plan in action.", "Hero acts differently.", "Opposition resistance.", "Apply what's learned.", "Build difficult momentum.", "Supporters' meaningful roles.", "Plot/Stakes collide.", "Biggest challenge yet.", "Nearly fail differently.", "Growth matters in action.", "Drive toward climax.", "Central confrontation.", "Resolve external plot.", "Resolve emotional arc.", "Cost, gain, change.", "Tie up remaining threads.", "Final Image: contrast with start."];
 
 const PROMPTS = ["Character refuses.", "Strange smell.", "Someone watching.", "Tool breaks.", "Hostile weather.", "Secret blurted.", "3-min clock.", "Object found.", "Unexpected knock.", "Sudden silence.", "Worst case.", "Lie revealed.", "Hero sacrifice.", "Power shift.", "5-word flashback.", "Bribe.", "Safe path gone.", "Work with enemy.", "Misdirected msg.", "Fact is false.", "Injury.", "Promise due.", "Weather stakes.", "Hidden door.", "No.", "Followed.", "Fake object.", "Truth page.", "Item vanishes.", "Strength is weakness.", "Animal.", "Unwanted gift.", "Sound-only writing.", "Wrong time.", "Grudge.", "Two evils.", "Motivation shift.", "Talent.", "Core fear.", "Enemy kindness.", "Ally betrayal.", "Leaving all.", "Reality glitch.", "Another's letter.", "Danger request.", "Hiding.", "Secret habit.", "Deja vu.", "Leap of faith.", "Not the hero.", "Calm snap.", "Map to nowhere."];
 
@@ -66,13 +66,19 @@ function showGame() {
 }
 
 window.addWords = () => {
-    // Unlock Audio Context on first click
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
-    document.querySelector('.app').classList.add('shake');
-    setTimeout(() => document.querySelector('.app').classList.remove('shake'), 400);
+
+    const app = document.querySelector('.app');
+    const sprite = document.getElementById('bossSprite');
+    app.classList.add('shake');
+    sprite.classList.add('boss-hit');
+    
+    setTimeout(() => {
+        app.classList.remove('shake');
+        sprite.classList.remove('boss-hit');
+    }, 400);
 
     state.total += val;
     state.logs.push({ date: new Date().toISOString().split('T')[0], total: state.total });
@@ -108,7 +114,6 @@ function updateUI() {
     const hp = Math.max(0, 100 - ((progress - curB.pct) / ((nxtB.pct - curB.pct) || 1) * 100));
     const microIdx = Math.min(99, Math.floor((state.total / state.goal) * 100));
 
-    // Dashboard UI
     document.getElementById('lvlName').innerText = curB.name;
     document.getElementById('bossName').innerText = `You are battling the ${nxtB.name.toUpperCase()} BEAT BOSS!`;
     document.getElementById('bossHPBar').style.width = hp + "%";
@@ -118,8 +123,7 @@ function updateUI() {
     document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
     document.getElementById('hpText').innerText = `${state.total.toLocaleString()} / ${state.goal.toLocaleString()} WORDS`;
 
-    // Side Panels UI
-    document.getElementById('sideRankDisplay').innerText = `LEVEL ${curIdx + 1}`;
+    document.getElementById('sideRankDisplay').innerText = `LVL ${curIdx + 1}`;
     document.getElementById('sideRankName').innerText = RANKS[curIdx].toUpperCase();
     
     if (state.deadline) {
@@ -130,6 +134,14 @@ function updateUI() {
 
     const s = document.getElementById('bossSprite');
     s.style.borderRadius = progress < 25 ? "0%" : progress < 50 ? "50% 0%" : progress < 75 ? "50%" : "30% 70%";
+    
+    if (hp < 50) {
+        s.style.filter = `blur(${(50-hp)/10}px) brightness(${1+(50-hp)/50})`;
+        if (hp < 20) s.style.animation = "glitch-vibe 0.1s infinite";
+    } else {
+        s.style.filter = "none";
+        s.style.animation = "pulse 1.5s infinite alternate ease-in-out";
+    }
 }
 
 window.toggleIntel = () => {
