@@ -1,5 +1,13 @@
 export const CONFIG = {
-    // 40-Point Roadmap based on 80k-word PDF benchmarks
+    inspiration: [
+        "NEURAL SPIKE: A character just lied. Why?",
+        "NEURAL SPIKE: Describe the smell of the current room.",
+        "NEURAL SPIKE: Next sentence must be exactly 7 words.",
+        "NEURAL SPIKE: A minor character reveals a hidden weapon/item.",
+        "NEURAL SPIKE: Kill the lighting in the scene. What happens?",
+        "NEURAL SPIKE: The protagonist hears a sound from the floor above.",
+        "NEURAL SPIKE: A character's internal monologue contradicts their words."
+    ],
     checkpoints: [
         { pct: 0,    name: "Opening Image (1)", tasks: ["Visual snapshot of status quo", "Establish tone/scope"] },
         { pct: 1.25, name: "Opening Image (2)", tasks: ["The hero’s world in stasis", "Show the 'Internal Lack'"] },
@@ -25,7 +33,7 @@ export const CONFIG = {
         { pct: 42.5, name: "Fun & Games (6)", tasks: ["A and B plots weave", "Pressure begins to simmer"] },
         { pct: 45,   name: "Approaching Mid", tasks: ["Plan for 'Big Goal' set", "Temporary alliance"] },
         { pct: 47.5, name: "Midpoint Shift", tasks: ["Stakes raised unexpectedly", "Turning proactive"] },
-        { pct: 50,   name: "The Midpoint", tasks: ["The Midpoint: False Victory or Defeat", "The 'No Turning Back' moment"] },
+        { pct: 50,   name: "The Midpoint", tasks: ["False Victory or Defeat", "No Turning Back moment"] },
         { pct: 52.5, name: "Bad Guys Close (1)", tasks: ["Antagonist regroups", "Internal flaws resurface"] },
         { pct: 55,   name: "Bad Guys Close (2)", tasks: ["The 'Noose Tightens'", "Support systems fail"] },
         { pct: 57.5, name: "Bad Guys Close (3)", tasks: ["Loss of minor ally", "Plan starts to crumble"] },
@@ -49,6 +57,6 @@ export const CONFIG = {
         thriller: ["Quiet Morning", "Ominous Note", "Growing Suspicion", "First Attack", "Phone Call", "No Return", "Unexpected Ally", "High Speed Chase", "The Tracker", "Safehouse Breach", "The Mole", "Total Isolation", "The Trap", "Mastermind", "The Escape", "The Set-up", "Shadow Agency", "Encryption Key", "Double Cross", "Extraction", "Network Blackout", "Target Locked", "Deep Fake", "Cover Blown", "Safe Deposit Box", "The Hitman", "Interrogation", "The Ransom", "Ticking Clock", "Point Blank", "Ransom Note", "The Leverage", "Broken Protocol", "The Fall Guy", "Last Stand", "Confrontation", "The Reveal", "Justice Served", "Aftermath", "Case Closed"],
         horror: ["Peaceful House", "Cold Spot", "Local Legend", "First Scream", "Warning Ignored", "Locked Door", "Creeping Shadow", "False Security", "The Ritual", "Entity Revealed", "Bloody Grudge", "Darkest Night", "Ancient Evil", "The Basement", "The Attic", "Broken Mirror", "Static TV", "Ouija Board", "Shadow Figure", "Blood Writing", "The Possession", "Isolated Cabin", "Full Moon", "The Crypt", "Cemetery Gates", "The Cult", "Sacrificial Knife", "The Curse", "Urban Legend", "The Screaming", "Dark Woods", "The Fog", "Nightmare Fuel", "Final Girl", "The Survivor", "Daylight Breaks", "The Burial", "Unanswered Phone", "The Haunting", "The End?"],
         romance: ["Lonely Studio", "Friend's Advice", "Predictable Life", "Chance Encounter", "Panic Attack", "First Date", "Quirky Rival", "Honeymoon Phase", "Big Secret", "Ex's Return", "Heartbreak Engine", "Tearful Rainstorm", "Grand Gesture", "Wall of Pride", "Wedding Bells", "Awkward Hello", "Coffee Date", "Shared Umbrella", "Misread Text", "Secret Admirer", "First Kiss", "Public Scene", "Family Dinner", "Old Flame", "Misunderstanding", "Long Distance", "The Jealousy", "Compromise", "Second Chance", "The Proposal", "Love Letter", "Midnight Dance", "Sunset Walk", "Forgiveness", "The Soulmate", "Anniversary", "Happy Ever After", "New Beginning", "Forever Home", "True Love"],
-        crime: ["Cold Case", "Partner's Hunch", "Routine Patrol", "Murder Scene", "Corrupt Captain", "First Interrogation", "Shady Informant", "Paper Trail", "Double Cross", "Syndicate Enforcers", "Framed Evidence", "Prison Cell", "Missing Link", "Kingpin", "Handcuffs", "Police Lineup", "Evidence Locker", "Crime Lab", "Witness Room", "District Attorney", "Search Warrant", "The Stakeout", "Getaway Car", "Safe House", "Undercover Job", "The Payoff", "The Snitch", "The Smuggler", "The Heist", "The Ransom", "Police Siren", "The Courtroom", "The Jury", "The Verdict", "The Sentence", "The Parole", "Redemption", "Clean Slate", "New Life", "Justice Done"]
+        crime: ["Cold Case", "Partner's Hunch", "Routine Patrol", "Murder Scene", "Corrupt Captain", "First Interrogation", "Shady Informant", "Paper Trail", "Double Cross", "Syndicate Enforcers", "Framed Evidence", "Prison Cell", "Missing Link", "Kingpin", "Handcuffs", "Police Lineup", "Evidence Locker", "Crime Lab", "Witness Room", "District Attorney", "Search Warrant", "Stakeout", "Getaway Car", "Safe House", "Undercover Job", "The Payoff", "The Snitch", "The Smuggler", "The Heist", "The Ransom", "Police Siren", "The Courtroom", "The Jury", "The Verdict", "The Sentence", "The Parole", "Redemption", "Clean Slate", "New Life", "Justice Done"]
     }
 };
