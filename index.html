@@ -50,7 +50,8 @@
             <div class="boss-zone">
                 <img id="bossSprite" class="boss-sprite" src="bosses/1a.png">
                 <div style="flex: 1;">
-                    <div id="bossName">BOSS</div>
+                    <div id="bossBattleLabel" style="font-size: 0.7rem; font-weight: bold; color: var(--neon); margin-bottom: 2px;">BATTLE:</div>
+                    <div id="bossName" style="font-size: 1.1rem; font-weight: 900; margin-bottom: 5px;">BOSS</div>
                     <div class="boss-hp-container">
                         <div id="bossHPBar" class="boss-hp-fill"></div>
                         <div id="bossHPText">HP: 100%</div>
@@ -70,16 +71,15 @@
 
             <div class="bar-container">
                 <div id="hpBar" class="bar-fill"></div>
-                <div id="hpText">0 WORDS</div>
+                <div id="hpText">0 / 80,000 WORDS</div>
             </div>
 
             <div class="input-zone">
                 <input type="number" id="wordIn" placeholder="WORDCOUNT">
                 <button onclick="addWords()">ADD</button>
-                <button onclick="getInspiration()" class="grenade-btn">NARRATIVE GRENADE</button>
+                <button onclick="showGrenade()" class="grenade-btn">NARRATIVE GRENADE</button>
             </div>
             
-            <div id="inspireBox" class="hidden"></div>
             <div id="buddyGallery" class="buddy-container"></div>
             <button class="reset-btn" onclick="resetGame()">RESET</button>
         </div>
@@ -99,10 +99,18 @@
         </div>
     </div>
 
+    <div id="grenadeOverlay" class="overlay hidden" onclick="closeGrenade()">
+        <div class="congrats-box grenade-box">
+            <h2 style="color: #ff4500;">NARRATIVE GRENADE</h2>
+            <p id="inspireText" style="font-size: 1.3rem; margin: 20px 0;"></p>
+            <div class="click-advance">CLICK TO DISMISS</div>
+        </div>
+    </div>
+
     <div id="levelOverlay" class="overlay hidden" onclick="closeOverlay()">
         <div class="congrats-box">
-            <h3 id="newLevelName">BEAT</h3>
-            <div id="rankTitle">RANK</div>
+            <h3>BEAT COMPLETED!</h3>
+            <div id="rankTitle" style="font-size: 1.5rem; font-weight: 900; color: var(--neon);">RANK</div>
         </div>
     </div>
 
