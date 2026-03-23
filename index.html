@@ -17,6 +17,11 @@
                 <option value="sciFi">SCI-FI</option>
                 <option value="fantasy">HIGH FANTASY</option>
                 <option value="horror">HORROR</option>
+                <option value="cyberpunk">CYBERPUNK</option>
+                <option value="crimeNoir">CRIME / NOIR</option>
+                <option value="romance">ROMANCE</option>
+                <option value="thriller">THRILLER</option>
+                <option value="western">WESTERN</option>
             </select>
             <input type="number" id="goalIn" placeholder="WORD GOAL">
             <input type="date" id="deadlineIn">
@@ -26,19 +31,19 @@
 
     <div id="mainDashboard" class="main-layout hidden">
         <div class="side-container">
-            <a href="#" target="_blank" class="side-box partner-link">
+            <div class="side-box">
                 <label>PARTNER</label>
-                <img src="partners/partner1_logo.png" class="partner-img">
-            </a>
+                <div class="partner-placeholder">ADS / LOGO</div>
+            </div>
             <div class="side-box">
                 <label>WRITING BUDDIES</label>
                 <div id="buddyCountDisplay">0</div>
                 <div id="buddyCountLabel">RECRUITED</div>
             </div>
-            <a href="#" target="_blank" class="side-box partner-link">
+            <div class="side-box">
                 <label>PARTNER</label>
-                <img src="partners/partner2_logo.png" class="partner-img">
-            </a>
+                <div class="partner-placeholder">ADS / LOGO</div>
+            </div>
         </div>
 
         <div class="app">
@@ -69,7 +74,8 @@
                 <canvas id="velocityChart"></canvas>
             </div>
 
-            <div class="bar-container">
+            <label class="bar-label">TOTAL PROJECT PROGRESS</label>
+            <div class="bar-container total-bar">
                 <div id="hpBar" class="bar-fill"></div>
                 <div id="hpText">0 / 0 WORDS</div>
             </div>
@@ -80,7 +86,7 @@
                 <button onclick="showGrenade()" class="grenade-btn">NARRATIVE GRENADE</button>
             </div>
 
-            <div class="collection-header">YOUR WRITING BUDDIES</div>
+            <div class="collection-header">WRITING BUDDY COLLECTION</div>
             <div id="buddyGallery" class="buddy-container"></div>
             
             <button class="reset-btn" onclick="resetGame()">RESET DATA</button>
@@ -103,22 +109,22 @@
 
     <div id="grenadeOverlay" class="overlay" onclick="closeGrenade()" style="display:none;">
         <div class="congrats-box grenade-box">
-            <h2 style="color: #ff4500;">NARRATIVE GRENADE</h2>
-            <p id="inspireText" style="font-size: 1.3rem; margin: 20px 0;"></p>
-            <div style="font-size: 0.7rem; opacity: 0.6;">CLICK TO DISMISS</div>
+            <h2>NARRATIVE GRENADE</h2>
+            <p id="inspireText"></p>
+            <div style="font-size: 0.7rem; opacity: 0.6; margin-top: 15px;">CLICK TO DISMISS</div>
         </div>
     </div>
 
     <div id="levelOverlay" class="overlay" onclick="closeOverlay()" style="display:none;">
         <div class="congrats-box">
             <h3>BEAT COMPLETED!</h3>
-            <div id="rankTitle" style="font-size: 1.5rem; font-weight: 900; color: var(--neon);">RANK</div>
+            <div id="rankTitle">RANK</div>
         </div>
     </div>
 
     <div id="buddyOverlay" class="overlay" onclick="closeBuddyOverlay()" style="display:none;">
         <div class="congrats-box">
-            <h2>WRITING BUDDY FOUND!</h2>
+            <h2>NEW BUDDY RECRUITED!</h2>
             <img id="newBuddyImg" src="" class="reward-img">
             <div style="font-size: 0.7rem; opacity: 0.6; margin-top: 10px;">CLICK TO RECRUIT</div>
         </div>
