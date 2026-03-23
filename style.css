@@ -1,27 +1,36 @@
 :root { --neon: #0ff; --bg: #0a0a12; --panel: #151525; }
-body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+body { background: var(--bg); color: #fff; font-family: 'Courier New', monospace; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+
 .hidden { display: none !important; }
 
-.setup-screen { background: var(--panel); border: 1px solid var(--neon); padding: 40px; text-align: center; width: 350px; }
+.setup-screen { background: var(--panel); border: 1px solid var(--neon); padding: 40px; text-align: center; width: 350px; z-index: 500; }
 .input-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
 
-.main-layout { display: flex; gap: 20px; width: 95vw; max-width: 1200px; height: 90vh; }
+.main-layout { display: flex; gap: 20px; width: 95vw; max-width: 1200px; height: 92vh; }
 .side-container { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-.side-box { background: rgba(0,0,0,0.5); border: 1px solid #333; padding: 15px; text-align: center; }
-.app { flex: 3; background: var(--panel); border: 1px solid var(--neon); padding: 20px; display: flex; flex-direction: column; }
+.side-box { background: rgba(0,0,0,0.6); border: 1px solid #333; padding: 15px; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.app { flex: 3; background: var(--panel); border: 1px solid var(--neon); padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
 
-.boss-zone { display: flex; align-items: center; gap: 20px; background: #000; padding: 15px; margin-bottom: 10px; }
+.boss-zone { display: flex; align-items: center; gap: 20px; background: #000; border-left: 4px solid var(--neon); padding: 15px; margin-bottom: 15px; }
 .boss-sprite { width: 80px; height: 80px; image-rendering: pixelated; }
 
-.graph-container { flex-grow: 1; min-height: 120px; margin: 10px 0; }
-.bar-container { height: 30px; background: #000; border: 1px solid #333; position: relative; margin-bottom: 10px; }
-.bar-fill { height: 100%; background: var(--neon); width: 0%; transition: 0.5s; }
-#hpText { position: absolute; width: 100%; text-align: center; top: 5px; font-weight: bold; font-size: 0.8rem; }
+.graph-container { flex-grow: 1; min-height: 100px; max-height: 180px; margin-bottom: 20px; } /* Added margin to prevent overlap */
 
-.buddy-container { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; min-height: 40px; border-top: 1px solid #333; padding-top: 10px; }
-.buddy-relic { width: 30px; height: 30px; image-rendering: pixelated; }
+.bar-container { height: 35px; background: #000; border: 1px solid #333; position: relative; margin-bottom: 15px; }
+.bar-fill { height: 100%; background: linear-gradient(90deg, transparent, var(--neon)); width: 0%; transition: 0.5s; }
+#hpText { position: absolute; width: 100%; text-align: center; top: 8px; font-weight: bold; font-size: 0.85rem; text-shadow: 1px 1px 2px #000; }
 
-input { background: #000; border: 1px solid #444; color: var(--neon); padding: 10px; }
-button { background: var(--neon); color: #000; border: none; padding: 10px; font-weight: bold; cursor: pointer; }
-.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; }
-.congrats-box { border: 2px solid var(--neon); padding: 30px; background: #000; text-align: center; }
+.input-zone { display: flex; gap: 10px; margin-bottom: 15px; }
+.buddy-container { display: flex; flex-wrap: wrap; gap: 5px; height: 50px; border-top: 1px solid #222; padding-top: 10px; overflow-y: auto; }
+
+input { background: #000; border: 1px solid #444; color: var(--neon); padding: 12px; font-family: inherit; }
+button { background: var(--neon); color: #000; border: none; padding: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+button:hover { filter: brightness(1.2); }
+.grenade-btn { background: #ff4500; color: #fff; }
+
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.congrats-box { border: 2px solid var(--neon); padding: 40px; background: #000; text-align: center; max-width: 80%; }
+.grenade-box { border-color: #ff4500; box-shadow: 0 0 30px rgba(255, 69, 0, 0.3); }
+
+#daysLeftDisplay { font-size: 3rem; font-weight: 900; color: var(--neon); }
+.lvl-icon { width: 60px; height: 60px; margin: 0 auto 10px; image-rendering: pixelated; }
