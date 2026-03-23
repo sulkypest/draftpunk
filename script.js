@@ -1,7 +1,6 @@
 let chart;
-let audioCtx; 
 let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
-    active: false, title: "", genre: "urbanFantasy", goal: 80000, total: 0, 
+    active: false, title: "", goal: 80000, total: 0, 
     logs: [], lastLevel: 0, deadline: "", inventory: [] 
 };
 
@@ -25,14 +24,12 @@ const BOSS_BEATS = [
     { pct: 100, name: "Final Image", lore: "The change solidified." }
 ];
 
-const MICRO_TIPS = Array(100).fill("Focus on this 800-word block to reach your goal.");
 const PROMPTS = ["A secret is blurted out.", "Something breaks.", "An unexpected visitor.", "A sudden change in weather.", "A deadline is moved up.", "A lie is revealed."];
 
 function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
 
-window.startQuest = () => {
+window.start = () => {
     state.title = document.getElementById('titleIn').value || "PROJECT";
-    state.genre = document.getElementById('genreIn').value;
     state.goal = parseInt(document.getElementById('goalIn').value) || 80000;
     state.deadline = document.getElementById('deadlineIn').value;
     state.active = true;
@@ -44,17 +41,14 @@ window.startQuest = () => {
 window.addWords = () => {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
-
     const oldTotal = state.total;
     state.total += val;
     state.logs.push({ date: new Date().toISOString().split('T')[0], total: state.total });
 
-    // Buddy Reward (Every 5,000 words)
     if (Math.floor(state.total / 5000) > Math.floor(oldTotal / 5000)) {
         const buddyNum = Math.floor(Math.random() * 20) + 1;
-        const buddyFile = `buddy${buddyNum}.png`;
-        state.inventory.push(buddyFile);
-        document.getElementById('newBuddyImg').src = `buddies/${buddyFile}`;
+        state.inventory.push(`buddy${buddyNum}.png`);
+        document.getElementById('newBuddyImg').src = `buddies/buddy${buddyNum}.png`;
         document.getElementById('buddyOverlay').classList.remove('hidden');
     }
 
@@ -66,9 +60,8 @@ window.addWords = () => {
         document.getElementById('rankTitle').innerText = RANKS[curIdx];
         document.getElementById('levelOverlay').classList.remove('hidden');
     }
-
-    document.getElementById('wordIn').value = "";
     save(); updateUI(); updateGraph();
+    document.getElementById('wordIn').value = "";
 };
 
 function updateUI() {
@@ -80,15 +73,14 @@ function updateUI() {
 
     document.getElementById('wipDisplay').innerText = state.title;
     document.getElementById('lvlName').innerText = curB.name;
-    document.getElementById('bossName').innerText = `BATTLE: ${nxtB.name}`;
+    document.getElementById('bossName').innerText = nxtB.name;
     document.getElementById('bossHPBar').style.width = hp + "%";
     document.getElementById('bossHPText').innerText = `HP: ${Math.floor(hp)}%`;
     document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
-    document.getElementById('hpText').innerText = `${state.total} WORDS`;
+    document.getElementById('hpText').innerText = `${state.total} / ${state.goal} WORDS`;
     
     document.getElementById('loreBox').innerText = curB.lore;
-    const microIdx = Math.min(99, Math.floor(progress));
-    document.getElementById('tipsBox').innerText = MICRO_TIPS[microIdx];
+    document.getElementById('tipsBox').innerText = `Microbeat focus: ${Math.floor(progress)}% of story reached.`;
 
     document.getElementById('bossSprite').src = `bosses/${curIdx+1}${hp <= 25 ? 'd' : hp <= 50 ? 'c' : hp <= 75 ? 'b' : 'a'}.png`;
     document.getElementById('levelIcon').src = `ranks/lvl${curIdx+1}.png`;
@@ -101,7 +93,6 @@ function updateUI() {
 }
 
 window.toggleIntel = () => document.getElementById('intelContainer').classList.toggle('hidden');
-
 window.getInspiration = () => {
     const box = document.getElementById('inspireBox');
     box.innerText = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
@@ -111,17 +102,15 @@ window.getInspiration = () => {
 
 function initGraph() {
     const ctx = document.getElementById('velocityChart').getContext('2d');
-    if (chart) chart.destroy();
     chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: state.logs.map(l => l.date),
-            datasets: [{ label: 'Words', data: state.logs.map(l => l.total), borderColor: '#0ff', tension: 0.3 }]
+            datasets: [{ label: 'Wordcount', data: state.logs.map(l => l.total), borderColor: '#0ff', fill: false }]
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false } } }
+        options: { responsive: true, maintainAspectRatio: false }
     });
 }
-
 function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.update(); } }
 window.closeOverlay = () => document.getElementById('levelOverlay').classList.add('hidden');
 window.closeBuddyOverlay = () => document.getElementById('buddyOverlay').classList.add('hidden');
@@ -129,7 +118,7 @@ window.resetGame = () => { localStorage.clear(); location.reload(); };
 
 window.onload = () => {
     if (state.active) {
-        document.getElementById('setup').classList.add('hidden');
+        document.getElementById('setup').style.display = 'none';
         document.getElementById('mainDashboard').classList.remove('hidden');
         updateUI(); initGraph();
     }
