@@ -24,7 +24,6 @@ const BOSS_BEATS = [
     { pct: 100, name: "Final Image", lore: "The change solidified." }
 ];
 
-// FULL 100 MICROBEATS (Based on 800-word increments for 80k goal)
 const MICRO_TIPS = [
     "Introduce the hero in their 'Before' state.", "Show a hint of their internal flaw.", "The environment should feel lived-in.", "Introduce a secondary character early.", "Hint at a desire that's just out of reach.", "Something small goes wrong in the routine.", "A reminder of the hero's past.", "The atmosphere shifts slightly.", "A moment of quiet reflection before the storm.", "A secondary character challenges the hero.",
     "THEME STATED: A minor character says the truth.", "The hero ignores the truth just stated.", "The world is closing in.", "The Catalyst is looming.", "CATALYST: The world changes forever.", "Reaction to the Catalyst.", "The first moment of shock.", "The hero tries to go back to 'normal'.", "The hero realizes normal is gone.", "DEBATE: Should I stay or should I go?",
@@ -38,7 +37,7 @@ const MICRO_TIPS = [
     "The immediate aftermath.", "Checking on the survivors.", "The B-story is resolved.", "A moment of shared triumph.", "The New World begins to settle.", "The hero reflects on the journey.", "Packing up the tools.", "A look toward the future.", "FINAL IMAGE: The new normal is set.", "THE END."
 ];
 
-const PROMPTS = ["A secret is blurted out.", "Something breaks.", "An unexpected visitor.", "A sudden change in weather.", "A deadline is moved up.", "A lie is revealed.", "A minor character turns hostile.", "A piece of technology fails.", "A ghost from the past appears."];
+const PROMPTS = ["A secret is blurted out.", "Something breaks.", "An unexpected visitor.", "A sudden change in weather.", "A deadline is moved up.", "A lie is revealed.", "A minor character turns hostile.", "A technology failure."];
 
 function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
 
@@ -60,6 +59,7 @@ window.addWords = () => {
     state.total += val;
     state.logs.push({ date: new Date().toLocaleDateString(), total: state.total });
 
+    // Writing Buddy Milestone
     if (Math.floor(state.total / 5000) > Math.floor(oldTotal / 5000)) {
         const buddyNum = Math.floor(Math.random() * 20) + 1;
         state.inventory.push(`buddy${buddyNum}.png`);
@@ -87,13 +87,12 @@ function updateUI() {
 
     document.getElementById('wipDisplay').innerText = state.title;
     document.getElementById('lvlName').innerText = curB.name;
-    document.getElementById('bossName').innerText = nxtB.name.toUpperCase();
+    document.getElementById('bossName').innerText = nxtB.name;
     document.getElementById('bossHPBar').style.width = hp + "%";
     document.getElementById('bossHPText').innerText = `HP: ${Math.floor(hp)}%`;
     document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
     document.getElementById('hpText').innerText = `${state.total.toLocaleString()} / ${state.goal.toLocaleString()} WORDS`;
     
-    // MICROBEAT LOGIC: Update based on 1% wordcount increments
     document.getElementById('loreBox').innerText = curB.lore;
     const microIdx = Math.min(99, Math.floor(progress));
     document.getElementById('tipsBox').innerText = `Microbeat ${microIdx + 1}: ${MICRO_TIPS[microIdx]}`;
@@ -101,7 +100,7 @@ function updateUI() {
     document.getElementById('bossSprite').src = `bosses/${curIdx+1}${hp <= 25 ? 'd' : hp <= 50 ? 'c' : hp <= 75 ? 'b' : 'a'}.png`;
     document.getElementById('levelIcon').src = `ranks/lvl${curIdx+1}.png`;
     document.getElementById('sideRankDisplay').innerText = `LVL ${curIdx+1}`;
-    document.getElementById('sideRankName').innerText = RANKS[curIdx];
+    document.getElementById('sideRankName').innerText = RANKS[curIdx].toUpperCase();
     document.getElementById('buddyCountDisplay').innerText = state.inventory.length;
 
     if (state.deadline) {
@@ -123,7 +122,7 @@ window.closeGrenade = () => document.getElementById('grenadeOverlay').style.disp
 window.toggleIntel = () => document.getElementById('intelContainer').classList.toggle('hidden');
 window.closeOverlay = () => document.getElementById('levelOverlay').style.display = 'none';
 window.closeBuddyOverlay = () => document.getElementById('buddyOverlay').style.display = 'none';
-window.resetGame = () => { if(confirm("RESET ALL DATA?")) { localStorage.clear(); location.reload(); } };
+window.resetGame = () => { if(confirm("RESET ALL?")) { localStorage.clear(); location.reload(); }};
 
 function initGraph() {
     const ctx = document.getElementById('velocityChart').getContext('2d');
@@ -131,14 +130,13 @@ function initGraph() {
         type: 'line',
         data: {
             labels: state.logs.map(l => l.date),
-            datasets: [{ label: 'Wordcount', data: state.logs.map(l => l.total), borderColor: '#0ff', backgroundColor: 'rgba(0, 255, 255, 0.1)', fill: true, tension: 0.2 }]
+            datasets: [{ data: state.logs.map(l => l.total), borderColor: '#0ff', backgroundColor: 'rgba(0, 255, 255, 0.1)', fill: true, tension: 0.2 }]
         },
         options: { 
-            responsive: true, 
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             scales: {
                 y: { grid: { color: '#222' }, ticks: { color: '#666', font: { size: 9 } } },
-                x: { grid: { display: false }, ticks: { display: false } } // Hidden ticks to prevent overlap
+                x: { ticks: { display: false }, grid: { display: false } }
             },
             plugins: { legend: { display: false } }
         }
