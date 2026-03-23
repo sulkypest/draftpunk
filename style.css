@@ -4,273 +4,108 @@
     --panel: #151525; 
 }
 
+* { box-sizing: border-box; } /* CRITICAL: Prevents width bloat */
+
 body { 
     background: var(--bg); 
     color: #fff; 
     font-family: 'Courier New', monospace; 
     margin: 0; 
-    padding: 20px; 
+    padding: 10px; 
     min-height: 100vh; 
     display: flex; 
-    align-items: flex-start; 
     justify-content: center; 
-    overflow-y: auto; 
+    overflow-x: hidden; /* Stops the horizontal scrolling */
 }
 
-.hidden { display: none !important; }
-
-/* Setup Screen */
-.setup-screen { 
-    background: var(--panel); 
-    border: 2px solid var(--neon); 
-    padding: 40px; 
-    text-align: center; 
-    width: 350px; 
-    margin-top: 10vh; 
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
-}
-
-.input-group { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 15px; 
-    margin-top: 20px; 
-}
-
-/* Main Dashboard Layout */
 .main-layout { 
     display: flex; 
-    gap: 20px; 
-    width: 98vw; 
-    max-width: 1300px; 
-    margin: 0 auto; 
+    gap: 15px; 
+    width: 100%; 
+    max-width: 1200px; /* Limits how wide it can get on big screens */
+    margin: 0 auto;
 }
 
 .side-container { 
-    flex: 1; 
+    flex: 0 0 180px; /* Fixed width for sides so they don't squash */
     display: flex; 
     flex-direction: column; 
-    gap: 15px; 
-    position: sticky; 
-    top: 20px; 
-}
-
-.side-box { 
-    background: rgba(0,0,0,0.6); 
-    border: 1px solid #333; 
-    padding: 20px; 
-    text-align: center; 
-    border-top: 3px solid var(--neon);
+    gap: 10px; 
 }
 
 .app { 
-    flex: 3; 
+    flex: 1; /* Takes up remaining space */
     background: var(--panel); 
     border: 2px solid var(--neon); 
-    padding: 30px; 
+    padding: 20px; 
     display: flex; 
-    flex-direction: column; 
-    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    flex-direction: column;
+    min-width: 0; /* Prevents flex-children from exploding width */
 }
 
-/* Boss & Leveling */
+/* Boss Zone */
 .boss-zone { 
     display: flex; 
     align-items: center; 
-    gap: 20px; 
+    gap: 15px; 
     background: #000; 
-    padding: 20px; 
-    margin-bottom: 25px; 
+    padding: 15px; 
+    margin-bottom: 20px; 
     border: 1px solid #444; 
-    border-left: 5px solid var(--neon);
 }
 
-.boss-sprite { 
-    width: 100px; 
-    height: 100px; 
-    image-rendering: pixelated; 
-}
+.boss-sprite { width: 70px; height: 70px; image-rendering: pixelated; }
 
-.boss-hp-container { 
-    height: 12px; 
-    background: #222; 
-    margin-top: 8px; 
-    border: 1px solid #444; 
-    overflow: hidden; 
-}
-
-.boss-hp-fill { 
-    height: 100%; 
-    background: #f00; 
-    width: 100%; 
-    transition: 0.4s ease-out; 
-}
-
-/* GRAPH FIX: Hard clearance for X-axis labels */
+/* GRAPH SECTION - Fixed height, but responsive width */
 .graph-container { 
     width: 100%; 
-    height: 300px; 
-    margin-bottom: 60px; /* Space for dates so they don't hit the progress bar */
-    padding: 10px;
+    height: 250px; 
+    margin-bottom: 40px; /* Buffer for X-axis labels */
     background: rgba(0,0,0,0.2);
-    border: 1px solid #222;
 }
 
 /* Progress Bars */
-.bar-label { 
-    font-size: 0.8rem; 
-    font-weight: bold; 
-    color: var(--neon); 
-    margin-bottom: 8px; 
-    text-transform: uppercase;
-}
-
 .bar-container { 
-    height: 45px; 
+    height: 35px; 
     background: #000; 
     border: 1px solid var(--neon); 
     position: relative; 
-    margin-bottom: 35px; 
-    overflow: hidden;
+    margin-bottom: 20px; 
 }
 
-.bar-fill { 
-    height: 100%; 
-    background: var(--neon); 
-    width: 0%; 
-    transition: 0.8s cubic-bezier(0.1, 0.7, 0.1, 1); 
-    box-shadow: 0 0 15px var(--neon);
-}
+.bar-fill { height: 100%; background: var(--neon); width: 0%; transition: 0.5s; }
 
 #hpText { 
     position: absolute; 
     width: 100%; 
     text-align: center; 
-    top: 14px; 
+    top: 8px; 
     font-weight: 900; 
-    font-size: 1rem;
-    color: #fff; 
-    text-shadow: 1px 1px 3px #000;
-    z-index: 5;
+    font-size: 0.9rem;
 }
 
 /* Inputs */
-.input-zone { 
-    display: flex; 
-    gap: 15px; 
-    margin-bottom: 50px; 
-}
+.input-zone { display: flex; gap: 10px; margin-bottom: 30px; }
+input { background: #000; border: 1px solid #444; color: #fff; padding: 10px; flex: 1; min-width: 0; }
+button { background: var(--neon); color: #000; border: none; padding: 10px 15px; font-weight: 900; cursor: pointer; }
 
-input, select { 
-    background: #000; 
-    border: 1px solid #444; 
-    color: #fff; 
-    padding: 15px; 
-    font-family: inherit; 
-    font-size: 1rem;
-}
-
-input:focus { border-color: var(--neon); outline: none; }
-
-button { 
-    background: var(--neon); 
-    color: #000; 
-    border: none; 
-    padding: 15px 25px; 
-    font-weight: 900; 
-    cursor: pointer; 
-    text-transform: uppercase; 
-    transition: 0.2s;
-}
-
-button:hover { opacity: 0.8; transform: translateY(-2px); }
-
-.grenade-btn { 
-    background: #ff4500; 
-    color: #fff; 
-}
-
-.intel-btn { 
-    font-size: 0.75rem; 
-    margin-bottom: 10px; 
-    background: transparent; 
-    color: var(--neon); 
-    border: 1px solid var(--neon); 
-}
-
-/* Microbeats */
-.lore-container, .tips-container { 
-    background: #000; 
-    padding: 15px; 
-    border: 1px solid #333; 
-    margin-bottom: 10px; 
-    font-size: 0.9rem; 
-    line-height: 1.4;
-    border-left: 3px solid var(--neon);
-}
-
-/* Buddy Collection (Beneath the dashboard) */
-.collection-header { 
-    font-size: 1.2rem; 
-    font-weight: 900; 
-    color: var(--neon); 
-    margin-bottom: 15px; 
-    padding-top: 30px; 
-    border-top: 1px solid #333; 
-}
-
+/* Buddy Collection */
 .buddy-container { 
     display: flex; 
     flex-wrap: wrap; 
-    gap: 12px; 
-    min-height: 120px; 
-    padding: 20px; 
+    gap: 8px; 
+    padding: 15px; 
     background: rgba(0,0,0,0.4); 
-    margin-bottom: 40px; 
     border: 1px dashed #444;
 }
 
-.buddy-relic { 
-    width: 50px; 
-    height: 50px; 
-    image-rendering: pixelated; 
-    border: 1px solid #333; 
-    background: #000;
-}
+.buddy-relic { width: 40px; height: 40px; image-rendering: pixelated; }
 
 /* Overlays */
-.overlay { 
-    position: fixed; 
-    inset: 0; 
-    background: rgba(0,0,0,0.95); 
-    display: none; 
-    align-items: center; 
-    justify-content: center; 
-    z-index: 99999; 
-}
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.congrats-box { border: 2px solid var(--neon); padding: 30px; background: #000; text-align: center; max-width: 90%; }
 
-.congrats-box { 
-    border: 3px solid var(--neon); 
-    padding: 60px; 
-    background: #000; 
-    text-align: center; 
-    max-width: 500px;
-}
-
-.grenade-box { border-color: #ff4500; }
-#inspireText { font-size: 1.5rem; margin: 25px 0; color: #fff; }
-
-/* Side Stats specific */
-#daysLeftDisplay { font-size: 4rem; font-weight: 900; color: var(--neon); line-height: 1; }
-.lvl-icon { width: 80px; height: 80px; margin: 0 auto 10px; image-rendering: pixelated; }
-.reset-btn { background: #333; color: #777; font-size: 0.6rem; align-self: center; margin-top: 20px; }
-
-.partner-placeholder { 
-    height: 100px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    color: #444; 
-    font-size: 0.8rem; 
-    border: 1px dashed #333; 
-}
+/* Side Box Utilities */
+.side-box { background: rgba(0,0,0,0.6); border: 1px solid #333; padding: 10px; text-align: center; font-size: 0.8rem; }
+#daysLeftDisplay { font-size: 2.5rem; font-weight: 900; color: var(--neon); }
+.lvl-icon { width: 50px; height: 50px; image-rendering: pixelated; }
