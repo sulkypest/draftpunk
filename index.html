@@ -31,7 +31,6 @@
     </div>
 
     <div id="mainDashboard" class="main-layout hidden">
-        
         <div class="side-container">
             <div class="side-box">
                 <label>PARTNER</label>
@@ -58,7 +57,7 @@
                 <img id="bossSprite" class="boss-sprite" src="bosses/1a.png">
                 <div style="flex: 1; min-width: 0;">
                     <div style="font-size: 0.7rem; font-weight: bold; color: var(--neon);">BATTLE:</div>
-                    <div id="bossName" style="font-size: 1.1rem; font-weight: 900; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">BOSS</div>
+                    <div id="bossName" style="font-size: 1.1rem; font-weight: 900; text-transform: uppercase;">BOSS</div>
                     <div class="boss-hp-container">
                         <div id="bossHPBar" class="boss-hp-fill"></div>
                         <div id="bossHPText">HP: 100%</div>
@@ -121,14 +120,13 @@
         <div class="congrats-box">
             <h3>BEAT COMPLETED!</h3>
             <div id="rankTitle" style="font-size: 1.5rem; font-weight: 900; color: var(--neon);">RANK</div>
-            <div style="font-size: 0.7rem; opacity: 0.6; margin-top: 10px;">CLICK TO CONTINUE</div>
         </div>
     </div>
 
     <div id="buddyOverlay" class="overlay" onclick="closeBuddyOverlay()" style="display:none;">
         <div class="congrats-box">
             <h2>NEW BUDDY RECRUITED!</h2>
-            <img id="newBuddyImg" src="" class="reward-img" style="width:80px; height:80px; margin: 15px auto;">
+            <img id="newBuddyImg" src="" style="width:80px; height:80px; margin: 15px auto; display: block;">
             <div style="font-size: 0.7rem; opacity: 0.6;">CLICK TO RECRUIT</div>
         </div>
     </div>
