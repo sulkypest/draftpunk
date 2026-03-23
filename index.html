@@ -20,24 +20,22 @@
             </select>
             <input type="number" id="goalIn" placeholder="WORD GOAL">
             <input type="date" id="deadlineIn">
-            <button onclick="startQuest()">START QUEST</button>
+            <button onclick="start()">START</button>
         </div>
     </div>
 
     <div id="mainDashboard" class="main-layout hidden">
         <div class="side-container">
-            <a id="partnerLink1" href="#" target="_blank" class="side-box partner-link">
+            <a href="#" target="_blank" class="side-box partner-link">
                 <label>PARTNER</label>
                 <img src="partners/partner1_logo.png" class="partner-img">
             </a>
-            
             <div class="side-box">
                 <label>WRITING BUDDIES</label>
                 <div id="buddyCountDisplay">0</div>
                 <div id="buddyCountLabel">RECRUITED</div>
             </div>
-
-            <a id="partnerLink2" href="#" target="_blank" class="side-box partner-link">
+            <a href="#" target="_blank" class="side-box partner-link">
                 <label>PARTNER</label>
                 <img src="partners/partner2_logo.png" class="partner-img">
             </a>
@@ -52,7 +50,7 @@
             <div class="boss-zone">
                 <img id="bossSprite" class="boss-sprite" src="bosses/1a.png">
                 <div style="flex: 1;">
-                    <div id="bossName">BATTLE</div>
+                    <div id="bossName">BOSS</div>
                     <div class="boss-hp-container">
                         <div id="bossHPBar" class="boss-hp-fill"></div>
                         <div id="bossHPText">HP: 100%</div>
@@ -76,16 +74,14 @@
             </div>
 
             <div class="input-zone">
-                <input type="number" id="wordIn" placeholder="WORDS TO ADD...">
-                <button onclick="addWords()">ATTACK</button>
+                <input type="number" id="wordIn" placeholder="WORDCOUNT">
+                <button onclick="addWords()">ADD</button>
                 <button onclick="getInspiration()" class="grenade-btn">NARRATIVE GRENADE</button>
             </div>
             
             <div id="inspireBox" class="hidden"></div>
-
             <div id="buddyGallery" class="buddy-container"></div>
-
-            <button class="reset-btn" onclick="resetGame()">RESET DATA</button>
+            <button class="reset-btn" onclick="resetGame()">RESET</button>
         </div>
 
         <div class="side-container">
@@ -95,7 +91,6 @@
                 <div id="sideRankDisplay">LVL 1</div>
                 <div id="sideRankName">RANK</div>
             </div>
-            
             <div class="side-box">
                 <label>DEADLINE</label>
                 <div id="daysLeftDisplay">--</div>
@@ -106,7 +101,6 @@
 
     <div id="levelOverlay" class="overlay hidden" onclick="closeOverlay()">
         <div class="congrats-box">
-            <div class="glitch">LEVEL UP!</div>
             <h3 id="newLevelName">BEAT</h3>
             <div id="rankTitle">RANK</div>
         </div>
@@ -116,7 +110,6 @@
         <div class="congrats-box">
             <h2>WRITING BUDDY FOUND!</h2>
             <img id="newBuddyImg" src="" class="reward-img">
-            <div class="click-advance">CLICK TO CLOSE</div>
         </div>
     </div>
 
