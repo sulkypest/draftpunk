@@ -3,71 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRAFT PUNK</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>DRAFT PUNK: Boss Rush</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div id="levelOverlay" class="overlay hidden" onclick="closeOverlay()">
-        <div class="congrats-box">
-            <div class="glitch-wrapper">
-                <h1 class="glitch" data-text="BEAT DEFEATED">BEAT DEFEATED</h1>
-            </div>
-            <h2 id="newLevelName">STORY BEAT</h2>
-            <div class="rank-up">
-                <p>RANK INCREASED TO:</p>
-                <h3 id="rankTitle">LEVEL 1: WORDSMITH</h3>
-            </div>
-            <p class="click-advance">[ CLICK TO ACTIVATE NEXT STAGE ]</p>
+
+    <div id="setup" class="setup-screen">
+        <h1>DRAFT PUNK</h1>
+        <div class="input-group">
+            <input type="text" id="titleIn" placeholder="PROJECT TITLE">
+            <select id="genreIn">
+                <option value="urbanFantasy">URBAN FANTASY</option>
+                <option value="sciFi">SCI-FI</option>
+                <option value="fantasy">HIGH FANTASY</option>
+                <option value="horror">HORROR</option>
+                <option value="thriller">THRILLER</option>
+                <option value="romance">ROMANCE</option>
+            </select>
+            <input type="number" id="goalIn" placeholder="WORD GOAL (e.g. 80000)">
+            <input type="date" id="deadlineIn">
+            <button onclick="startQuest()">INITIALIZE SYSTEM</button>
         </div>
     </div>
 
-    <div id="inspireBox" class="hidden"></div>
-
     <div class="main-layout">
-        <div class="app">
-            <div id="setup">
-                <h1>DRAFT PUNK</h1>
-                <div class="setup-grid">
-                    <input type="text" id="titleIn" placeholder="WIP Title...">
-                    <select id="genreIn">
-                        <option value="urbanFantasy">Urban Fantasy</option>
-                        <option value="sciFi">Sci-Fi</option>
-                        <option value="fantasy">High Fantasy</option>
-                        <option value="horror">Horror</option>
-                        <option value="thriller">Thriller</option>
-                        <option value="romance">Romance</option>
-                        <option value="crime">Crime/Noir</option>
-                    </select>
-                    <input type="number" id="goalIn" value="80000">
-                    <input type="date" id="deadlineIn">
-                    <button onclick="startQuest()">INITIALIZE SYSTEM</button>
-                </div>
+        <div class="side-container">
+            <a href="https://partner1.com" target="_blank" class="side-box partner-link">
+                <label>ELITE PARTNER</label>
+                <img src="partners/partner1_logo.png" class="partner-img">
+                <div class="partner-text">WRITING TOOLS</div>
+            </a>
+            
+            <div class="side-box">
+                <label>THE GUILD</label>
+                <div id="buddyCountDisplay">0</div>
+                <div id="buddyCountLabel">NO BUDDIES YET</div>
             </div>
 
+            <a href="https://partner2.com" target="_blank" class="side-box partner-link">
+                <label>SPONSOR</label>
+                <img src="partners/partner2_logo.png" class="partner-img">
+                <div class="partner-text">JOIN THE GUILD</div>
+            </a>
+        </div>
+
+        <div class="app shake-container">
             <div id="game" class="hidden">
                 <div class="header">
-                    <div class="title-block">
-                        <h1 id="wipDisplay">WIP TITLE</h1>
-                        <h2 id="lvlName">OPENING IMAGE</h2>
-                    </div>
-                    <button onclick="getInspiration()" class="insp-btn">NARRATIVE GRENADE</button>
+                    <h1 id="wipDisplay">PROJECT</h1>
+                    <h2 id="lvlName">LEVEL 1</h2>
                 </div>
 
                 <div class="boss-zone">
-                    <div id="bossSprite" class="boss-sprite"></div>
-                    <div class="boss-meta">
-                        <p id="bossName">You are battling the THEME STATED BEAT BOSS!</p>
+                    <img id="bossSprite" class="boss-sprite" src="bosses/1a.png">
+                    <div style="flex: 1;">
+                        <div id="bossName">BATTLE: SETUP</div>
                         <div class="boss-hp-container">
                             <div id="bossHPBar" class="boss-hp-fill"></div>
-                            <span id="bossHPText">HP: 100%</span>
+                            <div id="bossHPText">HP: 100%</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="intel-controls">
-                    <button onclick="toggleIntel()" class="intel-btn">VIEW MICROBEAT TIPS ▾</button>
-                </div>
+                <button class="intel-btn" onclick="toggleIntel()">VIEW MICROBEAT TIPS ▾</button>
                 <div id="intelContainer" class="hidden">
                     <div id="loreBox" class="lore-container"></div>
                     <div id="tipsBox" class="tips-container"></div>
@@ -77,34 +76,71 @@
                     <canvas id="velocityChart"></canvas>
                 </div>
 
-                <div class="progress-zone">
-                    <div class="bar-container">
-                        <div id="hpBar" class="bar-fill"></div>
-                        <span id="hpText">0 / 80,000 WORDS</span>
-                    </div>
+                <div class="bar-container">
+                    <div id="hpBar" class="bar-fill"></div>
+                    <div id="hpText">0 / 80,000 WORDS</div>
                 </div>
 
                 <div class="input-zone">
-                    <input type="number" id="wordIn" placeholder="Words added...">
-                    <button id="attackBtn" onclick="addWords()">ATTACK</button>
+                    <input type="number" id="wordIn" placeholder="ENTER WORD COUNT...">
+                    <button onclick="addWords()">ATTACK</button>
+                    <button onclick="getInspiration()" class="grenade-btn">NARRATIVE GRENADE</button>
                 </div>
-                <button onclick="resetGame()" class="reset-btn">WIPE MEMORY (RESET)</button>
+                
+                <div id="inspireBox" class="hidden"></div>
+
+                <div class="gallery-section">
+                    <div class="gallery-label">THE WRITING GUILD (COLLECTED BUDDIES)</div>
+                    <div id="buddyGallery" class="buddy-container"></div>
+                </div>
+
+                <button class="reset-btn" onclick="resetGame()">SYSTEM REBOOT</button>
             </div>
         </div>
 
-        <div id="sidePanels" class="side-container hidden">
-            <div class="side-box level-box">
-                <label>WRITER LEVEL</label>
-                <div id="sideRankDisplay">LEVEL 1</div>
-                <h4 id="sideRankName">WORDSMITH</h4>
+        <div class="side-container">
+            <div class="side-box">
+                <label>CURRENT RANK</label>
+                <img id="levelIcon" src="ranks/lvl1.png" class="lvl-icon">
+                <div id="sideRankDisplay">LVL 1</div>
+                <div id="sideRankName">WORDSMITH</div>
             </div>
-            <div class="side-box dead-box">
-                <label>DAYS REMAINING</label>
+            
+            <div class="side-box">
+                <label>TIME TO DEADLINE</label>
                 <div id="daysLeftDisplay">--</div>
-                <p id="deadlineLabel">TO DEADLINE</p>
+                <div id="deadlineLabel">DAYS REMAINING</div>
             </div>
         </div>
     </div>
+
+    <div id="levelOverlay" class="overlay hidden" onclick="closeOverlay()">
+        <div class="congrats-box">
+            <div class="glitch">RANK UP!</div>
+            <h3 id="newLevelName">BEAT COMPLETED</h3>
+            <div id="rankTitle" class="rank-up-title">LEVEL 2: INKSLINGER</div>
+            <div class="click-advance">CLICK TO CONTINUE</div>
+        </div>
+    </div>
+
+    <div id="buddyOverlay" class="overlay hidden" onclick="closeBuddyOverlay()">
+        <div class="congrats-box buddy-reward">
+            <h2>NEW DISCOVERY!</h2>
+            <div class="glitch" style="font-size: 1.5rem;">YOU'VE FOUND A WRITING BUDDY!</div>
+            <img id="newBuddyImg" src="" class="reward-img">
+            <div class="click-advance">CLICK TO RECRUIT</div>
+        </div>
+    </div>
+
+    <div id="victoryOverlay" class="overlay hidden">
+        <div class="congrats-box gold-border">
+            <h1 class="glitch">QUEST COMPLETE</h1>
+            <p>THE MANUSCRIPT IS FINISHED</p>
+            <div class="final-rank">RANK: ALMIGHTY WIELDER OF WORDS!</div>
+            <button onclick="resetGame()" class="victory-btn">START NEW ADVENTURE</button>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
