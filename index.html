@@ -39,11 +39,6 @@
             <div class="side-box">
                 <label>WRITING BUDDIES</label>
                 <div id="buddyCountDisplay">0</div>
-                <div id="buddyCountLabel">RECRUITED</div>
-            </div>
-            <div class="side-box">
-                <label>PARTNER</label>
-                <div class="partner-placeholder">ADS / LOGO</div>
             </div>
         </div>
 
@@ -56,11 +51,9 @@
             <div class="boss-zone">
                 <img id="bossSprite" class="boss-sprite" src="bosses/1a.png">
                 <div style="flex: 1; min-width: 0;">
-                    <div style="font-size: 0.7rem; font-weight: bold; color: var(--neon);">BATTLE:</div>
                     <div id="bossName" style="font-size: 1.1rem; font-weight: 900; text-transform: uppercase;">BOSS</div>
                     <div class="boss-hp-container">
-                        <div id="bossHPBar" class="boss-hp-fill"></div>
-                        <div id="bossHPText">HP: 100%</div>
+                        <div id="bossHPBar" class="boss-hp-fill" style="height:10px; background:red; width:100%;"></div>
                     </div>
                 </div>
             </div>
@@ -71,64 +64,47 @@
                 <div id="tipsBox" class="tips-container"></div>
             </div>
 
-            <div class="graph-container">
+            <div class="chart-shield">
                 <canvas id="velocityChart"></canvas>
             </div>
 
-            <label class="bar-label">TOTAL PROJECT PROGRESS</label>
-            <div class="bar-container total-bar">
+            <label class="bar-label">TOTAL PROGRESS</label>
+            <div class="bar-container">
                 <div id="hpBar" class="bar-fill"></div>
-                <div id="hpText">0 / 0 WORDS</div>
+                <div id="hpText">0 / 0</div>
             </div>
 
             <div class="input-zone">
-                <input type="number" id="wordIn" placeholder="WORDCOUNT">
+                <input type="number" id="wordIn" placeholder="WORDS">
                 <button onclick="addWords()">ADD</button>
-                <button onclick="showGrenade()" class="grenade-btn">NARRATIVE GRENADE</button>
+                <button onclick="showGrenade()" style="background:#ff4500; color:white;">GRENADE</button>
             </div>
 
-            <div class="collection-header">WRITING BUDDY COLLECTION</div>
-            <div id="buddyGallery" class="buddy-container"></div>
-            
-            <button class="reset-btn" onclick="resetGame()">RESET DATA</button>
+            <div class="buddy-container" id="buddyGallery"></div>
+            <button onclick="resetGame()" style="background:#333; margin-top:20px;">RESET</button>
         </div>
 
         <div class="side-container">
             <div class="side-box">
-                <label>CURRENT RANK</label>
-                <img id="levelIcon" src="ranks/lvl1.png" class="lvl-icon">
-                <div id="sideRankDisplay">LVL 1</div>
+                <label>RANK</label>
                 <div id="sideRankName">RANK</div>
             </div>
             <div class="side-box">
                 <label>DEADLINE</label>
                 <div id="daysLeftDisplay">--</div>
-                <div id="deadlineLabel">DAYS REMAINING</div>
             </div>
         </div>
     </div>
 
-    <div id="grenadeOverlay" class="overlay" onclick="closeGrenade()" style="display:none;">
-        <div class="congrats-box grenade-box">
-            <h2 style="color: #ff4500;">NARRATIVE GRENADE</h2>
+    <div id="grenadeOverlay" class="overlay" onclick="closeGrenade()">
+        <div class="congrats-box">
+            <h2 style="color:#ff4500;">GRENADE</h2>
             <p id="inspireText"></p>
-            <div style="font-size: 0.7rem; opacity: 0.6; margin-top: 15px;">CLICK TO DISMISS</div>
         </div>
     </div>
 
-    <div id="levelOverlay" class="overlay" onclick="closeOverlay()" style="display:none;">
-        <div class="congrats-box">
-            <h3>BEAT COMPLETED!</h3>
-            <div id="rankTitle" style="font-size: 1.5rem; font-weight: 900; color: var(--neon);">RANK</div>
-        </div>
-    </div>
-
-    <div id="buddyOverlay" class="overlay" onclick="closeBuddyOverlay()" style="display:none;">
-        <div class="congrats-box">
-            <h2>NEW BUDDY RECRUITED!</h2>
-            <img id="newBuddyImg" src="" style="width:80px; height:80px; margin: 15px auto; display: block;">
-            <div style="font-size: 0.7rem; opacity: 0.6;">CLICK TO RECRUIT</div>
-        </div>
+    <div id="buddyOverlay" class="overlay" onclick="closeBuddyOverlay()">
+        <div class="congrats-box"><h2>NEW BUDDY!</h2></div>
     </div>
 
     <script src="script.js"></script>
