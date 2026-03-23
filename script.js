@@ -5,15 +5,8 @@ let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
 };
 
 const GENRE_STYLES = {
-    urbanFantasy: "#0ff",
-    sciFi: "#0fa",
-    fantasy: "#ffd700",
-    horror: "#ff0000",
-    cyberpunk: "#f0f",
-    crimeNoir: "#708090",
-    romance: "#ff69b4",
-    thriller: "#ffa500",
-    western: "#cd7f32"
+    urbanFantasy: "#0ff", sciFi: "#0fa", fantasy: "#ffd700", horror: "#ff0000",
+    cyberpunk: "#f0f", crimeNoir: "#708090", romance: "#ff69b4", thriller: "#ffa500", western: "#cd7f32"
 };
 
 const RANKS = ["Wordsmith", "Inkslinger", "Plot Baron", "Doctor of Drafts", "Prose Pilot", "Scene Slasher", "Chapter Champion", "Arc Architect", "Theme Weaver", "Manuscript Mage", "Story Sorcerer", "Narrative Knight", "World Builder", "The Scribeanator", "Almighty Wielder of Words!"];
@@ -144,11 +137,16 @@ window.resetGame = () => { if(confirm("RESET ALL DATA?")) { localStorage.clear()
 
 function initGraph() {
     const ctx = document.getElementById('velocityChart').getContext('2d');
+    if (chart) chart.destroy();
     chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: state.logs.map(l => l.date),
-            datasets: [{ data: state.logs.map(l => l.total), borderColor: GENRE_STYLES[state.genre], backgroundColor: 'rgba(0,0,0,0)', fill: false, tension: 0.1 }]
+            datasets: [{ 
+                data: state.logs.map(l => l.total), 
+                borderColor: GENRE_STYLES[state.genre], 
+                backgroundColor: 'rgba(0,0,0,0)', fill: false, tension: 0.1 
+            }]
         },
         options: { 
             responsive: true, maintainAspectRatio: false,
