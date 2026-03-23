@@ -24,6 +24,7 @@ const BOSS_BEATS = [
     { pct: 100, name: "Final Image", lore: "The change solidified." }
 ];
 
+// Restore 100 Microbeats
 const MICRO_TIPS = [
     "Introduce the hero in their 'Before' state.", "Show a hint of their internal flaw.", "The environment should feel lived-in.", "Introduce a secondary character early.", "Hint at a desire that's just out of reach.", "Something small goes wrong in the routine.", "A reminder of the hero's past.", "The atmosphere shifts slightly.", "A moment of quiet reflection before the storm.", "A secondary character challenges the hero.",
     "THEME STATED: A minor character says the truth.", "The hero ignores the truth just stated.", "The world is closing in.", "The Catalyst is looming.", "CATALYST: The world changes forever.", "Reaction to the Catalyst.", "The first moment of shock.", "The hero tries to go back to 'normal'.", "The hero realizes normal is gone.", "DEBATE: Should I stay or should I go?",
@@ -59,7 +60,6 @@ window.addWords = () => {
     state.total += val;
     state.logs.push({ date: new Date().toLocaleDateString(), total: state.total });
 
-    // Writing Buddy Milestone
     if (Math.floor(state.total / 5000) > Math.floor(oldTotal / 5000)) {
         const buddyNum = Math.floor(Math.random() * 20) + 1;
         state.inventory.push(`buddy${buddyNum}.png`);
@@ -122,7 +122,7 @@ window.closeGrenade = () => document.getElementById('grenadeOverlay').style.disp
 window.toggleIntel = () => document.getElementById('intelContainer').classList.toggle('hidden');
 window.closeOverlay = () => document.getElementById('levelOverlay').style.display = 'none';
 window.closeBuddyOverlay = () => document.getElementById('buddyOverlay').style.display = 'none';
-window.resetGame = () => { if(confirm("RESET ALL?")) { localStorage.clear(); location.reload(); }};
+window.resetGame = () => { if(confirm("RESET ALL DATA?")) { localStorage.clear(); location.reload(); }};
 
 function initGraph() {
     const ctx = document.getElementById('velocityChart').getContext('2d');
@@ -135,8 +135,8 @@ function initGraph() {
         options: { 
             responsive: true, maintainAspectRatio: false,
             scales: {
-                y: { grid: { color: '#222' }, ticks: { color: '#666', font: { size: 9 } } },
-                x: { ticks: { display: false }, grid: { display: false } }
+                y: { grid: { color: '#222' }, ticks: { color: '#666', font: { size: 10 } } },
+                x: { grid: { display: false }, ticks: { color: '#666', font: { size: 10 } } }
             },
             plugins: { legend: { display: false } }
         }
