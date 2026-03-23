@@ -1,7 +1,19 @@
 let chart;
 let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
-    active: false, title: "", goal: 80000, total: 0, 
+    active: false, title: "", goal: 80000, total: 0, genre: "urbanFantasy",
     logs: [], lastLevel: 0, deadline: "", inventory: [] 
+};
+
+const GENRE_STYLES = {
+    urbanFantasy: "#0ff",
+    sciFi: "#0fa",
+    fantasy: "#ffd700",
+    horror: "#ff0000",
+    cyberpunk: "#f0f",
+    crimeNoir: "#708090",
+    romance: "#ff69b4",
+    thriller: "#ffa500",
+    western: "#cd7f32"
 };
 
 const RANKS = ["Wordsmith", "Inkslinger", "Plot Baron", "Doctor of Drafts", "Prose Pilot", "Scene Slasher", "Chapter Champion", "Arc Architect", "Theme Weaver", "Manuscript Mage", "Story Sorcerer", "Narrative Knight", "World Builder", "The Scribeanator", "Almighty Wielder of Words!"];
@@ -24,7 +36,6 @@ const BOSS_BEATS = [
     { pct: 100, name: "Final Image", lore: "The change solidified." }
 ];
 
-// Restore 100 Microbeats
 const MICRO_TIPS = [
     "Introduce the hero in their 'Before' state.", "Show a hint of their internal flaw.", "The environment should feel lived-in.", "Introduce a secondary character early.", "Hint at a desire that's just out of reach.", "Something small goes wrong in the routine.", "A reminder of the hero's past.", "The atmosphere shifts slightly.", "A moment of quiet reflection before the storm.", "A secondary character challenges the hero.",
     "THEME STATED: A minor character says the truth.", "The hero ignores the truth just stated.", "The world is closing in.", "The Catalyst is looming.", "CATALYST: The world changes forever.", "Reaction to the Catalyst.", "The first moment of shock.", "The hero tries to go back to 'normal'.", "The hero realizes normal is gone.", "DEBATE: Should I stay or should I go?",
@@ -38,7 +49,12 @@ const MICRO_TIPS = [
     "The immediate aftermath.", "Checking on the survivors.", "The B-story is resolved.", "A moment of shared triumph.", "The New World begins to settle.", "The hero reflects on the journey.", "Packing up the tools.", "A look toward the future.", "FINAL IMAGE: The new normal is set.", "THE END."
 ];
 
-const PROMPTS = ["A secret is blurted out.", "Something breaks.", "An unexpected visitor.", "A sudden change in weather.", "A deadline is moved up.", "A lie is revealed.", "A minor character turns hostile.", "A technology failure."];
+const PROMPTS = ["A secret is blurted out.", "Something breaks.", "An unexpected visitor.", "Sudden weather change.", "Deadline moved up.", "A lie revealed.", "Technology fails.", "A ghost appears."];
+
+function applyGenreStyle() {
+    const color = GENRE_STYLES[state.genre] || "#0ff";
+    document.documentElement.style.setProperty('--neon', color);
+}
 
 function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
 
@@ -46,6 +62,7 @@ window.start = () => {
     state.title = document.getElementById('titleIn').value || "PROJECT";
     state.goal = parseInt(document.getElementById('goalIn').value) || 80000;
     state.deadline = document.getElementById('deadlineIn').value;
+    state.genre = document.getElementById('genreIn').value;
     state.active = true;
     state.total = 0;
     state.logs = [{ date: new Date().toLocaleDateString(), total: 0 }];
@@ -79,6 +96,7 @@ window.addWords = () => {
 };
 
 function updateUI() {
+    applyGenreStyle();
     const progress = (state.total / state.goal) * 100;
     const curIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
     const curB = BOSS_BEATS[curIdx] || BOSS_BEATS[0];
@@ -95,7 +113,7 @@ function updateUI() {
     
     document.getElementById('loreBox').innerText = curB.lore;
     const microIdx = Math.min(99, Math.floor(progress));
-    document.getElementById('tipsBox').innerText = `Microbeat ${microIdx + 1}: ${MICRO_TIPS[microIdx]}`;
+    document.getElementById('tipsBox').innerText = MICRO_TIPS[microIdx];
 
     document.getElementById('bossSprite').src = `bosses/${curIdx+1}${hp <= 25 ? 'd' : hp <= 50 ? 'c' : hp <= 75 ? 'b' : 'a'}.png`;
     document.getElementById('levelIcon').src = `ranks/lvl${curIdx+1}.png`;
@@ -130,13 +148,13 @@ function initGraph() {
         type: 'line',
         data: {
             labels: state.logs.map(l => l.date),
-            datasets: [{ data: state.logs.map(l => l.total), borderColor: '#0ff', backgroundColor: 'rgba(0, 255, 255, 0.1)', fill: true, tension: 0.2 }]
+            datasets: [{ data: state.logs.map(l => l.total), borderColor: GENRE_STYLES[state.genre], backgroundColor: 'rgba(0,0,0,0)', fill: false, tension: 0.1 }]
         },
         options: { 
             responsive: true, maintainAspectRatio: false,
             scales: {
-                y: { grid: { color: '#222' }, ticks: { color: '#666', font: { size: 10 } } },
-                x: { grid: { display: false }, ticks: { color: '#666', font: { size: 10 } } }
+                y: { ticks: { color: '#666', font: { size: 10 } }, grid: { color: '#222' } },
+                x: { ticks: { color: '#666', font: { size: 10 } }, grid: { display: false } }
             },
             plugins: { legend: { display: false } }
         }
