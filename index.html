@@ -50,8 +50,8 @@
             <div class="boss-zone">
                 <img id="bossSprite" class="boss-sprite" src="bosses/1a.png">
                 <div style="flex: 1;">
-                    <div id="bossBattleLabel" style="font-size: 0.7rem; font-weight: bold; color: var(--neon); margin-bottom: 2px;">BATTLE:</div>
-                    <div id="bossName" style="font-size: 1.1rem; font-weight: 900; margin-bottom: 5px;">BOSS</div>
+                    <div style="font-size: 0.7rem; font-weight: bold; color: var(--neon);">BATTLE:</div>
+                    <div id="bossName" style="font-size: 1.1rem; font-weight: 900; text-transform: uppercase;">BOSS</div>
                     <div class="boss-hp-container">
                         <div id="bossHPBar" class="boss-hp-fill"></div>
                         <div id="bossHPText">HP: 100%</div>
@@ -71,7 +71,7 @@
 
             <div class="bar-container">
                 <div id="hpBar" class="bar-fill"></div>
-                <div id="hpText">0 / 80,000 WORDS</div>
+                <div id="hpText">0 / 0 WORDS</div>
             </div>
 
             <div class="input-zone">
@@ -99,25 +99,27 @@
         </div>
     </div>
 
-    <div id="grenadeOverlay" class="overlay hidden" onclick="closeGrenade()">
+    <div id="grenadeOverlay" class="overlay" onclick="closeGrenade()" style="display:none;">
         <div class="congrats-box grenade-box">
             <h2 style="color: #ff4500;">NARRATIVE GRENADE</h2>
             <p id="inspireText" style="font-size: 1.3rem; margin: 20px 0;"></p>
-            <div class="click-advance">CLICK TO DISMISS</div>
+            <div style="font-size: 0.7rem; opacity: 0.6;">CLICK TO DISMISS</div>
         </div>
     </div>
 
-    <div id="levelOverlay" class="overlay hidden" onclick="closeOverlay()">
+    <div id="levelOverlay" class="overlay" onclick="closeOverlay()" style="display:none;">
         <div class="congrats-box">
             <h3>BEAT COMPLETED!</h3>
             <div id="rankTitle" style="font-size: 1.5rem; font-weight: 900; color: var(--neon);">RANK</div>
+            <div style="font-size: 0.7rem; opacity: 0.6; margin-top: 10px;">CLICK TO CONTINUE</div>
         </div>
     </div>
 
-    <div id="buddyOverlay" class="overlay hidden" onclick="closeBuddyOverlay()">
+    <div id="buddyOverlay" class="overlay" onclick="closeBuddyOverlay()" style="display:none;">
         <div class="congrats-box">
             <h2>WRITING BUDDY FOUND!</h2>
             <img id="newBuddyImg" src="" class="reward-img">
+            <div style="font-size: 0.7rem; opacity: 0.6;">CLICK TO RECRUIT</div>
         </div>
     </div>
 
