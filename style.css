@@ -59,18 +59,24 @@ body {
     padding: 15px; 
     margin-bottom: 20px; 
     border-left: 5px solid var(--neon); 
-    height: 90px;
+    height: 120px;
+    overflow: visible; /* Allows the glow to spread outside the box */
 }
 
 .boss-sprite { 
-    width: 60px; 
-    height: 60px; 
+    width: 80px; 
+    height: 80px; 
     image-rendering: pixelated; 
     object-fit: contain;
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     
-    /* ADDED BOSS GLOW */
-    filter: drop-shadow(0 0 10px var(--neon));
+    /* TRIPLE-LAYER NEON GLOW */
+    filter: drop-shadow(0 0 5px var(--neon)) 
+            drop-shadow(0 0 15px var(--neon)) 
+            drop-shadow(0 0 25px var(--neon));
+            
+    position: relative;
+    z-index: 10;
 }
 
 /* SHAKE ANIMATION */
