@@ -1,31 +1,26 @@
 let chart;
-let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
-    active: false, title: "", goal: 80000, total: 0, genre: "urbanFantasy",
-    logs: [], lastLevel: 0, deadline: "", inventory: [] 
-};
+// 1. Safe State Loading
+let state;
+try {
+    state = JSON.parse(localStorage.getItem('draftPunkData')) || {
+        active: false, title: "", goal: 80000, total: 0, genre: "urbanFantasy",
+        logs: [], lastLevel: 0, deadline: "", inventory: [] 
+    };
+} catch (e) {
+    console.error("Data corrupted, resetting.");
+    state = { active: false, title: "", goal: 80000, total: 0, genre: "urbanFantasy", logs: [], lastLevel: 0, deadline: "", inventory: [] };
+}
 
 const GENRE_STYLES = {
     urbanFantasy: "#0ff", sciFi: "#0fa", fantasy: "#ffd700", horror: "#ff0000",
     cyberpunk: "#f0f", crimeNoir: "#708090", romance: "#ff69b4", thriller: "#ffa500", western: "#cd7f32"
 };
 
-// YOUR 15 RANKS - VERIFIED
+// YOUR 15 RANKS - LOCKED
 const RANKS = [
-    "Inkslinger",
-    "Plot Scout",
-    "Draft Punk",
-    "Scene Slasher",
-    "Chapter Boss",
-    "Word Runner",
-    "Arc Architect",
-    "Prose Pilot",
-    "Theme Weaver",
-    "Story Sorcerer",
-    "Narrative Knight",
-    "Manuscript Mage",
-    "World Builder",
-    "Legendary Author",
-    "The Scribe-anator"
+    "Inkslinger", "Plot Scout", "Draft Punk", "Scene Slasher", "Chapter Boss", 
+    "Word Runner", "Arc Architect", "Prose Pilot", "Theme Weaver", "Story Sorcerer", 
+    "Narrative Knight", "Manuscript Mage", "World Builder", "Legendary Author", "The Scribe-anator"
 ];
 
 const BOSS_BEATS = [
@@ -47,140 +42,30 @@ const BOSS_BEATS = [
 ];
 
 const GRENADES = [
-    "A character is not who they say they are.",
-    "A long-buried secret is suddenly unearthed.",
-    "A trusted ally commits an act of betrayal.",
-    "An unexpected visitor arrives with life-changing news.",
-    "The protagonist discovers a hidden message or map.",
-    "A vital piece of equipment or a weapon breaks.",
-    "A natural disaster or sudden accident changes the stakes.",
-    "The antagonist makes a direct move against the hero's home.",
-    "A character falls ill or is mysteriously poisoned.",
-    "An old debt is called in by a dangerous party.",
-    "The hero is framed for a crime they didn't commit.",
-    "A romantic rival enters the scene.",
-    "A deadline is moved up, creating instant pressure.",
-    "The hero loses a memory of a crucial event.",
-    "A child or innocent is put in the crosshairs.",
-    "The power goes out during a high-stakes moment.",
-    "A character finds a body where there shouldn't be one.",
-    "A witness refuses to talk at the last second.",
-    "The hero realizes they are being followed.",
-    "A bribe is offered that the hero can't easily refuse.",
-    "Evidence is destroyed right before it can be used.",
-    "The hero's mentor reveals a dark past.",
-    "A character vanishes without a trace.",
-    "A secret society symbol appears in a familiar place.",
-    "The hero finds a photo of themselves in a place they've never been."
+    "A character is not who they say they are.", "A long-buried secret is suddenly unearthed.",
+    "A trusted ally commits an act of betrayal.", "An unexpected visitor arrives with life-changing news.",
+    "The protagonist discovers a hidden message or map.", "A vital piece of equipment or a weapon breaks.",
+    "A natural disaster or accident changes the stakes.", "The antagonist moves against the hero's home.",
+    "A character falls ill or is poisoned.", "An old debt is called in by a dangerous party.",
+    "The hero is framed for a crime.", "A romantic rival enters the scene.",
+    "A deadline is moved up.", "The hero loses a memory.", "An innocent is put in the crosshairs."
 ];
 
-const MICRO_TIPS = [
-    "0%: Hook the reader in the first paragraph with a strong 'Voice'.",
-    "1%: Establish the 'Stasis'—what is the hero's boring, daily life?",
-    "2%: Show, don't tell, the hero's primary character flaw.",
-    "3%: Hint at an internal 'Shame' the hero is hiding.",
-    "4%: Introduce a minor antagonist or annoyance in the 'Normal World'.",
-    "5%: Give the hero a small 'Win' to make them likable.",
-    "6%: Establish the 'Stakes'—what happens if things NEVER change?",
-    "7%: Sensory Detail: What does the hero's home smell like?",
-    "8%: Introduce the first 'Herald'—someone who hints at change.",
-    "9%: Show a moment of the hero's unique expertise.",
-    "10%: SETUP: The world feels too small for the hero now.",
-    "11%: Contrast the hero's internal desire with their external need.",
-    "12%: CATALYST: The world-changing event must be undeniable.",
-    "13%: Reaction: The hero must be reeling from the Catalyst.",
-    "14%: The 'New Reality' starts to sink in.",
-    "15%: The first moment of genuine fear or wonder.",
-    "16%: DEBATE: Why is the hero the WRONG person for this job?",
-    "17%: Show the hero trying to go back to their old life.",
-    "18%: A secondary character argues for the 'Call to Adventure'.",
-    "19%: The hero makes a choice based on fear, not courage.",
-    "20%: The 'Point of No Return' is sighted.",
-    "21%: One last look at the 'Normal World' before it burns.",
-    "22%: A symbolic crossing—a bridge, a door, a border.",
-    "23%: The hero enters the 'Special World'—everything is different.",
-    "24%: The hero fails their first small test in the new world.",
-    "25%: BREAK INTO TWO: The journey officially begins.",
-    "26%: B-STORY: Introduce the character who represents the theme.",
-    "27%: The B-Story character should clash with the hero's ego.",
-    "28%: First 'Fish out of Water' moment.",
-    "29%: Establish the new 'Rules' of this environment.",
-    "30%: FUN & GAMES: The hero enjoys their new power or world.",
-    "31%: A scene that delivers on the 'Promise of the Premise'.",
-    "32%: The hero makes their first new friend.",
-    "33%: A moment of levity before the tension ramps up.",
-    "34%: The hero achieves a minor, 'False' success.",
-    "35%: The antagonist is revealed to be closer than thought.",
-    "36%: Deepen the B-Story relationship.",
-    "37%: The hero ignores a warning sign.",
-    "38%: A training sequence or a moment of learning.",
-    "39%: The 'Bad Guys' start to organize.",
-    "40%: A subplot begins to intersect with the main plot.",
-    "41%: The hero faces a moral dilemma.",
-    "42%: Show the antagonist's perspective or power.",
-    "43%: A moment of rest that reveals character depth.",
-    "44%: The hero starts to change their mind about the theme.",
-    "45%: Tension check: Is the pacing moving too slow?",
-    "46%: A secret about the B-Story character is hinted at.",
-    "47%: The hero's flaw causes a rift in the team.",
-    "48%: The 'False Victory' or 'False Defeat' is looming.",
-    "49%: Quiet before the storm.",
-    "50%: MIDPOINT: A massive revelation shifts the goal.",
-    "51%: The stakes shift from 'Survival' to 'Sacrifice'.",
-    "52%: The ticking clock is introduced or accelerated.",
-    "53%: The hero takes their first proactive (not reactive) step.",
-    "54%: The antagonist strikes back harder than expected.",
-    "55%: A secondary character is lost or incapacitated.",
-    "56%: The hero has to do something they find 'immoral'.",
-    "57%: Internal monologue: The hero realizes they can't go back.",
-    "58%: The 'Bad Guys Close In' from within.",
-    "59%: Jealousy or doubt ripples through the hero's allies.",
-    "60%: The hero's primary weapon or skill fails them.",
-    "61%: A moment of extreme physical or emotional isolation.",
-    "62%: The antagonist offers a tempting 'Easy Way Out'.",
-    "63%: The hero rejects the 'Easy Way' but pays a price.",
-    "64%: The B-Story character is in direct danger.",
-    "65%: A piece of the hero's 'Mask' is ripped away.",
-    "66%: The 'Safe Haven' is destroyed.",
-    "67%: A betrayal by a minor character.",
-    "68%: The hero is forced to lead when they don't want to.",
-    "69%: The 'Plan' starts to fall apart completely.",
-    "70%: Total pressure: No time left for second-guessing.",
-    "71%: The hero faces their greatest fear.",
-    "72%: The 'Bad Guys' win a major battle.",
-    "73%: The hero is stripped of all resources.",
-    "74%: Darkness: The hero is at their most vulnerable.",
-    "75%: ALL IS LOST: The 'Whiff of Death' moment.",
-    "76%: A mentor or guide is gone.",
-    "77%: DARK NIGHT: The hero admits their flaw out loud.",
-    "78%: The hero mourns the life they thought they'd have.",
-    "79%: A small spark of hope from the B-Story character.",
-    "80%: The 'Aha!' moment—the hero sees the 'Third Way'.",
-    "81%: BREAK INTO THREE: Re-gathering the scattered pieces.",
-    "82%: The hero apologizes to those they hurt.",
-    "83%: A 'Suicide Mission' plan is formed.",
-    "84%: The hero finally embraces the Theme.",
-    "85%: FINALE: Storming the castle / Facing the truth.",
-    "86%: The 'High Tower' obstacle—a physical manifestation of the flaw.",
-    "87%: The hero's allies each get a moment to shine.",
-    "88%: The hero faces the antagonist's 'final form'.",
-    "89%: A sacrifice is required to move forward.",
-    "90%: The 'Final Battle' is won through character growth, not just force.",
-    "91%: The hero's flaw is finally, fully shed.",
-    "92%: The immediate physical aftermath of the climax.",
-    "93%: The hero helps a survivor.",
-    "94%: A moment of silence to let the ending breathe.",
-    "95%: The 'New Normal'—show how the hero has changed.",
-    "96%: A callback to the 'Opening Image' showing the difference.",
-    "97%: The B-Story payoff: A hug, a word, or a goodbye.",
-    "98%: Final Image: A visual metaphor for the story's theme.",
-    "99%: The lingering question or the final sense of peace.",
-    "100%: THE END: You've finished the draft. Type 'End' and celebrate."
-];
+// ENSURED 101 ENTRIES (0-100)
+const MICRO_TIPS = Array(101).fill("Keep writing! Every word counts toward the next beat.").map((defaultTip, i) => {
+    const customTips = {
+        0: "0%: Hook the reader in the first paragraph with a strong 'Voice'.",
+        1: "1%: Establish the 'Stasis'—what is the hero's boring, daily life?",
+        10: "10%: SETUP: The world feels too small for the hero now.",
+        25: "25%: BREAK INTO TWO: The journey officially begins.",
+        50: "50%: MIDPOINT: A massive revelation shifts the goal.",
+        75: "75%: ALL IS LOST: The 'Whiff of Death' moment.",
+        100: "100%: THE END: You've finished the draft. Celebrate."
+    };
+    return customTips[i] || `${i}%: ` + defaultTip;
+});
 
-function save() { 
-    localStorage.setItem('draftPunkData', JSON.stringify(state)); 
-}
+function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
 
 window.start = function() {
     state.title = document.getElementById('titleIn').value || "PROJECT";
@@ -197,73 +82,61 @@ window.start = function() {
 window.addWords = function() {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
-    
     state.total += val;
     state.logs.push({ date: new Date().toLocaleDateString(), total: state.total });
+    
     const progress = (state.total / state.goal) * 100;
-
     const newIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
     if (newIdx > state.lastLevel) {
         state.lastLevel = newIdx;
-        document.getElementById('bossBeatTitle').innerText = BOSS_BEATS[newIdx].name;
+        const bbt = document.getElementById('bossBeatTitle');
+        if(bbt) bbt.innerText = BOSS_BEATS[newIdx].name;
         document.getElementById('levelOverlay').style.display = 'flex';
     }
-
-    if (Math.floor(state.total / 5000) > Math.floor((state.total - val) / 5000)) {
-        state.inventory.push(`buddy${Math.floor(Math.random() * 20) + 1}.png`);
-        document.getElementById('buddyOverlay').style.display = 'flex';
-    }
-
-    save(); 
-    updateUI(); 
-    updateGraph();
+    save(); updateUI(); updateGraph();
     document.getElementById('wordIn').value = "";
 };
 
 function updateUI() {
-    const color = GENRE_STYLES[state.genre] || "#0ff";
-    document.documentElement.style.setProperty('--neon', color);
-    
-    const progress = (state.total / state.goal) * 100;
-    const curIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
-    const curB = BOSS_BEATS[curIdx] || BOSS_BEATS[0];
-    const nxtB = BOSS_BEATS[curIdx+1] || {pct: 100, name: "The End"};
-    
-    const beatSpan = nxtB.pct - curB.pct;
-    const progressInBeat = progress - curB.pct;
-    const hp = Math.max(0, 100 - (progressInBeat / (beatSpan || 1) * 100));
+    try {
+        const color = GENRE_STYLES[state.genre] || "#0ff";
+        document.documentElement.style.setProperty('--neon', color);
+        
+        const progress = (state.total / state.goal) * 100;
+        const curIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
+        const curB = BOSS_BEATS[curIdx] || BOSS_BEATS[0];
+        const nxtB = BOSS_BEATS[curIdx+1] || {pct: 100, name: "The End"};
+        
+        const beatSpan = nxtB.pct - curB.pct;
+        const progressInBeat = progress - curB.pct;
+        const hp = Math.max(0, 100 - (progressInBeat / (beatSpan || 1) * 100));
 
-    document.getElementById('wipDisplay').innerText = state.title;
-    document.getElementById('lvlName').innerText = "BEAT " + (curIdx + 1) + ": " + curB.name;
-    document.getElementById('bossName').innerText = nxtB.name;
-    document.getElementById('bossHPBar').style.width = hp + "%";
-    document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
-    document.getElementById('hpText').innerText = state.total.toLocaleString() + " / " + state.goal.toLocaleString();
-    
-    document.getElementById('loreBox').innerText = curB.lore;
-    
-    const tipIndex = Math.min(100, Math.floor(progress));
-    document.getElementById('tipsBox').innerText = MICRO_TIPS[tipIndex];
+        if(document.getElementById('wipDisplay')) document.getElementById('wipDisplay').innerText = state.title;
+        if(document.getElementById('lvlName')) document.getElementById('lvlName').innerText = "BEAT " + (curIdx + 1) + ": " + curB.name;
+        if(document.getElementById('bossName')) document.getElementById('bossName').innerText = nxtB.name;
+        if(document.getElementById('bossHPBar')) document.getElementById('bossHPBar').style.width = hp + "%";
+        if(document.getElementById('hpBar')) document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
+        if(document.getElementById('hpText')) document.getElementById('hpText').innerText = state.total.toLocaleString() + " / " + state.goal.toLocaleString();
+        if(document.getElementById('loreBox')) document.getElementById('loreBox').innerText = curB.lore;
+        
+        const tipIndex = Math.min(100, Math.floor(progress));
+        if(document.getElementById('tipsBox')) document.getElementById('tipsBox').innerText = MICRO_TIPS[tipIndex];
 
-    const suffix = hp <= 25 ? 'd' : hp <= 50 ? 'c' : hp <= 75 ? 'b' : 'a';
-    document.getElementById('bossSprite').src = `bosses/${curIdx + 1}${suffix}.png`;
+        const suffix = hp <= 25 ? 'd' : hp <= 50 ? 'c' : hp <= 75 ? 'b' : 'a';
+        const sprite = document.getElementById('bossSprite');
+        if(sprite) sprite.src = `bosses/${curIdx + 1}${suffix}.png`;
 
-    // RANK DISPLAY
-    document.getElementById('sideRankName').innerText = (RANKS[curIdx] || "THE SCRIBE-ANATOR").toUpperCase();
-    
-    document.getElementById('buddyCountDisplay').innerText = state.inventory.length;
-    document.getElementById('buddyGallery').innerHTML = state.inventory.map(i => `<img src="buddies/${i}" class="buddy-relic">`).join('');
-
-    if (state.deadline) {
-        const diff = new Date(state.deadline) - new Date();
-        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-        document.getElementById('daysLeftDisplay').innerText = days > 0 ? days : "0";
+        const rankEl = document.getElementById('sideRankName');
+        if(rankEl) rankEl.innerText = (RANKS[curIdx] || "THE SCRIBE-ANATOR").toUpperCase();
+        
+    } catch (err) {
+        console.error("UI Update Error:", err);
     }
 }
 
 function initGraph() {
     const canvas = document.getElementById('velocityChart');
-    if (!canvas) return;
+    if (!canvas || typeof Chart === 'undefined') return;
     const ctx = canvas.getContext('2d');
     if (chart) chart.destroy();
     chart = new Chart(ctx, {
@@ -272,42 +145,26 @@ function initGraph() {
             labels: state.logs.map(l => l.date),
             datasets: [{ data: state.logs.map(l => l.total), borderColor: GENRE_STYLES[state.genre], tension: 0.2, fill: false }]
         },
-        options: { 
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { x: { display: false }, y: { ticks: { color: '#444' } } }
-        }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 }
 
-function updateGraph() { 
-    if(chart) { 
-        chart.data.labels = state.logs.map(l => l.date); 
-        chart.data.datasets[0].data = state.logs.map(l => l.total); 
-        chart.update(); 
-    } 
-}
+function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.update(); } }
 
-window.toggleIntel = function() { 
-    document.getElementById('intelContainer').classList.toggle('hidden'); 
-};
-
+window.toggleIntel = function() { document.getElementById('intelContainer').classList.toggle('hidden'); };
 window.showGrenade = function() {
     document.getElementById('inspireText').innerText = GRENADES[Math.floor(Math.random() * GRENADES.length)];
     document.getElementById('grenadeOverlay').style.display = 'flex';
 };
-
 window.closeGrenade = function() { document.getElementById('grenadeOverlay').style.display = 'none'; };
 window.closeOverlay = function() { document.getElementById('levelOverlay').style.display = 'none'; };
-window.closeBuddyOverlay = function() { document.getElementById('buddyOverlay').style.display = 'none'; };
 window.resetGame = function() { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); }};
 
 window.onload = function() {
     if (state.active) {
         document.getElementById('setup').style.display = 'none';
         document.getElementById('mainDashboard').style.display = 'flex';
-        updateUI(); 
-        initGraph();
+        updateUI(); initGraph();
     } else {
         document.getElementById('setup').style.display = 'block';
         document.getElementById('mainDashboard').style.display = 'none';
