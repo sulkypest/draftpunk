@@ -27,24 +27,39 @@ window.start = function() {
 window.addWords = function() {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
+    
     state.total += val;
     state.logs.push({ date: new Date().toLocaleDateString(), total: state.total });
-    const progress = (state.total / state.goal) * 100;
-    const newIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
     
-    if (newIdx > state.lastLevel) {
-        state.lastLevel = newIdx;
-        if(document.getElementById('bossBeatTitle')) document.getElementById('bossBeatTitle').innerText = BOSS_BEATS[newIdx].name;
-        document.getElementById('levelOverlay').style.display = 'flex';
+    // Safety check for data availability
+    if (typeof BOSS_BEATS !== 'undefined') {
+        const progress = (state.total / state.goal) * 100;
+        const newIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
+        if (newIdx > state.lastLevel) {
+            state.lastLevel = newIdx;
+            const bbt = document.getElementById('bossBeatTitle');
+            if(bbt) bbt.innerText = BOSS_BEATS[newIdx].name;
+            document.getElementById('levelOverlay').style.display = 'flex';
+        }
     }
-    save(); updateUI(); updateGraph();
+
+    save(); 
+    updateUI(); 
+    updateGraph();
     document.getElementById('wordIn').value = "";
 };
 
 function updateUI() {
+    // 1. Ensure Data exists
+    if (typeof BOSS_BEATS === 'undefined' || typeof RANKS === 'undefined') {
+        console.error("Content not found in data.js");
+        return;
+    }
+
     try {
         const color = GENRE_STYLES[state.genre] || "#0ff";
         document.documentElement.style.setProperty('--neon', color);
+        
         const progress = (state.total / state.goal) * 100;
         const curIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
         const curB = BOSS_BEATS[curIdx] || BOSS_BEATS[0];
@@ -54,18 +69,23 @@ function updateUI() {
         const progressInBeat = progress - curB.pct;
         const hp = Math.max(0, 100 - (progressInBeat / (beatSpan || 1) * 100));
 
-        if(document.getElementById('wipDisplay')) document.getElementById('wipDisplay').innerText = state.title;
-        if(document.getElementById('lvlName')) document.getElementById('lvlName').innerText = "BEAT " + (curIdx + 1) + ": " + curB.name;
-        if(document.getElementById('bossName')) document.getElementById('bossName').innerText = nxtB.name;
-        if(document.getElementById('hpBar')) document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
-        if(document.getElementById('bossHPBar')) document.getElementById('bossHPBar').style.width = hp + "%";
-        if(document.getElementById('hpText')) document.getElementById('hpText').innerText = state.total.toLocaleString() + " / " + state.goal.toLocaleString();
-        if(document.getElementById('loreBox')) document.getElementById('loreBox').innerText = curB.lore;
+        // Text Updates
+        document.getElementById('wipDisplay').innerText = state.title;
+        document.getElementById('lvlName').innerText = "BEAT " + (curIdx + 1) + ": " + curB.name;
+        document.getElementById('bossName').innerText = nxtB.name;
+        document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
+        document.getElementById('bossHPBar').style.width = hp + "%";
+        document.getElementById('hpText').innerText = state.total.toLocaleString() + " / " + state.goal.toLocaleString();
+        document.getElementById('loreBox').innerText = curB.lore;
         
+        // Rank and Tips
         const tipIndex = Math.min(100, Math.floor(progress));
-        if(document.getElementById('tipsBox')) document.getElementById('tipsBox').innerText = MICRO_TIPS[tipIndex];
-        if(document.getElementById('sideRankName')) document.getElementById('sideRankName').innerText = (RANKS[curIdx] || "THE SCRIBE-ANATOR").toUpperCase();
+        if (typeof MICRO_TIPS !== 'undefined') {
+            document.getElementById('tipsBox').innerText = MICRO_TIPS[tipIndex];
+        }
+        document.getElementById('sideRankName').innerText = (RANKS[curIdx] || "THE SCRIBE-ANATOR").toUpperCase();
 
+        // Image Handling (Hidden if missing)
         const sprite = document.getElementById('bossSprite');
         if(sprite) {
             const suffix = hp <= 25 ? 'd' : hp <= 50 ? 'c' : hp <= 75 ? 'b' : 'a';
@@ -73,7 +93,15 @@ function updateUI() {
             sprite.onerror = () => { sprite.style.display = 'none'; };
             sprite.onload = () => { sprite.style.display = 'block'; };
         }
-    } catch (e) { console.error("UI Update failed:", e); }
+
+        if (state.deadline) {
+            const diff = new Date(state.deadline) - new Date();
+            const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+            document.getElementById('daysLeftDisplay').innerText = days > 0 ? days : "0";
+        }
+    } catch (err) {
+        console.warn("UI sync pending data load...", err);
+    }
 }
 
 function initGraph() {
@@ -85,18 +113,35 @@ function initGraph() {
         type: 'line',
         data: {
             labels: state.logs.map(l => l.date),
-            datasets: [{ data: state.logs.map(l => l.total), borderColor: GENRE_STYLES[state.genre], tension: 0.2, fill: false }]
+            datasets: [{ 
+                data: state.logs.map(l => l.total), 
+                borderColor: GENRE_STYLES[state.genre], 
+                tension: 0.2, 
+                fill: false 
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { display: false } }
+        }
     });
 }
 
-function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.update(); } }
+function updateGraph() { 
+    if(chart) { 
+        chart.data.labels = state.logs.map(l => l.date); 
+        chart.data.datasets[0].data = state.logs.map(l => l.total); 
+        chart.update(); 
+    } 
+}
 
 window.showGrenade = function() {
-    const insp = document.getElementById('inspireText');
-    if(insp) insp.innerText = GRENADES[Math.floor(Math.random() * GRENADES.length)];
-    document.getElementById('grenadeOverlay').style.display = 'flex';
+    if (typeof GRENADES !== 'undefined') {
+        document.getElementById('inspireText').innerText = GRENADES[Math.floor(Math.random() * GRENADES.length)];
+        document.getElementById('grenadeOverlay').style.display = 'flex';
+    }
 };
 
 window.closeGrenade = function() { document.getElementById('grenadeOverlay').style.display = 'none'; };
@@ -107,7 +152,8 @@ window.onload = function() {
     if (state.active) {
         document.getElementById('setup').style.display = 'none';
         document.getElementById('mainDashboard').style.display = 'flex';
-        updateUI(); initGraph();
+        updateUI(); 
+        initGraph();
     } else {
         document.getElementById('setup').style.display = 'block';
         document.getElementById('mainDashboard').style.display = 'none';
