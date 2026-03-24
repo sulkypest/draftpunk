@@ -9,7 +9,7 @@
 </head>
 <body>
 
-    <div id="setup" class="setup-screen" style="display:none;">
+    <div id="setup" class="setup-screen">
         <h1>DRAFT PUNK</h1>
         <div class="input-group">
             <input type="text" id="titleIn" placeholder="PROJECT TITLE">
@@ -30,9 +30,9 @@
         </div>
     </div>
 
-    <div id="mainDashboard" class="main-layout" style="display:none;">
+    <div id="mainDashboard" class="main-layout hidden">
         <div class="side-container">
-            <div class="side-box"><label>PARTNER</label><div class="partner-placeholder">ADS / LOGO</div></div>
+            <div class="side-box"><label>PARTNER</label></div>
             <div class="side-box">
                 <label>BUDDIES</label>
                 <div id="buddyCountDisplay" style="font-size: 1.5rem;">0</div>
@@ -96,12 +96,12 @@
     <div id="grenadeOverlay" class="overlay" onclick="closeGrenade()">
         <div class="congrats-box">
             <h2 style="color:#ff4500;">NARRATIVE GRENADE</h2>
-            <p id="inspireText" style="font-size: 1.2rem; margin: 20px 0;"></p>
+            <p id="inspireText" style="font-size: 1.1rem; margin: 20px 0;"></p>
         </div>
     </div>
 
     <div id="buddyOverlay" class="overlay" onclick="closeBuddyOverlay()">
-        <div class="congrats-box"><h2>NEW BUDDY RECRUITED!</h2><div style="margin-top:10px;">Check your collection.</div></div>
+        <div class="congrats-box"><h2>NEW BUDDY!</h2><p>Check your collection below.</p></div>
     </div>
 
     <script src="script.js"></script>
