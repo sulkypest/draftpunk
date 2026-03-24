@@ -1,3 +1,5 @@
+console.log("Draft Punk Script Loading...");
+
 let chart;
 let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
     active: false, title: "", goal: 80000, total: 0, genre: "urbanFantasy",
@@ -12,41 +14,39 @@ const GENRE_STYLES = {
 const BOSS_BEATS = [
     { pct: 0, name: "Opening Image", lore: "Establish the normal world." },
     { pct: 10, name: "Theme Stated", lore: "A hint of the truth." },
-    { pct: 25, name: "Break into Two", lore: "The journey begins." },
+    { pct: 25, name: "Threshold", lore: "The journey begins." },
     { pct: 50, name: "Midpoint", lore: "The stakes double." },
     { pct: 75, name: "All Is Lost", lore: "The lowest point." },
     { pct: 90, name: "Finale", lore: "The final battle." },
     { pct: 100, name: "Resolution", lore: "The new normal." }
 ];
 
-const MICRO_TIPS = Array.from({length: 101}, (_, i) => `Micro-Beat ${i}: Focus on sensory detail and character reaction.`);
-
 const GRENADES = [
     "A phone rings—it's someone who shouldn't have the number.",
     "A sudden discovery: a hidden compartment or a deleted file.",
     "Someone is lying, and the hero just caught the slip-up.",
-    "A power outage or a sudden equipment failure at the worst time.",
+    "A power outage at the worst possible time.",
     "An unexpected visitor arrives with a warrant or a warning.",
-    "The hero realizes they are being followed by a familiar face.",
-    "A character reveals a secret that changes the goal of the scene.",
-    "The weather turns violent, forcing characters into a tight space.",
-    "A secondary character makes a romantic or aggressive move.",
-    "The hero loses a vital item: a key, a weapon, or a piece of ID.",
-    "A ghost from the past appears in a public place.",
-    "An explosion or loud crash occurs nearby, but out of sight.",
+    "The hero realizes they are being followed.",
+    "A character reveals a secret that changes the goal.",
+    "The weather turns violent, forcing characters together.",
+    "A secondary character makes a surprising move.",
+    "The hero loses a vital item like a key or weapon.",
+    "A ghost from the past appears in public.",
+    "An explosion or loud crash occurs nearby.",
     "The hero is offered a bribe they actually need.",
-    "A deadline is moved up—they have half the time they thought.",
-    "The antagonist sends a 'gift' that is actually a threat.",
-    "A trusted ally is caught communicating with the enemy.",
-    "The protagonist's internal flaw causes a public embarrassment.",
-    "A law enforcement officer starts asking too many questions.",
-    "Someone collapses or falls ill, demanding immediate attention.",
-    "The hero discovers the person they trust most isn't who they say they are."
+    "The deadline is moved up—half the time remains.",
+    "The antagonist sends a threatening 'gift'.",
+    "A trusted ally is caught talking to the enemy.",
+    "A public embarrassment happens due to a character flaw.",
+    "A law officer starts asking too many questions.",
+    "Someone collapses, demanding immediate attention.",
+    "The hero discovers a massive lie about their mentor."
 ];
 
 function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
 
-window.start = () => {
+window.start = function() {
     state.title = document.getElementById('titleIn').value || "PROJECT";
     state.goal = parseInt(document.getElementById('goalIn').value) || 80000;
     state.deadline = document.getElementById('deadlineIn').value;
@@ -58,23 +58,21 @@ window.start = () => {
     location.reload(); 
 };
 
-window.addWords = () => {
+window.addWords = function() {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
     
-    const oldProgress = (state.total / state.goal) * 100;
     state.total += val;
     state.logs.push({ date: new Date().toLocaleDateString(), total: state.total });
-    const newProgress = (state.total / state.goal) * 100;
+    const progress = (state.total / state.goal) * 100;
 
-    // Check for Boss Beat Level Up
-    const newIdx = BOSS_BEATS.findLastIndex(b => newProgress >= b.pct);
+    const newIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
     if (newIdx > state.lastLevel) {
         state.lastLevel = newIdx;
-        showBossOverlay(BOSS_BEATS[newIdx].name);
+        document.getElementById('bossBeatTitle').innerText = BOSS_BEATS[newIdx].name;
+        document.getElementById('levelOverlay').style.display = 'flex';
     }
 
-    // Check for Buddy (Every 5k)
     if (Math.floor(state.total / 5000) > Math.floor((state.total - val) / 5000)) {
         state.inventory.push(`buddy${Math.floor(Math.random() * 20) + 1}.png`);
         document.getElementById('buddyOverlay').style.display = 'flex';
@@ -83,11 +81,6 @@ window.addWords = () => {
     save(); updateUI(); updateGraph();
     document.getElementById('wordIn').value = "";
 };
-
-function showBossOverlay(name) {
-    document.getElementById('bossBeatTitle').innerText = name;
-    document.getElementById('levelOverlay').style.display = 'flex';
-}
 
 function updateUI() {
     const color = GENRE_STYLES[state.genre] || "#0ff";
@@ -104,13 +97,19 @@ function updateUI() {
     document.getElementById('bossName').innerText = nxtB.name;
     document.getElementById('bossHPBar').style.width = hp + "%";
     document.getElementById('hpBar').style.width = Math.min(100, progress) + "%";
-    document.getElementById('hpText').innerText = `${state.total.toLocaleString()} / ${state.goal.toLocaleString()}`;
+    document.getElementById('hpText').innerText = state.total.toLocaleString() + " / " + state.goal.toLocaleString();
     
     document.getElementById('loreBox').innerText = curB.lore;
-    document.getElementById('tipsBox').innerText = MICRO_TIPS[Math.floor(progress)] || "Keep writing!";
-    document.getElementById('sideRankName').innerText = `LVL ${curIdx + 1}`;
+    document.getElementById('tipsBox').innerText = "Focus on the " + curB.name + " requirements.";
+    document.getElementById('sideRankName').innerText = "LEVEL " + (curIdx + 1);
     document.getElementById('buddyCountDisplay').innerText = state.inventory.length;
     document.getElementById('buddyGallery').innerHTML = state.inventory.map(i => `<img src="buddies/${i}" class="buddy-relic">`).join('');
+
+    if (state.deadline) {
+        const diff = new Date(state.deadline) - new Date();
+        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        document.getElementById('daysLeftDisplay').innerText = days > 0 ? days : "0";
+    }
 }
 
 function initGraph() {
@@ -132,25 +131,26 @@ function initGraph() {
 
 function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.update(); } }
 
-window.toggleIntel = () => document.getElementById('intelContainer').classList.toggle('hidden');
+window.toggleIntel = function() { document.getElementById('intelContainer').classList.toggle('hidden'); };
 
-window.showGrenade = () => {
+window.showGrenade = function() {
     document.getElementById('inspireText').innerText = GRENADES[Math.floor(Math.random() * GRENADES.length)];
     document.getElementById('grenadeOverlay').style.display = 'flex';
 };
 
-window.closeGrenade = () => document.getElementById('grenadeOverlay').style.display = 'none';
-window.closeOverlay = () => document.getElementById('levelOverlay').style.display = 'none';
-window.closeBuddyOverlay = () => document.getElementById('buddyOverlay').style.display = 'none';
-window.resetGame = () => { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); }};
+window.closeGrenade = function() { document.getElementById('grenadeOverlay').style.display = 'none'; };
+window.closeOverlay = function() { document.getElementById('levelOverlay').style.display = 'none'; };
+window.closeBuddyOverlay = function() { document.getElementById('buddyOverlay').style.display = 'none'; };
+window.resetGame = function() { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); }};
 
-window.onload = () => {
+window.onload = function() {
     if (state.active) {
         document.getElementById('setup').style.display = 'none';
-        document.getElementById('mainDashboard').style.display = 'flex';
-        updateUI(); initGraph();
+        document.getElementById('mainDashboard').classList.remove('hidden');
+        updateUI(); 
+        initGraph();
     } else {
         document.getElementById('setup').style.display = 'block';
-        document.getElementById('mainDashboard').style.display = 'none';
+        document.getElementById('mainDashboard').classList.add('hidden');
     }
 };
