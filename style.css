@@ -183,6 +183,11 @@ button {
     transform: scale(1.05);
 }
 
+#sideLevelNumber {
+    font-family: 'Arial Black', sans-serif;
+    text-shadow: 0 0 10px var(--neon);
+}
+
 .input-group { 
     display: flex; 
     flex-direction: column; 
