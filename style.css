@@ -158,16 +158,29 @@ button {
     margin-top: 10vh; 
 }
 
-/* Updated Logo Logic to ensure it fits the container */
 #appLogo {
-    width: 250px;           /* Base size */
-    max-width: 90%;        /* Prevents it from touching the box edges */
+    width: 250px;
+    max-width: 90%;
     height: auto;
     object-fit: contain;
     margin: 20px auto;
     display: block;
     image-rendering: pixelated;
     filter: drop-shadow(0 0 5px var(--neon));
+}
+
+#partnerLogo {
+    width: 100%;
+    max-width: 140px;
+    height: auto;
+    margin-top: 10px;
+    display: inline-block;
+    image-rendering: pixelated; 
+    transition: transform 0.2s;
+}
+
+#partnerLogo:hover {
+    transform: scale(1.05);
 }
 
 .input-group { 
