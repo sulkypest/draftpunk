@@ -20,7 +20,6 @@ body {
 
 .hidden { display: none !important; }
 
-/* Layout Containers */
 .main-layout { display: flex; width: 100%; max-width: 1000px; gap: 15px; }
 
 .side-container { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; gap: 15px; }
@@ -42,7 +41,6 @@ body {
     flex-direction: column; 
 }
 
-/* Charts and Graphics */
 .chart-shield { 
     position: relative; 
     width: 100%; 
@@ -69,7 +67,6 @@ body {
     object-fit: contain;
 }
 
-/* Progress Bars */
 .bar-container { 
     height: 35px; 
     background: #000; 
@@ -96,7 +93,6 @@ body {
     z-index: 5; 
 }
 
-/* Typography and Boxes */
 .intel-btn { 
     background: transparent; 
     color: var(--neon); 
@@ -116,7 +112,6 @@ body {
     border-left: 3px solid var(--neon); 
 }
 
-/* Input Fields */
 .input-zone { display: flex; gap: 10px; margin-bottom: 30px; }
 input, select { 
     background: #000; 
@@ -135,7 +130,6 @@ button {
     text-transform: uppercase; 
 }
 
-/* Buddy Gallery */
 .buddy-container { 
     display: flex; 
     flex-wrap: wrap; 
@@ -153,10 +147,8 @@ button {
     border: 1px solid var(--neon); 
     image-rendering: pixelated;
     object-fit: contain;
-    background: rgba(255,255,255,0.05);
 }
 
-/* Setup Screen */
 .setup-screen { 
     background: var(--panel); 
     border: 2px solid var(--neon); 
@@ -166,6 +158,15 @@ button {
     margin-top: 10vh; 
 }
 
+#appLogo {
+    width: 150px;
+    height: auto;
+    margin: 20px auto;
+    display: block;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 0 5px var(--neon));
+}
+
 .input-group { 
     display: flex; 
     flex-direction: column; 
@@ -173,7 +174,6 @@ button {
     margin-top: 15px; 
 }
 
-/* Overlays */
 .overlay { 
     position: fixed; 
     inset: 0; 
@@ -192,7 +192,6 @@ button {
     max-width: 80%; 
 }
 
-/* Buddy Pop-up Animation */
 #newBuddySprite {
     filter: drop-shadow(0 0 15px var(--neon));
     animation: buddyPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
