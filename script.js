@@ -9,7 +9,24 @@ const GENRE_STYLES = {
     cyberpunk: "#f0f", crimeNoir: "#708090", romance: "#ff69b4", thriller: "#ffa500", western: "#cd7f32"
 };
 
-const RANKS = ["Scrivener", "Ink-Stained", "Plot-Hound", "Draft-Punk", "Scene-Slasher", "Chapter-Boss", "Word-Runner", "Arc-Architect", "Prose-Pilot", "Theme-Weaver", "Story-Sorcerer", "Narrative-Knight", "Manuscript-Mage", "World-Builder", "The Scribe-anator"];
+// YOUR 15 RANKS - VERIFIED
+const RANKS = [
+    "Inkslinger",
+    "Plot Scout",
+    "Draft Punk",
+    "Scene Slasher",
+    "Chapter Boss",
+    "Word Runner",
+    "Arc Architect",
+    "Prose Pilot",
+    "Theme Weaver",
+    "Story Sorcerer",
+    "Narrative Knight",
+    "Manuscript Mage",
+    "World Builder",
+    "Legendary Author",
+    "The Scribe-anator"
+];
 
 const BOSS_BEATS = [
     { pct: 0, name: "Opening Image", lore: "A snapshot of the 'before' world." },
@@ -30,57 +47,31 @@ const BOSS_BEATS = [
 ];
 
 const GRENADES = [
-    "A phone rings—it's someone who shouldn't have the number.",
-    "A sudden discovery: a hidden compartment or a deleted file.",
-    "A character is caught in a blatant lie about their whereabouts.",
-    "A power outage hits at the worst possible moment.",
-    "An unexpected visitor arrives with a warrant or a warning.",
-    "The hero realizes they are being followed by a black sedan.",
-    "A secondary character reveals a secret that changes the goal.",
-    "The weather turns violent, forcing characters into a tight space.",
-    "An anonymous tip arrives via a blood-stained note.",
-    "The hero loses a vital item: a key, a weapon, or a piece of ID.",
-    "A ghost from the past appears in a smoky bar or crowded street.",
-    "An explosion or loud crash occurs nearby, but out of sight.",
-    "The hero is offered a bribe they actually desperately need.",
-    "The deadline is moved up—they have half the time they thought.",
-    "The antagonist sends a 'gift' that is actually a direct threat.",
-    "A trusted ally is caught communicating with the enemy.",
-    "The protagonist's internal flaw causes a public embarrassment.",
-    "A law enforcement officer starts asking too many questions.",
-    "Someone collapses or falls ill, demanding immediate attention.",
-    "The hero discovers the person they trust most is an impostor.",
-    "A weapon is found hidden in the hero's own belongings.",
-    "A siren wails in the distance, getting closer every second.",
-    "The 'safe house' is revealed to be a trap.",
-    "A character suddenly defects to the other side.",
-    "An old debt is called in by a dangerous creditor.",
-    "A piece of evidence is destroyed right before it can be used.",
-    "The hero is framed for a crime they were trying to solve.",
-    "A mentor figure reveals they were the cause of the problem.",
-    "The hero is drugged or poisoned and must find an antidote.",
-    "A romantic interest is kidnapped or held hostage.",
-    "A key witness is found dead just as they were about to speak.",
-    "The hero discovers a map that leads somewhere unexpected.",
-    "A character previously thought dead reappears with a grudge.",
-    "The hero's reputation is publicly ruined by a leak.",
-    "A massive bribe is offered to the hero's closest friend.",
-    "A secret society's symbol is found on a familiar object.",
-    "The hero is given 10 minutes to make an impossible choice.",
-    "A character starts speaking in a language they shouldn't know.",
-    "An ambush occurs in a place the hero thought was neutral ground.",
-    "The hero finds a photo of themselves from a time they don't remember.",
-    "A secondary character is revealed to be a secret billionaire or royalty.",
-    "The hero wakes up in a place they've never been before.",
-    "A character's true identity is revealed by a scar or tattoo.",
-    "The hero is forced to team up with their worst enemy.",
-    "A message is written in blood on the hero's bathroom mirror.",
-    "The hero's bank accounts are suddenly drained to zero.",
-    "A character hands the hero a heavy briefcase and runs away.",
-    "The hero is mistaken for a famous assassin or target.",
-    "An item the hero has carried all along begins to glow or vibrate.",
-    "A character reveals they are dying and has one final request.",
-    "The hero finds a recording of their own voice saying something they don't recall."
+    "A character is not who they say they are.",
+    "A long-buried secret is suddenly unearthed.",
+    "A trusted ally commits an act of betrayal.",
+    "An unexpected visitor arrives with life-changing news.",
+    "The protagonist discovers a hidden message or map.",
+    "A vital piece of equipment or a weapon breaks.",
+    "A natural disaster or sudden accident changes the stakes.",
+    "The antagonist makes a direct move against the hero's home.",
+    "A character falls ill or is mysteriously poisoned.",
+    "An old debt is called in by a dangerous party.",
+    "The hero is framed for a crime they didn't commit.",
+    "A romantic rival enters the scene.",
+    "A deadline is moved up, creating instant pressure.",
+    "The hero loses a memory of a crucial event.",
+    "A child or innocent is put in the crosshairs.",
+    "The power goes out during a high-stakes moment.",
+    "A character finds a body where there shouldn't be one.",
+    "A witness refuses to talk at the last second.",
+    "The hero realizes they are being followed.",
+    "A bribe is offered that the hero can't easily refuse.",
+    "Evidence is destroyed right before it can be used.",
+    "The hero's mentor reveals a dark past.",
+    "A character vanishes without a trace.",
+    "A secret society symbol appears in a familiar place.",
+    "The hero finds a photo of themselves in a place they've never been."
 ];
 
 const MICRO_TIPS = [
@@ -187,7 +178,9 @@ const MICRO_TIPS = [
     "100%: THE END: You've finished the draft. Type 'End' and celebrate."
 ];
 
-function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
+function save() { 
+    localStorage.setItem('draftPunkData', JSON.stringify(state)); 
+}
 
 window.start = function() {
     state.title = document.getElementById('titleIn').value || "PROJECT";
@@ -221,7 +214,9 @@ window.addWords = function() {
         document.getElementById('buddyOverlay').style.display = 'flex';
     }
 
-    save(); updateUI(); updateGraph();
+    save(); 
+    updateUI(); 
+    updateGraph();
     document.getElementById('wordIn').value = "";
 };
 
@@ -253,7 +248,9 @@ function updateUI() {
     const suffix = hp <= 25 ? 'd' : hp <= 50 ? 'c' : hp <= 75 ? 'b' : 'a';
     document.getElementById('bossSprite').src = `bosses/${curIdx + 1}${suffix}.png`;
 
-    document.getElementById('sideRankName').innerText = (RANKS[curIdx] || "LEGEND").toUpperCase();
+    // RANK DISPLAY
+    document.getElementById('sideRankName').innerText = (RANKS[curIdx] || "THE SCRIBE-ANATOR").toUpperCase();
+    
     document.getElementById('buddyCountDisplay').innerText = state.inventory.length;
     document.getElementById('buddyGallery').innerHTML = state.inventory.map(i => `<img src="buddies/${i}" class="buddy-relic">`).join('');
 
@@ -265,7 +262,9 @@ function updateUI() {
 }
 
 function initGraph() {
-    const ctx = document.getElementById('velocityChart').getContext('2d');
+    const canvas = document.getElementById('velocityChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (chart) chart.destroy();
     chart = new Chart(ctx, {
         type: 'line',
@@ -281,9 +280,17 @@ function initGraph() {
     });
 }
 
-function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.update(); } }
+function updateGraph() { 
+    if(chart) { 
+        chart.data.labels = state.logs.map(l => l.date); 
+        chart.data.datasets[0].data = state.logs.map(l => l.total); 
+        chart.update(); 
+    } 
+}
 
-window.toggleIntel = function() { document.getElementById('intelContainer').classList.toggle('hidden'); };
+window.toggleIntel = function() { 
+    document.getElementById('intelContainer').classList.toggle('hidden'); 
+};
 
 window.showGrenade = function() {
     document.getElementById('inspireText').innerText = GRENADES[Math.floor(Math.random() * GRENADES.length)];
