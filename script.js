@@ -83,7 +83,109 @@ const GRENADES = [
     "The hero finds a recording of their own voice saying something they don't recall."
 ];
 
-const MICRO_TIPS = Array.from({length: 101}, (_, i) => `Tip ${i}: Focus on the immediate sensory reaction of your protagonist.`);
+const MICRO_TIPS = [
+    "0%: Hook the reader in the first paragraph with a strong 'Voice'.",
+    "1%: Establish the 'Stasis'—what is the hero's boring, daily life?",
+    "2%: Show, don't tell, the hero's primary character flaw.",
+    "3%: Hint at an internal 'Shame' the hero is hiding.",
+    "4%: Introduce a minor antagonist or annoyance in the 'Normal World'.",
+    "5%: Give the hero a small 'Win' to make them likable.",
+    "6%: Establish the 'Stakes'—what happens if things NEVER change?",
+    "7%: Sensory Detail: What does the hero's home smell like?",
+    "8%: Introduce the first 'Herald'—someone who hints at change.",
+    "9%: Show a moment of the hero's unique expertise.",
+    "10%: SETUP: The world feels too small for the hero now.",
+    "11%: Contrast the hero's internal desire with their external need.",
+    "12%: CATALYST: The world-changing event must be undeniable.",
+    "13%: Reaction: The hero must be reeling from the Catalyst.",
+    "14%: The 'New Reality' starts to sink in.",
+    "15%: The first moment of genuine fear or wonder.",
+    "16%: DEBATE: Why is the hero the WRONG person for this job?",
+    "17%: Show the hero trying to go back to their old life.",
+    "18%: A secondary character argues for the 'Call to Adventure'.",
+    "19%: The hero makes a choice based on fear, not courage.",
+    "20%: The 'Point of No Return' is sighted.",
+    "21%: One last look at the 'Normal World' before it burns.",
+    "22%: A symbolic crossing—a bridge, a door, a border.",
+    "23%: The hero enters the 'Special World'—everything is different.",
+    "24%: The hero fails their first small test in the new world.",
+    "25%: BREAK INTO TWO: The journey officially begins.",
+    "26%: B-STORY: Introduce the character who represents the theme.",
+    "27%: The B-Story character should clash with the hero's ego.",
+    "28%: First 'Fish out of Water' moment.",
+    "29%: Establish the new 'Rules' of this environment.",
+    "30%: FUN & GAMES: The hero enjoys their new power or world.",
+    "31%: A scene that delivers on the 'Promise of the Premise'.",
+    "32%: The hero makes their first new friend.",
+    "33%: A moment of levity before the tension ramps up.",
+    "34%: The hero achieves a minor, 'False' success.",
+    "35%: The antagonist is revealed to be closer than thought.",
+    "36%: Deepen the B-Story relationship.",
+    "37%: The hero ignores a warning sign.",
+    "38%: A training sequence or a moment of learning.",
+    "39%: The 'Bad Guys' start to organize.",
+    "40%: A subplot begins to intersect with the main plot.",
+    "41%: The hero faces a moral dilemma.",
+    "42%: Show the antagonist's perspective or power.",
+    "43%: A moment of rest that reveals character depth.",
+    "44%: The hero starts to change their mind about the theme.",
+    "45%: Tension check: Is the pacing moving too slow?",
+    "46%: A secret about the B-Story character is hinted at.",
+    "47%: The hero's flaw causes a rift in the team.",
+    "48%: The 'False Victory' or 'False Defeat' is looming.",
+    "49%: Quiet before the storm.",
+    "50%: MIDPOINT: A massive revelation shifts the goal.",
+    "51%: The stakes shift from 'Survival' to 'Sacrifice'.",
+    "52%: The ticking clock is introduced or accelerated.",
+    "53%: The hero takes their first proactive (not reactive) step.",
+    "54%: The antagonist strikes back harder than expected.",
+    "55%: A secondary character is lost or incapacitated.",
+    "56%: The hero has to do something they find 'immoral'.",
+    "57%: Internal monologue: The hero realizes they can't go back.",
+    "58%: The 'Bad Guys Close In' from within.",
+    "59%: Jealousy or doubt ripples through the hero's allies.",
+    "60%: The hero's primary weapon or skill fails them.",
+    "61%: A moment of extreme physical or emotional isolation.",
+    "62%: The antagonist offers a tempting 'Easy Way Out'.",
+    "63%: The hero rejects the 'Easy Way' but pays a price.",
+    "64%: The B-Story character is in direct danger.",
+    "65%: A piece of the hero's 'Mask' is ripped away.",
+    "66%: The 'Safe Haven' is destroyed.",
+    "67%: A betrayal by a minor character.",
+    "68%: The hero is forced to lead when they don't want to.",
+    "69%: The 'Plan' starts to fall apart completely.",
+    "70%: Total pressure: No time left for second-guessing.",
+    "71%: The hero faces their greatest fear.",
+    "72%: The 'Bad Guys' win a major battle.",
+    "73%: The hero is stripped of all resources.",
+    "74%: Darkness: The hero is at their most vulnerable.",
+    "75%: ALL IS LOST: The 'Whiff of Death' moment.",
+    "76%: A mentor or guide is gone.",
+    "77%: DARK NIGHT: The hero admits their flaw out loud.",
+    "78%: The hero mourns the life they thought they'd have.",
+    "79%: A small spark of hope from the B-Story character.",
+    "80%: The 'Aha!' moment—the hero sees the 'Third Way'.",
+    "81%: BREAK INTO THREE: Re-gathering the scattered pieces.",
+    "82%: The hero apologizes to those they hurt.",
+    "83%: A 'Suicide Mission' plan is formed.",
+    "84%: The hero finally embraces the Theme.",
+    "85%: FINALE: Storming the castle / Facing the truth.",
+    "86%: The 'High Tower' obstacle—a physical manifestation of the flaw.",
+    "87%: The hero's allies each get a moment to shine.",
+    "88%: The hero faces the antagonist's 'final form'.",
+    "89%: A sacrifice is required to move forward.",
+    "90%: The 'Final Battle' is won through character growth, not just force.",
+    "91%: The hero's flaw is finally, fully shed.",
+    "92%: The immediate physical aftermath of the climax.",
+    "93%: The hero helps a survivor.",
+    "94%: A moment of silence to let the ending breathe.",
+    "95%: The 'New Normal'—show how the hero has changed.",
+    "96%: A callback to the 'Opening Image' showing the difference.",
+    "97%: The B-Story payoff: A hug, a word, or a goodbye.",
+    "98%: Final Image: A visual metaphor for the story's theme.",
+    "99%: The lingering question or the final sense of peace.",
+    "100%: THE END: You've finished the draft. Type 'End' and celebrate."
+];
 
 function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
 
@@ -133,7 +235,8 @@ function updateUI() {
     const nxtB = BOSS_BEATS[curIdx+1] || {pct: 100, name: "The End"};
     
     const beatSpan = nxtB.pct - curB.pct;
-    const hp = Math.max(0, 100 - ((progress - curB.pct) / (beatSpan || 1) * 100));
+    const progressInBeat = progress - curB.pct;
+    const hp = Math.max(0, 100 - (progressInBeat / (beatSpan || 1) * 100));
 
     document.getElementById('wipDisplay').innerText = state.title;
     document.getElementById('lvlName').innerText = "BEAT " + (curIdx + 1) + ": " + curB.name;
@@ -143,9 +246,10 @@ function updateUI() {
     document.getElementById('hpText').innerText = state.total.toLocaleString() + " / " + state.goal.toLocaleString();
     
     document.getElementById('loreBox').innerText = curB.lore;
-    document.getElementById('tipsBox').innerText = MICRO_TIPS[Math.floor(progress)] || "Keep writing!";
     
-    // RESTORED IMAGE LOGIC: 15 beats, suffixes a-d
+    const tipIndex = Math.min(100, Math.floor(progress));
+    document.getElementById('tipsBox').innerText = MICRO_TIPS[tipIndex];
+
     const suffix = hp <= 25 ? 'd' : hp <= 50 ? 'c' : hp <= 75 ? 'b' : 'a';
     document.getElementById('bossSprite').src = `bosses/${curIdx + 1}${suffix}.png`;
 
@@ -194,11 +298,11 @@ window.resetGame = function() { if(confirm("Clear all data?")) { localStorage.cl
 window.onload = function() {
     if (state.active) {
         document.getElementById('setup').style.display = 'none';
-        document.getElementById('mainDashboard').classList.remove('hidden');
+        document.getElementById('mainDashboard').style.display = 'flex';
         updateUI(); 
         initGraph();
     } else {
         document.getElementById('setup').style.display = 'block';
-        document.getElementById('mainDashboard').classList.add('hidden');
+        document.getElementById('mainDashboard').style.display = 'none';
     }
 };
