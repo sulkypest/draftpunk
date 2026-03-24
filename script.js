@@ -55,6 +55,12 @@ window.addWords = function() {
         }
     }
 
+    // TRIGGER SHAKE ANIMATION
+    const sprite = document.getElementById('bossSprite');
+    sprite.classList.remove('hit-shake');
+    void sprite.offsetWidth; // Force reflow to restart animation
+    sprite.classList.add('hit-shake');
+
     save(); updateUI(); updateGraph();
     document.getElementById('wordIn').value = "";
 };
@@ -82,7 +88,6 @@ function updateUI() {
     document.getElementById('loreBox').innerText = curB.lore;
     document.getElementById('tipsBox').innerText = MICRO_TIPS[Math.min(100, Math.floor(progress))];
     
-    // UPDATED RANK SECTION: LARGE NUMBER AND NAME
     document.getElementById('sideLevelNumber').innerText = curIdx + 1;
     document.getElementById('sideRankName').innerText = RANKS[curIdx] || "AUTHOR";
     
@@ -93,8 +98,13 @@ function updateUI() {
     ).join('');
 
     const sprite = document.getElementById('bossSprite');
-    const suffix = hp <= 25 ? 'd' : hp <= 50 ? 'c' : hp <= 75 ? 'b' : 'a';
-    sprite.src = `bosses/${curIdx + 1}${suffix}.png`;
+    
+    // SHRINK LOGIC: Scales between 1.0 (100% HP) and 0.3 (0% HP)
+    const scaleFactor = 0.3 + (hp / 100) * 0.7;
+    sprite.style.transform = `scale(${scaleFactor})`;
+
+    // Load static image for the current boss
+    sprite.src = `bosses/${curIdx + 1}.png`;
     sprite.onerror = () => sprite.style.visibility = 'hidden';
     sprite.onload = () => sprite.style.visibility = 'visible';
 
