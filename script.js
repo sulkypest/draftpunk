@@ -5,8 +5,8 @@ let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
 };
 
 const GENRE_STYLES = {
-    urbanFantasy: "#0ff", sciFi: "#0fa", fantasy: "#ffd700", horror: "#ff0000",
-    cyberpunk: "#f0f", crimeNoir: "#708090", romance: "#ff69b4", thriller: "#ffa500", western: "#cd7f32"
+    urbanFantasy: "#0ff", sciFi: "#0fa", fantasy: "#ffd700", horror: "#f00",
+    cyberpunk: "#f0f", crimeNoir: "#708090", romance: "#ff69b4"
 };
 
 function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
@@ -28,11 +28,13 @@ window.addWords = function() {
     if (val <= 0) return;
     state.total += val;
     state.logs.push({ date: new Date().toLocaleDateString(), total: state.total });
+    
     const progress = (state.total / state.goal) * 100;
     const newIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
+    
     if (newIdx > state.lastLevel) {
         state.lastLevel = newIdx;
-        document.getElementById('bossBeatTitle').innerText = BOSS_BEATS[newIdx].name;
+        document.getElementById('bossBeatTitle').innerText = BOSS_BEATS[newIdx].name.toUpperCase();
         document.getElementById('levelOverlay').style.display = 'flex';
     }
     save(); updateUI(); updateGraph();
@@ -45,10 +47,12 @@ function updateUI() {
     const curIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
     const curB = BOSS_BEATS[curIdx] || BOSS_BEATS[0];
     const nxtB = BOSS_BEATS[curIdx+1] || {pct: 100, name: "THE END"};
+    
     const beatSpan = nxtB.pct - curB.pct;
     const progressInBeat = progress - curB.pct;
     const hp = Math.max(0, 100 - (progressInBeat / (beatSpan || 1) * 100));
 
+    // Update Text Elements
     document.getElementById('wipDisplay').innerText = state.title;
     document.getElementById('lvlName').innerText = `BEAT ${curIdx + 1}: ${curB.name.toUpperCase()}`;
     document.getElementById('bossName').innerText = nxtB.name.toUpperCase();
@@ -59,6 +63,7 @@ function updateUI() {
     document.getElementById('tipsBox').innerText = MICRO_TIPS[Math.min(100, Math.floor(progress))];
     document.getElementById('sideRankName').innerText = RANKS[curIdx].toUpperCase();
 
+    // Image logic
     const sprite = document.getElementById('bossSprite');
     const suffix = hp <= 25 ? 'd' : hp <= 50 ? 'c' : hp <= 75 ? 'b' : 'a';
     sprite.src = `bosses/${curIdx + 1}${suffix}.png`;
@@ -69,6 +74,9 @@ function updateUI() {
         const days = Math.ceil((new Date(state.deadline) - new Date()) / (1000 * 60 * 60 * 24));
         document.getElementById('daysLeftDisplay').innerText = days > 0 ? days : "0";
     }
+
+    // Apply Genre Color
+    document.documentElement.style.setProperty('--neon-primary', GENRE_STYLES[state.genre]);
 }
 
 function initGraph() {
@@ -79,9 +87,20 @@ function initGraph() {
         type: 'line',
         data: {
             labels: state.logs.map(l => l.date),
-            datasets: [{ data: state.logs.map(l => l.total), borderColor: GENRE_STYLES[state.genre], tension: 0.3, fill: false }]
+            datasets: [{ 
+                data: state.logs.map(l => l.total), 
+                borderColor: GENRE_STYLES[state.genre], 
+                backgroundColor: 'rgba(0, 255, 255, 0.1)',
+                tension: 0.3, 
+                fill: true 
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { color: '#888' } } } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } },
+            scales: { x: { display: false }, y: { ticks: { color: '#0ff', font: { family: 'monospace' } } } }
+        }
     });
 }
 
@@ -90,4 +109,12 @@ window.showGrenade = function() { document.getElementById('inspireText').innerTe
 window.closeGrenade = function() { document.getElementById('grenadeOverlay').style.display = 'none'; };
 window.closeOverlay = function() { document.getElementById('levelOverlay').style.display = 'none'; };
 window.resetGame = function() { if(confirm("PURGE SYSTEM DATA?")) { localStorage.clear(); location.reload(); }};
-window.onload = function() { if (state.active) { document.getElementById('setup').style.display = 'none'; document.getElementById('mainDashboard').style.display = 'flex'; updateUI(); initGraph(); } };
+
+window.onload = function() {
+    if (state.active) {
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('mainDashboard').style.display = 'flex';
+        updateUI(); 
+        initGraph();
+    }
+};
