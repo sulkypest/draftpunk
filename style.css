@@ -158,9 +158,12 @@ button {
     margin-top: 10vh; 
 }
 
+/* Updated Logo Logic to ensure it fits the container */
 #appLogo {
-    width: 150px;
+    width: 250px;           /* Base size */
+    max-width: 90%;        /* Prevents it from touching the box edges */
     height: auto;
+    object-fit: contain;
     margin: 20px auto;
     display: block;
     image-rendering: pixelated;
