@@ -3,99 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Draft Punk | Narrative Tracker</title>
+    <title>Draft Punk | The Author's HUD</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="neon-theme">
 
-    <div id="setup" class="container">
-        <h1>DRAFT PUNK</h1>
-        <div class="form-group">
-            <input type="text" id="titleIn" placeholder="Project Title">
-            <input type="number" id="goalIn" placeholder="Word Count Goal (e.g. 80000)">
+    <div id="setup" class="panel">
+        <h1 class="glitch">DRAFT PUNK</h1>
+        <div class="input-group">
+            <input type="text" id="titleIn" placeholder="PROJECT TITLE">
+            <input type="number" id="goalIn" placeholder="WORD GOAL">
             <input type="date" id="deadlineIn">
             <select id="genreIn">
-                <option value="urbanFantasy">Urban Fantasy</option>
-                <option value="sciFi">Sci-Fi</option>
-                <option value="fantasy">Epic Fantasy</option>
-                <option value="horror">Horror</option>
-                <option value="cyberpunk">Cyberpunk</option>
-                <option value="romance">Romance</option>
+                <option value="urbanFantasy">URBAN FANTASY</option>
+                <option value="sciFi">SCI-FI</option>
+                <option value="cyberpunk">CYBERPUNK</option>
+                <option value="crimeNoir">CRIME NOIR</option>
+                <option value="romance">ROMANCE</option>
+                <option value="thriller">THRILLER</option>
+                <option value="western">WESTERN</option>
             </select>
-            <button onclick="start()">INITIATE DRAFT</button>
+            <button onclick="start()">INITIATE NEURAL LINK</button>
         </div>
     </div>
 
-    <div id="mainDashboard" class="dashboard-layout" style="display:none;">
-        <aside class="sidebar">
-            <div class="rank-card">
-                <small>CURRENT RANK</small>
+    <div id="mainDashboard" class="hud-layout" style="display:none;">
+        <aside class="sidebar-neon">
+            <div class="rank-display">
+                <label>AUTHOR RANK</label>
                 <h2 id="sideRankName">INKSLINGER</h2>
             </div>
-            <div class="stat-box">
-                <small>PROJECT</small>
-                <div id="wipDisplay">---</div>
+            <div class="nav-stats">
+                <div class="stat-item"><label>WIP</label><span id="wipDisplay">---</span></div>
+                <div class="stat-item"><label>DAYS</label><span id="daysLeftDisplay">0</span></div>
             </div>
-            <div class="stat-box">
-                <small>DAYS LEFT</small>
-                <div id="daysLeftDisplay">0</div>
+            <div class="actions">
+                <button class="btn-grenade" onclick="showGrenade()">DETONATE GRENADE</button>
+                <button class="btn-reset" onclick="resetGame()">PURGE SYSTEM</button>
             </div>
-            <button class="grenade-btn" onclick="showGrenade()">NARRATIVE GRENADE</button>
-            <button class="reset-btn" onclick="resetGame()">WIPE DATA</button>
         </aside>
 
-        <main class="content">
-            <section class="boss-area">
-                <div class="boss-header">
-                    <h3 id="lvlName">BEAT 1: OPENING IMAGE</h3>
-                    <div class="hp-container">
-                        <div id="bossHPBar" class="hp-fill"></div>
-                    </div>
-                    <small>NEXT BEAT: <span id="bossName">THE END</span></small>
+        <main class="combat-zone">
+            <header class="boss-hud">
+                <h3 id="lvlName">BEAT 1: OPENING IMAGE</h3>
+                <div class="boss-health-bar">
+                    <div id="bossHPBar" class="health-fill"></div>
                 </div>
-                <div class="boss-visual">
-                    <img id="bossSprite" src="" alt="Boss Visual">
-                    <p id="loreBox" class="lore-text"></p>
+                <div class="next-beat-label">ENGAGING: <span id="bossName">THE END</span></div>
+            </header>
+
+            <section class="visual-engine">
+                <img id="bossSprite" src="" class="boss-image">
+                <div id="loreBox" class="lore-terminal"></div>
+            </section>
+
+            <section class="log-engine">
+                <div class="input-neon">
+                    <input type="number" id="wordIn" placeholder="LOG WORDS...">
+                    <button onclick="addWords()">SYNC</button>
+                </div>
+                <div class="progress-hud">
+                    <div class="total-bar"><div id="hpBar" class="total-fill"></div></div>
+                    <div id="hpText" class="progress-digits">0 / 0</div>
                 </div>
             </section>
 
-            <section class="progress-section">
-                <div class="input-area">
-                    <input type="number" id="wordIn" placeholder="+ Add Words">
-                    <button onclick="addWords()">LOG</button>
-                </div>
-                <div class="total-bar-container">
-                    <div id="hpBar" class="total-fill"></div>
-                    <span id="hpText">0 / 0</span>
-                </div>
-            </section>
-
-            <section class="intel-area">
-                <div class="tips-card">
-                    <strong>PRO-TIP:</strong>
+            <footer class="intel-terminal">
+                <div class="tip-module">
+                    <label>FIELD INTEL</label>
                     <p id="tipsBox"></p>
                 </div>
-                <div class="graph-container">
+                <div class="graph-module">
                     <canvas id="velocityChart"></canvas>
                 </div>
-            </section>
+            </footer>
         </main>
     </div>
 
-    <div id="grenadeOverlay" class="overlay" onclick="closeGrenade()">
-        <div class="overlay-content">
-            <h3>GRENADE DETONATED!</h3>
+    <div id="grenadeOverlay" class="modal" onclick="closeGrenade()">
+        <div class="modal-content neon-border">
+            <h2>GRENADE DETONATED</h2>
             <p id="inspireText"></p>
-            <button onclick="closeGrenade()">GET TO WORK</button>
+            <button class="btn-close" onclick="closeGrenade()">BACK TO THE GRIND</button>
         </div>
     </div>
 
-    <div id="levelOverlay" class="overlay" onclick="closeOverlay()">
-        <div class="overlay-content">
-            <h2>BEAT CLEARED!</h2>
+    <div id="levelOverlay" class="modal" onclick="closeOverlay()">
+        <div class="modal-content beat-clear">
+            <h2>BEAT CLEARED</h2>
             <h1 id="bossBeatTitle">---</h1>
-            <button onclick="closeOverlay()">NEXT LEVEL</button>
+            <button class="btn-close" onclick="closeOverlay()">CONTINUE</button>
         </div>
     </div>
 
