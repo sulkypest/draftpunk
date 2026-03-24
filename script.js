@@ -40,9 +40,22 @@ window.addWords = function() {
         document.getElementById('levelOverlay').style.display = 'flex';
     }
 
+    // UPDATED BUDDY LOGIC (Pathing & Overlay Injection)
     if (Math.floor(state.total / 5000) > Math.floor((state.total - val) / 5000)) {
-        state.inventory.push(`buddy${Math.floor(Math.random() * 20) + 1}.png`);
-        document.getElementById('buddyOverlay').style.display = 'flex';
+        const totalBuddiesAvailable = 100; 
+        const buddyID = Math.floor(Math.random() * totalBuddiesAvailable) + 1;
+        const buddyFile = `buddy${buddyID}.png`;
+
+        if (!state.inventory.includes(buddyFile)) {
+            state.inventory.push(buddyFile);
+            
+            // Set Overlay Image
+            const overlayImg = document.getElementById('newBuddySprite');
+            if (overlayImg) {
+                overlayImg.src = `buddies/${buddyFile}`;
+            }
+            document.getElementById('buddyOverlay').style.display = 'flex';
+        }
     }
 
     save(); updateUI(); updateGraph();
@@ -58,7 +71,6 @@ function updateUI() {
     const curB = BOSS_BEATS[curIdx] || BOSS_BEATS[0];
     const nxtB = BOSS_BEATS[curIdx+1] || {pct: 100, name: "The End"};
     
-    // HP calculation adjusted for all 15 beats
     const beatSpan = nxtB.pct - curB.pct;
     const progressInBeat = progress - curB.pct;
     const hp = Math.max(0, 100 - (progressInBeat / (beatSpan || 1) * 100));
@@ -74,7 +86,11 @@ function updateUI() {
     document.getElementById('tipsBox').innerText = MICRO_TIPS[Math.min(100, Math.floor(progress))];
     document.getElementById('sideRankName').innerText = RANKS[curIdx] || "AUTHOR";
     document.getElementById('buddyCountDisplay').innerText = state.inventory.length;
-    document.getElementById('buddyGallery').innerHTML = state.inventory.map(i => `<img src="buddies/${i}" class="buddy-relic">`).join('');
+    
+    // UPDATED GALLERY RENDER (Relative pathing fix)
+    document.getElementById('buddyGallery').innerHTML = state.inventory.map(i => 
+        `<img src="buddies/${i}" class="buddy-relic">`
+    ).join('');
 
     const sprite = document.getElementById('bossSprite');
     const suffix = hp <= 25 ? 'd' : hp <= 50 ? 'c' : hp <= 75 ? 'b' : 'a';
