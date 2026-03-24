@@ -3,97 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Draft Punk</title>
+    <title>DRAFT PUNK</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="neon-theme">
+<body>
 
-    <div id="setup" class="container">
-        <h1 class="glitch">DRAFT PUNK</h1>
-        <div class="setup-box">
+    <div id="setup" class="setup-screen">
+        <h1>DRAFT PUNK</h1>
+        <div class="input-group">
             <input type="text" id="titleIn" placeholder="PROJECT TITLE">
-            <input type="number" id="goalIn" placeholder="WORD GOAL">
-            <input type="date" id="deadlineIn">
             <select id="genreIn">
                 <option value="urbanFantasy">URBAN FANTASY</option>
                 <option value="sciFi">SCI-FI</option>
-                <option value="cyberpunk">CYBERPUNK</option>
+                <option value="fantasy">HIGH FANTASY</option>
                 <option value="horror">HORROR</option>
+                <option value="cyberpunk">CYBERPUNK</option>
+                <option value="crimeNoir">CRIME / NOIR</option>
                 <option value="romance">ROMANCE</option>
+                <option value="thriller">THRILLER</option>
+                <option value="western">WESTERN</option>
             </select>
-            <button onclick="start()">INITIATE DRAFT</button>
+            <input type="number" id="goalIn" placeholder="WORD GOAL">
+            <input type="date" id="deadlineIn">
+            <button onclick="start()">START</button>
         </div>
     </div>
 
-    <div id="mainDashboard" class="dashboard-layout" style="display:none;">
-        <aside class="sidebar">
-            <div class="rank-card">
-                <small>RANK</small>
-                <h2 id="sideRankName">INKSLINGER</h2>
+    <div id="mainDashboard" class="main-layout hidden">
+        <div class="side-container">
+            <div class="side-box"><label>PARTNER</label></div>
+            <div class="side-box">
+                <label>BUDDIES</label>
+                <div id="buddyCountDisplay" style="font-size: 1.5rem;">0</div>
             </div>
-            <div class="stats-box">
-                <div class="stat-item"><label>WIP</label><span id="wipDisplay">---</span></div>
-                <div class="stat-item"><label>DAYS</label><span id="daysLeftDisplay">0</span></div>
-            </div>
-            <button class="grenade-btn" onclick="showGrenade()">NARRATIVE GRENADE</button>
-            <button class="reset-btn" onclick="resetGame()">RESET DATA</button>
-        </aside>
+        </div>
 
-        <main class="content-area">
-            <div class="boss-vitals">
-                <h3 id="lvlName">BEAT 1: OPENING IMAGE</h3>
-                <div class="hp-bar-container">
-                    <div id="bossHPBar" class="hp-fill"></div>
-                </div>
-                <div class="next-beat">TARGET: <span id="bossName">THE END</span></div>
-            </div>
+        <div class="app">
+            <h1 id="wipDisplay">PROJECT</h1>
+            <h2 id="lvlName">LEVEL</h2>
 
-            <div class="boss-display">
-                <img id="bossSprite" src="" class="boss-img">
-                <div id="loreBox" class="lore-text"></div>
-            </div>
-
-            <div class="input-section">
-                <div class="word-input-wrap">
-                    <input type="number" id="wordIn" placeholder="+ ADD WORDS">
-                    <button onclick="addWords()">SYNC</button>
-                </div>
-                <div class="total-progress">
-                    <div class="progress-bg"><div id="hpBar" class="progress-fill"></div></div>
-                    <div id="hpText" class="progress-text">0 / 0</div>
+            <div class="boss-zone">
+                <img id="bossSprite" class="boss-sprite" src="bosses/1a.png">
+                <div style="flex:1;">
+                    <div id="bossName">BOSS</div>
+                    <div class="bar-container" style="height:10px; margin-bottom:0; border-color: #333;">
+                        <div id="bossHPBar" class="bar-fill" style="background:red; width:100%;"></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="footer-intel">
-                <div class="tips-module">
-                    <label>PRO-TIP</label>
-                    <p id="tipsBox"></p>
-                </div>
-                <div class="chart-module">
-                    <canvas id="velocityChart"></canvas>
-                </div>
+            <button class="intel-btn" onclick="toggleIntel()">MICROBEAT TIPS ▾</button>
+            <div id="intelContainer" class="hidden">
+                <div id="loreBox" class="lore-container"></div>
+                <div id="tipsBox" class="tips-container"></div>
             </div>
-        </main>
-    </div>
 
-    <div id="grenadeOverlay" class="overlay" style="display:none;" onclick="closeGrenade()">
-        <div class="overlay-content">
-            <h2>GRENADE DETONATED</h2>
-            <p id="inspireText"></p>
-            <button onclick="closeGrenade()">BACK TO WORK</button>
+            <div class="chart-shield">
+                <canvas id="velocityChart"></canvas>
+            </div>
+
+            <label class="bar-label">TOTAL PROGRESS</label>
+            <div class="bar-container">
+                <div id="hpBar" class="bar-fill"></div>
+                <div id="hpText">0 / 0</div>
+            </div>
+
+            <div class="input-zone">
+                <input type="number" id="wordIn" placeholder="WORDS">
+                <button onclick="addWords()">ADD</button>
+                <button onclick="showGrenade()" style="background:#ff4500; color:#fff;">GRENADE</button>
+            </div>
+
+            <div class="buddy-container" id="buddyGallery"></div>
+            <button onclick="resetGame()" style="background:#333; margin-top:20px; font-size:0.6rem;">RESET DATA</button>
+        </div>
+
+        <div class="side-container">
+            <div class="side-box"><label>RANK</label><div id="sideRankName">--</div></div>
+            <div class="side-box"><label>DEADLINE</label><div id="daysLeftDisplay">--</div></div>
         </div>
     </div>
 
-    <div id="levelOverlay" class="overlay" style="display:none;" onclick="closeOverlay()">
-        <div class="overlay-content">
-            <h2>BEAT CLEARED</h2>
-            <h1 id="bossBeatTitle">---</h1>
-            <button onclick="closeOverlay()">CONTINUE</button>
+    <div id="levelOverlay" class="overlay" onclick="closeOverlay()">
+        <div class="congrats-box">
+            <h3>BEAT COMPLETED!</h3>
+            <div id="bossBeatTitle" style="font-size: 1.8rem; font-weight: 900; color: var(--neon); margin: 15px 0;">BEAT NAME</div>
+            <div style="font-size: 0.7rem; opacity: 0.6;">CLICK TO CONTINUE</div>
         </div>
     </div>
 
-    <script src="data.js"></script>
+    <div id="grenadeOverlay" class="overlay" onclick="closeGrenade()">
+        <div class="congrats-box">
+            <h2 style="color:#ff4500;">NARRATIVE GRENADE</h2>
+            <p id="inspireText" style="font-size: 1.1rem; margin: 20px 0;"></p>
+        </div>
+    </div>
+
+    <div id="buddyOverlay" class="overlay" onclick="closeBuddyOverlay()">
+        <div class="congrats-box"><h2>NEW BUDDY!</h2><p>Check your collection below.</p></div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
