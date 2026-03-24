@@ -9,7 +9,7 @@
 </head>
 <body>
 
-    <div id="setup" class="setup-screen">
+    <div id="setup" class="setup-screen" style="display:none;">
         <h1>DRAFT PUNK</h1>
         <div class="input-group">
             <input type="text" id="titleIn" placeholder="PROJECT TITLE">
@@ -30,35 +30,30 @@
         </div>
     </div>
 
-    <div id="mainDashboard" class="main-layout hidden">
+    <div id="mainDashboard" class="main-layout" style="display:none;">
         <div class="side-container">
+            <div class="side-box"><label>PARTNER</label><div class="partner-placeholder">ADS / LOGO</div></div>
             <div class="side-box">
-                <label>PARTNER</label>
-                <div class="partner-placeholder">ADS / LOGO</div>
-            </div>
-            <div class="side-box">
-                <label>WRITING BUDDIES</label>
-                <div id="buddyCountDisplay">0</div>
+                <label>BUDDIES</label>
+                <div id="buddyCountDisplay" style="font-size: 1.5rem;">0</div>
             </div>
         </div>
 
         <div class="app">
-            <div class="header">
-                <h1 id="wipDisplay">PROJECT</h1>
-                <h2 id="lvlName">LEVEL 1</h2>
-            </div>
+            <h1 id="wipDisplay">PROJECT</h1>
+            <h2 id="lvlName">LEVEL</h2>
 
             <div class="boss-zone">
                 <img id="bossSprite" class="boss-sprite" src="bosses/1a.png">
-                <div style="flex: 1; min-width: 0;">
-                    <div id="bossName" style="font-size: 1.1rem; font-weight: 900; text-transform: uppercase;">BOSS</div>
-                    <div class="boss-hp-container">
-                        <div id="bossHPBar" class="boss-hp-fill" style="height:10px; background:red; width:100%;"></div>
+                <div style="flex:1;">
+                    <div id="bossName">BOSS</div>
+                    <div class="bar-container" style="height:10px; margin-bottom:0; border-color: #333;">
+                        <div id="bossHPBar" class="bar-fill" style="background:red; width:100%;"></div>
                     </div>
                 </div>
             </div>
 
-            <button class="intel-btn" onclick="toggleIntel()">VIEW MICROBEAT TIPS ▾</button>
+            <button class="intel-btn" onclick="toggleIntel()">MICROBEAT TIPS ▾</button>
             <div id="intelContainer" class="hidden">
                 <div id="loreBox" class="lore-container"></div>
                 <div id="tipsBox" class="tips-container"></div>
@@ -77,34 +72,36 @@
             <div class="input-zone">
                 <input type="number" id="wordIn" placeholder="WORDS">
                 <button onclick="addWords()">ADD</button>
-                <button onclick="showGrenade()" style="background:#ff4500; color:white;">GRENADE</button>
+                <button onclick="showGrenade()" style="background:#ff4500; color:#fff;">GRENADE</button>
             </div>
 
             <div class="buddy-container" id="buddyGallery"></div>
-            <button onclick="resetGame()" style="background:#333; margin-top:20px;">RESET</button>
+            <button onclick="resetGame()" style="background:#333; margin-top:20px; font-size:0.6rem;">RESET DATA</button>
         </div>
 
         <div class="side-container">
-            <div class="side-box">
-                <label>RANK</label>
-                <div id="sideRankName">RANK</div>
-            </div>
-            <div class="side-box">
-                <label>DEADLINE</label>
-                <div id="daysLeftDisplay">--</div>
-            </div>
+            <div class="side-box"><label>RANK</label><div id="sideRankName">--</div></div>
+            <div class="side-box"><label>DEADLINE</label><div id="daysLeftDisplay">--</div></div>
+        </div>
+    </div>
+
+    <div id="levelOverlay" class="overlay" onclick="closeOverlay()">
+        <div class="congrats-box">
+            <h3>BEAT COMPLETED!</h3>
+            <div id="bossBeatTitle" style="font-size: 1.8rem; font-weight: 900; color: var(--neon); margin: 15px 0;">BEAT NAME</div>
+            <div style="font-size: 0.7rem; opacity: 0.6;">CLICK TO CONTINUE</div>
         </div>
     </div>
 
     <div id="grenadeOverlay" class="overlay" onclick="closeGrenade()">
         <div class="congrats-box">
-            <h2 style="color:#ff4500;">GRENADE</h2>
-            <p id="inspireText"></p>
+            <h2 style="color:#ff4500;">NARRATIVE GRENADE</h2>
+            <p id="inspireText" style="font-size: 1.2rem; margin: 20px 0;"></p>
         </div>
     </div>
 
     <div id="buddyOverlay" class="overlay" onclick="closeBuddyOverlay()">
-        <div class="congrats-box"><h2>NEW BUDDY!</h2></div>
+        <div class="congrats-box"><h2>NEW BUDDY RECRUITED!</h2><div style="margin-top:10px;">Check your collection.</div></div>
     </div>
 
     <script src="script.js"></script>
