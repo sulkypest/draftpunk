@@ -40,7 +40,6 @@ window.addWords = function() {
         document.getElementById('levelOverlay').style.display = 'flex';
     }
 
-    // UPDATED BUDDY LOGIC (Pathing & Overlay Injection)
     if (Math.floor(state.total / 5000) > Math.floor((state.total - val) / 5000)) {
         const totalBuddiesAvailable = 100; 
         const buddyID = Math.floor(Math.random() * totalBuddiesAvailable) + 1;
@@ -48,8 +47,6 @@ window.addWords = function() {
 
         if (!state.inventory.includes(buddyFile)) {
             state.inventory.push(buddyFile);
-            
-            // Set Overlay Image
             const overlayImg = document.getElementById('newBuddySprite');
             if (overlayImg) {
                 overlayImg.src = `buddies/${buddyFile}`;
@@ -84,10 +81,13 @@ function updateUI() {
     
     document.getElementById('loreBox').innerText = curB.lore;
     document.getElementById('tipsBox').innerText = MICRO_TIPS[Math.min(100, Math.floor(progress))];
+    
+    // UPDATED RANK SECTION: LARGE NUMBER AND NAME
+    document.getElementById('sideLevelNumber').innerText = curIdx + 1;
     document.getElementById('sideRankName').innerText = RANKS[curIdx] || "AUTHOR";
+    
     document.getElementById('buddyCountDisplay').innerText = state.inventory.length;
     
-    // UPDATED GALLERY RENDER (Relative pathing fix)
     document.getElementById('buddyGallery').innerHTML = state.inventory.map(i => 
         `<img src="buddies/${i}" class="buddy-relic">`
     ).join('');
@@ -128,19 +128,15 @@ function initGraph() {
 }
 
 function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.date); chart.data.datasets[0].data = state.logs.map(l => l.total); chart.update(); } }
-
 window.toggleIntel = function() { document.getElementById('intelContainer').classList.toggle('hidden'); };
-
 window.showGrenade = function() {
     document.getElementById('inspireText').innerText = GRENADES[Math.floor(Math.random() * GRENADES.length)];
     document.getElementById('grenadeOverlay').style.display = 'flex';
 };
-
 window.closeGrenade = function() { document.getElementById('grenadeOverlay').style.display = 'none'; };
 window.closeOverlay = function() { document.getElementById('levelOverlay').style.display = 'none'; };
 window.closeBuddyOverlay = function() { document.getElementById('buddyOverlay').style.display = 'none'; };
 window.resetGame = function() { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); }};
-
 window.onload = function() {
     if (state.active) {
         document.getElementById('setup').style.display = 'none';
