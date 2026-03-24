@@ -1,12 +1,7 @@
 let chart;
 let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
     active: false, title: "", goal: 80000, total: 0, genre: "urbanFantasy",
-    logs: [], lastLevel: 0, deadline: "", inventory: [] 
-};
-
-const GENRE_STYLES = {
-    urbanFantasy: "#0ff", sciFi: "#0fa", fantasy: "#ffd700", horror: "#ff0000",
-    cyberpunk: "#f0f", romance: "#ff69b4"
+    logs: [], lastLevel: 0, deadline: ""
 };
 
 function save() { localStorage.setItem('draftPunkData', JSON.stringify(state)); }
@@ -28,8 +23,10 @@ window.addWords = function() {
     if (val <= 0) return;
     state.total += val;
     state.logs.push({ date: new Date().toLocaleDateString(), total: state.total });
+    
     const progress = (state.total / state.goal) * 100;
     const newIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
+    
     if (newIdx > state.lastLevel) {
         state.lastLevel = newIdx;
         document.getElementById('bossBeatTitle').innerText = BOSS_BEATS[newIdx].name;
@@ -45,6 +42,7 @@ function updateUI() {
     const curIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
     const curB = BOSS_BEATS[curIdx] || BOSS_BEATS[0];
     const nxtB = BOSS_BEATS[curIdx+1] || {pct: 100, name: "THE END"};
+    
     const beatSpan = nxtB.pct - curB.pct;
     const progressInBeat = progress - curB.pct;
     const hp = Math.max(0, 100 - (progressInBeat / (beatSpan || 1) * 100));
@@ -79,7 +77,7 @@ function initGraph() {
         type: 'line',
         data: {
             labels: state.logs.map(l => l.date),
-            datasets: [{ data: state.logs.map(l => l.total), borderColor: GENRE_STYLES[state.genre] || "#0ff", tension: 0.3, fill: false }]
+            datasets: [{ data: state.logs.map(l => l.total), borderColor: "#0ff", tension: 0.3, fill: false }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
@@ -89,5 +87,12 @@ function updateGraph() { if(chart) { chart.data.labels = state.logs.map(l => l.d
 window.showGrenade = function() { document.getElementById('inspireText').innerText = GRENADES[Math.floor(Math.random() * GRENADES.length)]; document.getElementById('grenadeOverlay').style.display = 'flex'; };
 window.closeGrenade = function() { document.getElementById('grenadeOverlay').style.display = 'none'; };
 window.closeOverlay = function() { document.getElementById('levelOverlay').style.display = 'none'; };
-window.resetGame = function() { if(confirm("PURGE SYSTEM DATA?")) { localStorage.clear(); location.reload(); }};
-window.onload = function() { if (state.active) { document.getElementById('setup').style.display = 'none'; document.getElementById('mainDashboard').style.display = 'flex'; updateUI(); initGraph(); } };
+window.resetGame = function() { if(confirm("RESET ALL DATA?")) { localStorage.clear(); location.reload(); }};
+
+window.onload = function() {
+    if (state.active) {
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('mainDashboard').style.display = 'flex';
+        updateUI(); initGraph();
+    }
+};
