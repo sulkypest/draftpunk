@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -17,6 +17,9 @@ const app      = initializeApp(firebaseConfig);
 const auth     = getAuth(app);
 const db       = getFirestore(app);
 const provider = new GoogleAuthProvider();
+
+// Handle redirect sign-in result (fires after Google redirects back)
+getRedirectResult(auth).catch(err => console.error('Redirect result:', err.message));
 
 const DATA_KEYS = ['draftPunkData', 'beatNotesData', 'charactersData', 'wordRunnerData'];
 
@@ -83,7 +86,12 @@ onAuthStateChanged(auth, async user => {
     if (user) {
         setSyncStatus('pending');
         const needsReload = await pullFromCloud(user);
-        if (needsReload) location.reload();
+        if (needsReload) {
+            location.reload();
+        } else {
+            // New user or local data is current — show project form if setup screen is visible
+            if (window.showProjectForm) window.showProjectForm();
+        }
     }
 });
 
@@ -92,8 +100,13 @@ window.signInWithGoogle = async function() {
     try {
         await signInWithPopup(auth, provider);
     } catch (err) {
-        console.error('Sign-in error:', err.message);
-        alert('Sign-in failed — make sure pop-ups are allowed for this site.');
+        if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+            // Fall back to redirect (reliable on mobile / strict browsers)
+            await signInWithRedirect(auth, provider);
+        } else {
+            console.error('Sign-in error:', err.message);
+            alert('Sign-in failed: ' + err.message);
+        }
     }
 };
 

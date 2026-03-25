@@ -192,6 +192,12 @@ window.showBuddyZoom = function(src) {
 };
 window.closeBuddyZoom = function() { document.getElementById('buddyZoomOverlay').style.display = 'none'; };
 window.resetGame = function() { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); }};
+window.showProjectForm = function() {
+    const signIn = document.getElementById('setupSignIn');
+    const form   = document.getElementById('projectForm');
+    if (signIn) signIn.style.display = 'none';
+    if (form)   form.style.display   = '';
+};
 window.onload = function() {
     if (!isStandalone) {
         document.querySelectorAll('.install-btn').forEach(b => b.classList.remove('hidden'));

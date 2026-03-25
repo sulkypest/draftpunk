@@ -44,7 +44,14 @@
 
         <button class="install-btn hidden" onclick="installApp()">+ ADD TO HOME SCREEN</button>
 
-        <div class="input-group">
+        <div id="setupSignIn" style="width:100%;max-width:340px;text-align:center;margin-top:10px;">
+            <p style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;margin-bottom:16px;">SAVE YOUR PROGRESS ACROSS DEVICES</p>
+            <button onclick="signInWithGoogle()" style="width:100%;background:var(--neon);color:#000;font-weight:900;letter-spacing:2px;">⊕ SIGN IN WITH GOOGLE</button>
+            <div style="margin:12px 0;font-size:0.7rem;opacity:0.3;">— OR —</div>
+            <button onclick="showProjectForm()" style="width:100%;background:transparent;border:1px solid #333;color:#666;font-size:0.75rem;letter-spacing:1px;">CONTINUE WITHOUT SIGNING IN</button>
+        </div>
+
+        <div class="input-group" id="projectForm" style="display:none;">
             <input type="text" id="titleIn" placeholder="PROJECT TITLE">
             <select id="genreIn">
                 <option value="urbanFantasy">URBAN FANTASY</option>
