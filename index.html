@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DRAFT PUNK</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Draft Punk">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -36,14 +40,12 @@
     <div id="mainDashboard" class="main-layout hidden">
         <div class="side-container">
             <div class="side-box">
-                <label>PARTNER</label>
+                <img src="DRAFTPUNK.png" alt="Draft Punk Logo" style="width: 100%; max-width: 140px; height: auto; display: block; margin: 0 auto; image-rendering: pixelated; filter: drop-shadow(0 0 5px var(--neon));">
+            </div>
+            <div class="side-box">
                 <a href="https://www.thewritingcommunitychatshow.com/" target="_blank">
                     <img src="partner.png" id="partnerLogo" alt="The Writing Community Chat Show">
                 </a>
-            </div>
-            <div class="side-box">
-                <label>BUDDIES</label>
-                <div id="buddyCountDisplay" style="font-size: 1.5rem;">0</div>
             </div>
         </div>
 
@@ -83,7 +85,13 @@
                 <button onclick="showGrenade()" style="background:#ff4500; color:#fff;">GRENADE</button>
             </div>
 
-            <div class="buddy-container" id="buddyGallery"></div>
+            <div class="buddy-container">
+                <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <label>BUDDIES</label>
+                    <div id="buddyCountDisplay" style="font-size: 1.5rem;">0</div>
+                </div>
+                <div id="buddyGallery" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+            </div>
             <button onclick="resetGame()" style="background:#333; margin-top:20px; font-size:0.6rem;">RESET DATA</button>
         </div>
 
@@ -93,14 +101,19 @@
                 <div id="sideLevelNumber" style="font-size: 3rem; font-weight: 900; line-height: 1; margin: 5px 0; color: var(--neon);">1</div>
                 <div id="sideRankName" style="font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase;">--</div>
             </div>
-            <div class="side-box"><label>DEADLINE</label><div id="daysLeftDisplay">--</div></div>
+            <div class="side-box">
+                <label>DEADLINE</label>
+                <div id="daysLeftDisplay" style="font-size: 3rem; font-weight: 900; line-height: 1; margin: 5px 0; color: var(--neon);">--</div>
+                <div style="font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase;">DAYS REMAINING</div>
+            </div>
         </div>
     </div>
 
     <div id="levelOverlay" class="overlay" onclick="closeOverlay()">
         <div class="congrats-box">
-            <h3>BEAT COMPLETED!</h3>
-            <div id="bossBeatTitle" style="font-size: 1.8rem; font-weight: 900; color: var(--neon); margin: 15px 0;">BEAT NAME</div>
+            <h2 style="color: var(--neon);">BOSS BEAT DEFEATED!</h2>
+            <img id="defeatedBossSprite" src="" style="width: 120px; height: 120px; image-rendering: pixelated; object-fit: contain; margin: 15px auto; display: block; filter: drop-shadow(0 0 10px var(--neon));">
+            <div id="bossBeatTitle" style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 15px 0;">BEAT NAME</div>
             <div style="font-size: 0.7rem; opacity: 0.6;">CLICK TO CONTINUE</div>
         </div>
     </div>
@@ -110,6 +123,10 @@
             <h2 style="color:#ff4500;">NARRATIVE GRENADE</h2>
             <p id="inspireText" style="font-size: 1.1rem; margin: 20px 0;"></p>
         </div>
+    </div>
+
+    <div id="buddyZoomOverlay" class="overlay" onclick="closeBuddyZoom()">
+        <img id="buddyZoomSprite" src="" style="width: 300px; height: 300px; image-rendering: pixelated; object-fit: contain; filter: drop-shadow(0 0 20px var(--neon));">
     </div>
 
     <div id="buddyOverlay" class="overlay" onclick="closeBuddyOverlay()">
@@ -122,5 +139,10 @@
 
     <script src="data.js"></script>
     <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
 </body>
 </html>

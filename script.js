@@ -37,7 +37,13 @@ window.addWords = function() {
     if (newIdx > state.lastLevel) {
         state.lastLevel = newIdx;
         document.getElementById('bossBeatTitle').innerText = BOSS_BEATS[newIdx].name;
+        document.getElementById('defeatedBossSprite').src = `bosses/${newIdx}.png`;
         document.getElementById('levelOverlay').style.display = 'flex';
+
+        const app = document.querySelector('.app');
+        app.classList.remove('app-shake');
+        void app.offsetWidth;
+        app.classList.add('app-shake');
     }
 
     if (Math.floor(state.total / 5000) > Math.floor((state.total - val) / 5000)) {
@@ -93,8 +99,8 @@ function updateUI() {
     
     document.getElementById('buddyCountDisplay').innerText = state.inventory.length;
     
-    document.getElementById('buddyGallery').innerHTML = state.inventory.map(i => 
-        `<img src="buddies/${i}" class="buddy-relic">`
+    document.getElementById('buddyGallery').innerHTML = state.inventory.map(i =>
+        `<img src="buddies/${i}" class="buddy-relic" onclick="showBuddyZoom('buddies/${i}')">`
     ).join('');
 
     const sprite = document.getElementById('bossSprite');
@@ -146,6 +152,11 @@ window.showGrenade = function() {
 window.closeGrenade = function() { document.getElementById('grenadeOverlay').style.display = 'none'; };
 window.closeOverlay = function() { document.getElementById('levelOverlay').style.display = 'none'; };
 window.closeBuddyOverlay = function() { document.getElementById('buddyOverlay').style.display = 'none'; };
+window.showBuddyZoom = function(src) {
+    document.getElementById('buddyZoomSprite').src = src;
+    document.getElementById('buddyZoomOverlay').style.display = 'flex';
+};
+window.closeBuddyZoom = function() { document.getElementById('buddyZoomOverlay').style.display = 'none'; };
 window.resetGame = function() { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); }};
 window.onload = function() {
     if (state.active) {
