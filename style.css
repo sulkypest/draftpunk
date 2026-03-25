@@ -11,7 +11,7 @@ body {
     color: #fff;
     font-family: 'Courier New', monospace;
     margin: 0;
-    padding: 60px 20px 20px;
+    padding: 75px 20px 20px;
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -35,7 +35,7 @@ body {
 
 .nav-dropdown-btn {
     padding: 12px 14px;
-    color: #444;
+    color: #888;
     font-family: 'Courier New', monospace;
     font-weight: 900;
     font-size: 0.75rem;
@@ -68,7 +68,7 @@ body {
     display: block;
     width: 100%;
     padding: 10px 14px;
-    color: #444;
+    color: #888;
     font-family: 'Courier New', monospace;
     font-weight: 900;
     font-size: 0.72rem;
@@ -86,7 +86,7 @@ body {
 
 .nav-link {
     padding: 12px 20px;
-    color: #444;
+    color: #888;
     text-decoration: none;
     font-family: 'Courier New', monospace;
     font-weight: 900;
@@ -555,7 +555,7 @@ button {
 
 @media (max-width: 700px) {
     body {
-        padding: 50px 10px 10px;
+        padding: 65px 10px 10px;
     }
 
     .setup-screen {
