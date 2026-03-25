@@ -22,10 +22,67 @@ body {
     position: fixed;
     top: 0; left: 0; right: 0;
     display: flex;
+    flex-wrap: wrap;
     background: #000;
     border-bottom: 1px solid #333;
     z-index: 100;
 }
+
+.nav-dropdown {
+    margin-left: auto;
+    position: relative;
+}
+
+.nav-dropdown-btn {
+    padding: 12px 14px;
+    color: #444;
+    font-family: 'Courier New', monospace;
+    font-weight: 900;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    border-left: 1px solid #333;
+    text-transform: uppercase;
+    height: 100%;
+}
+
+.nav-dropdown-btn:hover { color: var(--neon); }
+
+.nav-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #000;
+    border: 1px solid #333;
+    border-top: none;
+    min-width: 130px;
+    z-index: 200;
+}
+
+.nav-dropdown-menu.open { display: block; }
+
+.nav-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    color: #444;
+    font-family: 'Courier New', monospace;
+    font-weight: 900;
+    font-size: 0.72rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #222;
+    text-align: left;
+    cursor: pointer;
+}
+
+.nav-dropdown-item:last-child { border-bottom: none; }
+.nav-dropdown-item:hover { color: var(--neon); }
 
 .nav-link {
     padding: 12px 20px;
@@ -39,6 +96,78 @@ body {
 }
 
 .nav-link.active, .nav-link:hover { color: var(--neon); }
+
+/* NOTES PAGES */
+.notes-page {
+    width: 100%;
+    max-width: 700px;
+}
+
+/* ACCORDIONS */
+.accordion {
+    border: 1px solid #333;
+    margin-bottom: 8px;
+}
+
+.accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    background: #000;
+    border-left: 3px solid var(--neon);
+    cursor: pointer;
+    user-select: none;
+}
+
+.accordion-number {
+    font-size: 0.7rem;
+    color: var(--neon);
+    opacity: 0.7;
+    min-width: 18px;
+}
+
+.accordion-title {
+    font-weight: 900;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+.accordion-body {
+    padding: 15px;
+    background: var(--panel);
+}
+
+.beat-lore {
+    font-size: 0.8rem;
+    opacity: 0.55;
+    margin-bottom: 12px;
+    padding-left: 10px;
+    border-left: 2px solid var(--neon);
+}
+
+/* CHARACTER FIELDS */
+.char-fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.char-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.char-field-wide {
+    grid-column: 1 / -1;
+}
+
+.char-field label {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    opacity: 0.5;
+}
 
 .hidden { display: none !important; }
 
@@ -204,6 +333,7 @@ button {
     image-rendering: pixelated;
     object-fit: contain;
     cursor: pointer;
+    filter: drop-shadow(0 0 6px var(--neon));
 }
 
 .setup-screen { 
@@ -345,6 +475,52 @@ button {
     gap: 15px;
 }
 
+.tier-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin: 10px 0 15px;
+}
+
+.tier-card {
+    background: #000;
+    border: 1px solid #333;
+    padding: 8px 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.tier-card:hover { border-color: #666; }
+
+.tier-card.selected {
+    border-color: var(--neon);
+    box-shadow: 0 0 8px var(--neon);
+}
+
+.tier-card.complete { opacity: 0.5; }
+
+.tier-duration {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--neon);
+    line-height: 1;
+}
+
+.tier-label {
+    font-size: 0.5rem;
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+    margin-top: 3px;
+    text-transform: uppercase;
+}
+
+.tier-rescued {
+    font-size: 0.65rem;
+    color: var(--neon);
+    margin-top: 4px;
+}
+
 .toggle-row {
     display: flex;
     justify-content: space-between;
@@ -384,6 +560,14 @@ button {
     .side-container {
         width: 100%;
         flex-direction: row;
+    }
+
+    .char-fields-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tier-grid {
+        grid-template-columns: repeat(4, 1fr);
     }
 
     .side-box {

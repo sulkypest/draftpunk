@@ -15,7 +15,17 @@
     <nav class="app-nav">
         <a href="index.html" class="nav-link">DRAFT PUNK</a>
         <a href="wordrunner.html" class="nav-link active">WORDRUNNER</a>
+        <a href="beat-notes.html" class="nav-link">BEATS</a>
+        <a href="characters.html" class="nav-link">CHARS</a>
+        <div class="nav-dropdown">
+            <button class="nav-dropdown-btn" onclick="toggleDataMenu()">DATA ▾</button>
+            <div class="nav-dropdown-menu" id="dataMenu">
+                <button class="nav-dropdown-item" onclick="exportData(); toggleDataMenu()">⬇ BACKUP</button>
+                <button class="nav-dropdown-item" onclick="triggerImport(); toggleDataMenu()">⬆ RESTORE</button>
+            </div>
+        </div>
     </nav>
+    <input type="file" id="importFileInput" accept=".json" onchange="importData(event)" style="display:none;">
 
     <div class="main-layout">
 
@@ -33,12 +43,13 @@
         <div class="app">
             <h1>WORDRUNNER</h1>
 
+            <!-- Rescue zone -->
             <div class="boss-zone">
-                <img id="wrBossSprite" class="boss-sprite" src="bosses/1.png">
+                <img id="wrBuddySprite" class="boss-sprite" src="buddies/buddy1.png">
                 <div style="flex:1;">
-                    <div id="wrBossName">BOSS NAME</div>
+                    <div id="wrMissionName">SELECT A MISSION</div>
                     <div class="bar-container" style="height:10px;margin-bottom:0;border-color:#333;">
-                        <div id="wrBossHP" class="bar-fill" style="background:red;width:100%;"></div>
+                        <div id="wrCaptivityBar" class="bar-fill" style="background:red;width:100%;transition:width 0.3s;"></div>
                     </div>
                 </div>
             </div>
@@ -46,17 +57,24 @@
             <!-- Challenge setup -->
             <div id="challengeSetup">
 
-                <div id="bossChallenge" class="challenge-box">
-                    <label>CURRENT CHALLENGE</label>
+                <!-- Tier grid -->
+                <div id="tierGridWrapper">
+                    <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">SELECT MISSION TIER</label>
+                    <div class="tier-grid" id="tierGrid"></div>
+                </div>
+
+                <!-- Selected tier info -->
+                <div id="tierInfo" class="challenge-box hidden">
                     <div class="challenge-stats">
-                        <span><span id="challengeDuration">5</span> MIN</span>
+                        <span><span id="challengeDuration">--</span> MIN</span>
                         <span style="opacity:0.4;">/</span>
-                        <span><span id="challengeTarget">150</span> WORDS</span>
+                        <span><span id="challengeTarget">--</span> WORDS</span>
                     </div>
+                    <div id="tierBuddyStatus" style="font-size:0.7rem;opacity:0.6;margin-top:6px;"></div>
                 </div>
 
                 <div class="toggle-row">
-                    <label for="customToggle">CUSTOM SPRINT (NO BOSS DEFEAT)</label>
+                    <label for="customToggle">CUSTOM SPRINT (NO RESCUE)</label>
                     <input type="checkbox" id="customToggle" onchange="toggleCustom()">
                 </div>
 
@@ -78,11 +96,11 @@
                     <input type="checkbox" id="dpToggle">
                 </div>
 
-                <button onclick="startSprint()" style="width:100%;margin-top:10px;">START SPRINT</button>
+                <button id="startBtn" onclick="startSprint()" style="width:100%;margin-top:10px;" disabled>SELECT A MISSION TO START</button>
             </div>
 
-            <!-- Active sprint -->
-            <div id="activeSprint" class="hidden">
+            <!-- Sprint controls -->
+            <div id="sprintControls" class="hidden">
                 <div id="timerDisplay" class="timer-display">05:00</div>
 
                 <div style="text-align:center;margin-bottom:10px;">
@@ -95,46 +113,53 @@
                 <div class="bar-container" style="margin-bottom:15px;">
                     <div id="sprintBar" class="bar-fill"></div>
                 </div>
-
-                <textarea id="sprintText" class="sprint-textarea" placeholder="Write or paste your words here..." oninput="onSprintInput()"></textarea>
-
-                <button onclick="stopSprint()" style="background:#333;width:100%;margin-top:10px;">ABANDON SPRINT</button>
             </div>
+
+            <!-- Textarea (persists after sprint) -->
+            <div id="textareaSection" class="hidden">
+                <textarea id="sprintText" class="sprint-textarea" placeholder="Write or paste your words here..." oninput="onSprintInput()"></textarea>
+                <div style="display:flex;gap:10px;margin-top:10px;">
+                    <button id="abandonBtn" onclick="stopSprint()" style="background:#333;flex:1;">ABANDON SPRINT</button>
+                    <button id="copyBtn" class="hidden" onclick="copySprintText()" style="flex:1;">COPY TEXT</button>
+                </div>
+            </div>
+
         </div>
 
         <div class="side-container">
             <div class="side-box">
-                <label>LEVEL</label>
+                <label>RANK</label>
                 <div id="wrLevelNumber" style="font-size:3rem;font-weight:900;line-height:1;margin:5px 0;color:var(--neon);">1</div>
                 <div id="wrRankName" style="font-size:0.8rem;letter-spacing:1px;text-transform:uppercase;">--</div>
             </div>
             <div class="side-box">
-                <label>SPRINTS WON</label>
+                <label>RESCUED</label>
                 <div id="wrSprintsWon" style="font-size:3rem;font-weight:900;line-height:1;margin:5px 0;color:var(--neon);">0</div>
             </div>
         </div>
     </div>
 
-    <!-- Win overlay -->
+    <!-- Rescued overlay -->
     <div id="wrWinOverlay" class="overlay" onclick="closeWinOverlay()">
         <div class="congrats-box">
-            <h2 id="wrWinTitle" style="color:var(--neon);">BOSS DEFEATED!</h2>
-            <img id="wrDefeatedSprite" src="" style="width:120px;height:120px;image-rendering:pixelated;object-fit:contain;margin:15px auto;display:block;filter:drop-shadow(0 0 10px var(--neon));">
+            <h2 id="wrWinTitle" style="color:var(--neon);">BUDDY RESCUED!</h2>
+            <img id="wrRescuedSprite" src="" style="width:120px;height:120px;image-rendering:pixelated;object-fit:contain;margin:15px auto;display:block;filter:drop-shadow(0 0 10px var(--neon));">
             <div id="wrWinMessage" style="font-size:1.1rem;margin:15px 0;white-space:pre-line;"></div>
             <div style="font-size:0.7rem;opacity:0.6;">CLICK TO CONTINUE</div>
         </div>
     </div>
 
-    <!-- Fail overlay -->
+    <!-- Failed overlay -->
     <div id="wrFailOverlay" class="overlay" onclick="closeFailOverlay()">
         <div class="congrats-box">
-            <h2 style="color:#ff4500;">SPRINT FAILED</h2>
+            <h2 style="color:#ff4500;">RESCUE FAILED</h2>
             <p style="margin:15px 0;">You wrote <strong id="wrFailWords">0</strong> of <strong id="wrFailTarget">0</strong> words.</p>
-            <p style="font-size:0.9rem;opacity:0.7;">The boss lives. Try again.</p>
+            <p style="font-size:0.9rem;opacity:0.7;">Your buddy is still out there. Try again.</p>
             <div style="font-size:0.7rem;opacity:0.6;margin-top:15px;">CLICK TO CONTINUE</div>
         </div>
     </div>
 
+    <script src="backup.js"></script>
     <script src="wordrunner-data.js"></script>
     <script src="wordrunner.js"></script>
     <script>

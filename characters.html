@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHARACTERS</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Draft Punk">
+</head>
+<body>
+
+    <nav class="app-nav">
+        <a href="index.html" class="nav-link">DRAFT PUNK</a>
+        <a href="wordrunner.html" class="nav-link">WORDRUNNER</a>
+        <a href="beat-notes.html" class="nav-link">BEATS</a>
+        <a href="characters.html" class="nav-link active">CHARS</a>
+        <div class="nav-dropdown">
+            <button class="nav-dropdown-btn" onclick="toggleDataMenu()">DATA ▾</button>
+            <div class="nav-dropdown-menu" id="dataMenu">
+                <button class="nav-dropdown-item" onclick="exportData(); toggleDataMenu()">⬇ BACKUP</button>
+                <button class="nav-dropdown-item" onclick="triggerImport(); toggleDataMenu()">⬆ RESTORE</button>
+            </div>
+        </div>
+    </nav>
+    <input type="file" id="importFileInput" accept=".json" onchange="importData(event)" style="display:none;">
+
+    <div class="notes-page">
+        <div class="app">
+            <h1>CHARACTERS</h1>
+            <h2 id="projectTitle" style="font-size:0.9rem;opacity:0.5;margin-top:-10px;margin-bottom:20px;"></h2>
+            <button onclick="addChar()" style="width:100%;margin-bottom:15px;">+ ADD CHARACTER</button>
+            <div id="charContainer"></div>
+        </div>
+    </div>
+
+    <script src="backup.js"></script>
+    <script src="characters.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
+</body>
+</html>

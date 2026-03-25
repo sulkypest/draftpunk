@@ -1,4 +1,4 @@
-const CACHE = 'draftpunk-v2';
+const CACHE = 'draftpunk-v4';
 
 const PRECACHE = [
     './',
@@ -26,6 +26,11 @@ const PRECACHE = [
     './wordrunner.html',
     './wordrunner.js',
     './wordrunner-data.js',
+    './beat-notes.html',
+    './beat-notes.js',
+    './characters.html',
+    './characters.js',
+    './backup.js',
 ];
 
 self.addEventListener('install', event => {
