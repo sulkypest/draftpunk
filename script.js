@@ -213,7 +213,7 @@ window.onload = function() {
         updateUI();
         initGraph();
     } else if (!localStorage.getItem('authDecisionMade')) {
-        document.getElementById('authScreen').style.display = 'flex';
+        document.getElementById('authScreen').style.display = 'block';
         document.getElementById('setup').style.display = 'none';
         document.getElementById('mainDashboard').classList.add('hidden');
     } else {

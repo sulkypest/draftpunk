@@ -39,13 +39,11 @@
 
     <div id="authScreen" class="setup-screen" style="display:none;">
         <h1>DRAFT PUNK</h1>
-        <img src="DRAFTPUNK.png" alt="Draft Punk Logo" style="width:160px;height:auto;image-rendering:pixelated;filter:drop-shadow(0 0 12px var(--neon));margin:20px 0;">
-        <p style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;margin-bottom:24px;text-align:center;">YOUR WRITING. TRACKED. ANYWHERE.</p>
-        <div style="width:100%;max-width:320px;">
-            <button onclick="signInWithGoogle()" style="width:100%;background:var(--neon);color:#000;font-weight:900;letter-spacing:2px;padding:14px;font-size:0.9rem;margin-bottom:12px;">⊕ SIGN IN WITH GOOGLE</button>
-            <button onclick="skipAuth()" style="width:100%;background:transparent;border:1px solid #333;color:#555;font-size:0.75rem;letter-spacing:1px;padding:12px;">CONTINUE WITHOUT SIGNING IN</button>
-            <p style="font-size:0.65rem;opacity:0.3;text-align:center;margin-top:16px;line-height:1.6;">Sign in to back up your progress and sync across devices.</p>
-        </div>
+        <img id="authLogo" src="DRAFTPUNK.png" alt="Draft Punk Logo">
+        <p style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;margin-bottom:20px;">YOUR WRITING. TRACKED. ANYWHERE.</p>
+        <button onclick="signInWithGoogle()" style="width:100%;margin-bottom:10px;">⊕ SIGN IN WITH GOOGLE</button>
+        <button onclick="skipAuth()" class="install-btn" style="color:#555;border-color:#333;">CONTINUE WITHOUT SIGNING IN</button>
+        <p style="font-size:0.65rem;opacity:0.3;margin-top:16px;line-height:1.6;">Sign in to back up and sync across devices.</p>
     </div>
 
     <div id="setup" class="setup-screen" style="display:none;">

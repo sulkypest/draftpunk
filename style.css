@@ -345,15 +345,15 @@ button {
     margin-top: 10vh; 
 }
 
-#appLogo {
-    width: 250px;
-    max-width: 90%;
+#appLogo, #authLogo {
+    width: 200px;
+    max-width: 80%;
     height: auto;
     object-fit: contain;
     margin: 20px auto;
     display: block;
     image-rendering: pixelated;
-    filter: drop-shadow(0 0 5px var(--neon));
+    filter: drop-shadow(0 0 8px var(--neon));
 }
 
 #partnerLogo {
