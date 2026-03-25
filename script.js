@@ -191,7 +191,24 @@ window.showBuddyZoom = function(src) {
     document.getElementById('buddyZoomOverlay').style.display = 'flex';
 };
 window.closeBuddyZoom = function() { document.getElementById('buddyZoomOverlay').style.display = 'none'; };
-window.resetGame = function() { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); }};
+window.resetGame = function() { if(confirm("Start a new project? This will clear all current data.")) { localStorage.clear(); location.reload(); }};
+window.showProjectSettings = function() {
+    document.getElementById('editTitle').value    = state.title;
+    document.getElementById('editGenre').value    = state.genre;
+    document.getElementById('editGoal').value     = state.goal;
+    document.getElementById('editDeadline').value = state.deadline;
+    document.getElementById('projectSettingsOverlay').style.display = 'flex';
+};
+window.saveProjectSettings = function() {
+    state.title    = document.getElementById('editTitle').value || state.title;
+    state.goal     = parseInt(document.getElementById('editGoal').value) || state.goal;
+    state.deadline = document.getElementById('editDeadline').value;
+    state.genre    = document.getElementById('editGenre').value;
+    save(); updateUI(); closeProjectSettings();
+};
+window.closeProjectSettings = function() {
+    document.getElementById('projectSettingsOverlay').style.display = 'none';
+};
 window.skipAuth = function() {
     localStorage.setItem('authDecisionMade', '1');
     document.getElementById('authScreen').style.display = 'none';

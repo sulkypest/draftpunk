@@ -130,7 +130,10 @@
                 <div id="buddyGallery" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
             </div>
             <button class="install-btn hidden" onclick="installApp()" style="margin-top:20px;">+ ADD TO HOME SCREEN</button>
-            <button onclick="resetGame()" style="background:#333; margin-top:10px; font-size:0.6rem;">RESET DATA</button>
+            <div style="display:flex;gap:10px;margin-top:10px;">
+                <button onclick="showProjectSettings()" style="background:#333;flex:1;font-size:0.6rem;">EDIT PROJECT</button>
+                <button onclick="resetGame()" style="background:#333;flex:1;font-size:0.6rem;">NEW PROJECT</button>
+            </div>
         </div>
 
         <div class="side-container">
@@ -175,6 +178,32 @@
         <div class="congrats-box">
             <h2 style="color:#ff4500;">NARRATIVE GRENADE</h2>
             <p id="inspireText" style="font-size: 1.1rem; margin: 20px 0;"></p>
+        </div>
+    </div>
+
+    <div id="projectSettingsOverlay" class="overlay">
+        <div class="congrats-box" style="max-width:360px;width:90%;">
+            <h2 style="color:var(--neon);margin-bottom:20px;">EDIT PROJECT</h2>
+            <div class="input-group">
+                <input type="text" id="editTitle" placeholder="PROJECT TITLE">
+                <select id="editGenre">
+                    <option value="urbanFantasy">URBAN FANTASY</option>
+                    <option value="sciFi">SCI-FI</option>
+                    <option value="fantasy">HIGH FANTASY</option>
+                    <option value="horror">HORROR</option>
+                    <option value="cyberpunk">CYBERPUNK</option>
+                    <option value="crimeNoir">CRIME / NOIR</option>
+                    <option value="romance">ROMANCE</option>
+                    <option value="thriller">THRILLER</option>
+                    <option value="western">WESTERN</option>
+                </select>
+                <input type="number" id="editGoal" placeholder="WORD GOAL">
+                <input type="date" id="editDeadline">
+                <div style="display:flex;gap:10px;">
+                    <button onclick="saveProjectSettings()" style="flex:1;">SAVE</button>
+                    <button onclick="closeProjectSettings()" style="flex:1;background:#333;">CANCEL</button>
+                </div>
+            </div>
         </div>
     </div>
 
