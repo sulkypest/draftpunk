@@ -182,7 +182,12 @@ window.closeGrenade = function() { document.getElementById('grenadeOverlay').sty
 window.closeOverlay = function() { document.getElementById('levelOverlay').style.display = 'none'; };
 window.closeBuddyOverlay = function() { document.getElementById('buddyOverlay').style.display = 'none'; };
 window.showBuddyZoom = function(src) {
+    const match = src.match(/buddy(\d+)\.png/);
+    const num = match ? parseInt(match[1]) : 0;
+    const buddy = BUDDY_DATA[num - 1] || { name: 'MYSTERY BUDDY', fact: 'Origins unknown.' };
     document.getElementById('buddyZoomSprite').src = src;
+    document.getElementById('buddyZoomName').innerText = buddy.name.toUpperCase();
+    document.getElementById('buddyZoomFact').innerText = buddy.fact;
     document.getElementById('buddyZoomOverlay').style.display = 'flex';
 };
 window.closeBuddyZoom = function() { document.getElementById('buddyZoomOverlay').style.display = 'none'; };
