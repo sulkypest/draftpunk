@@ -93,6 +93,17 @@ onAuthStateChanged(auth, async user => {
             const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
             if (!dpData.active && window.showProjectForm) window.showProjectForm();
         }
+    } else if (localStorage.getItem('justSignedOut')) {
+        localStorage.removeItem('justSignedOut');
+        const authScreen = document.getElementById('authScreen');
+        if (authScreen) {
+            authScreen.style.display = 'flex';
+            const nav = document.querySelector('.app-nav');
+            if (nav) nav.style.display = 'none';
+        } else {
+            localStorage.setItem('justSignedOut', '1');
+            window.location.href = 'index.html';
+        }
     }
 });
 
@@ -109,11 +120,9 @@ window.signInWithGoogle = async function() {
 window.signOutUser = async function() {
     if (!confirm('Sign out?')) return;
     clearTimeout(syncTimeout);
-    await signOut(auth);
     localStorage.removeItem('authDecisionMade');
-    localStorage.removeItem('dpLastUpdated');
     localStorage.setItem('justSignedOut', '1');
-    window.location.href = 'index.html';
+    await signOut(auth);
 };
 
 // ── Update the nav to reflect signed-in state ─────────────────────────────────
