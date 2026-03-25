@@ -6,17 +6,39 @@
 
 * { box-sizing: border-box; }
 
-body { 
-    background: var(--bg); 
-    color: #fff; 
-    font-family: 'Courier New', monospace; 
-    margin: 0; 
-    padding: 20px; 
+body {
+    background: var(--bg);
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    padding: 60px 20px 20px;
     min-height: 100vh;
-    display: flex; 
-    justify-content: center; 
+    display: flex;
+    justify-content: center;
     align-items: flex-start;
 }
+
+.app-nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    background: #000;
+    border-bottom: 1px solid #333;
+    z-index: 100;
+}
+
+.nav-link {
+    padding: 12px 20px;
+    color: #444;
+    text-decoration: none;
+    font-family: 'Courier New', monospace;
+    font-weight: 900;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    border-right: 1px solid #333;
+}
+
+.nav-link.active, .nav-link:hover { color: var(--neon); }
 
 .hidden { display: none !important; }
 
@@ -280,9 +302,72 @@ button {
     100% { transform: scale(1); opacity: 1; }
 }
 
+/* WORDRUNNER */
+.timer-display {
+    font-size: 4rem;
+    font-weight: 900;
+    text-align: center;
+    color: var(--neon);
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px var(--neon);
+    margin: 20px 0;
+}
+
+.sprint-textarea {
+    width: 100%;
+    min-height: 200px;
+    background: #000;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.challenge-box {
+    background: #000;
+    border-left: 5px solid var(--neon);
+    padding: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.challenge-stats {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--neon);
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #222;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+.toggle-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--neon);
+    cursor: pointer;
+    flex: 0 0 auto;
+    min-height: unset;
+}
+
 @media (max-width: 700px) {
     body {
-        padding: 10px;
+        padding: 50px 10px 10px;
     }
 
     .setup-screen {
