@@ -206,20 +206,24 @@ window.onload = function() {
         document.querySelectorAll('.install-btn').forEach(b => b.classList.remove('hidden'));
     }
 
+    const nav = document.querySelector('.app-nav');
     if (state.active) {
         localStorage.setItem('authDecisionMade', '1');
         document.getElementById('authScreen').style.display = 'none';
         document.getElementById('setup').style.display = 'none';
         document.getElementById('mainDashboard').classList.remove('hidden');
+        if (nav) nav.style.display = '';
         updateUI();
         initGraph();
     } else if (localStorage.getItem('authDecisionMade')) {
         document.getElementById('authScreen').style.display = 'none';
         document.getElementById('setup').style.display = 'block';
         document.getElementById('mainDashboard').classList.add('hidden');
+        if (nav) nav.style.display = 'none';
     } else {
         document.getElementById('authScreen').style.display = 'flex';
         document.getElementById('setup').style.display = 'none';
         document.getElementById('mainDashboard').classList.add('hidden');
+        if (nav) nav.style.display = 'none';
     }
 };

@@ -1,4 +1,5 @@
 console.log("Wordrunner Script Loading...");
+(function() { const d = JSON.parse(localStorage.getItem('draftPunkData') || '{}'); if (!d.active) window.location.replace('index.html'); })();
 
 let wrState = JSON.parse(localStorage.getItem('wordRunnerData')) || {
     sprintsWon: 0,

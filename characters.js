@@ -1,3 +1,4 @@
+(function() { const d = JSON.parse(localStorage.getItem('draftPunkData') || '{}'); if (!d.active) window.location.replace('index.html'); })();
 const CHAR_FIELDS = [
     { key: 'age',         label: 'AGE',                  type: 'input',    wide: false },
     { key: 'role',        label: 'ROLE',                 type: 'input',    wide: false },

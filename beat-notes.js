@@ -1,3 +1,4 @@
+(function() { const d = JSON.parse(localStorage.getItem('draftPunkData') || '{}'); if (!d.active) window.location.replace('index.html'); })();
 const BEATS = [
     { name: "Opening Image",    lore: "A snapshot of the 'before' world." },
     { name: "Theme Stated",     lore: "Someone hints at the life lesson needed." },
