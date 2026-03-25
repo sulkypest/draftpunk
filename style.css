@@ -146,14 +146,23 @@ input, select {
     padding: 10px; 
     flex: 1; 
 }
-button { 
-    background: var(--neon); 
-    color: #000; 
-    border: none; 
-    padding: 10px 15px; 
-    font-weight: 900; 
-    cursor: pointer; 
-    text-transform: uppercase; 
+button {
+    background: var(--neon);
+    color: #000;
+    border: none;
+    padding: 10px 15px;
+    font-weight: 900;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.install-btn {
+    background: transparent;
+    color: var(--neon);
+    border: 1px solid var(--neon);
+    width: 100%;
+    font-family: inherit;
+    letter-spacing: 1px;
 }
 
 .buddy-container {

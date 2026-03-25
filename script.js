@@ -1,5 +1,35 @@
 console.log("Draft Punk Script Loading...");
 
+let deferredPrompt = null;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.querySelectorAll('.install-btn').forEach(b => b.classList.remove('hidden'));
+});
+
+window.addEventListener('appinstalled', () => {
+    document.querySelectorAll('.install-btn').forEach(b => b.classList.add('hidden'));
+});
+
+window.installApp = function() {
+    if (isIOS) {
+        document.getElementById('iosInstallOverlay').style.display = 'flex';
+    } else if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+            deferredPrompt = null;
+            document.querySelectorAll('.install-btn').forEach(b => b.classList.add('hidden'));
+        });
+    }
+};
+
+window.closeIOSInstall = function() {
+    document.getElementById('iosInstallOverlay').style.display = 'none';
+};
+
 let chart;
 let state = JSON.parse(localStorage.getItem('draftPunkData')) || {
     active: false, title: "", goal: 80000, total: 0, genre: "urbanFantasy",
@@ -159,6 +189,10 @@ window.showBuddyZoom = function(src) {
 window.closeBuddyZoom = function() { document.getElementById('buddyZoomOverlay').style.display = 'none'; };
 window.resetGame = function() { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); }};
 window.onload = function() {
+    if (isIOS && !isStandalone) {
+        document.querySelectorAll('.install-btn').forEach(b => b.classList.remove('hidden'));
+    }
+
     if (state.active) {
         document.getElementById('setup').style.display = 'none';
         document.getElementById('mainDashboard').classList.remove('hidden');

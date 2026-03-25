@@ -18,6 +18,8 @@
         
         <img src="DRAFTPUNK.png" id="appLogo" alt="Draft Punk Logo">
 
+        <button class="install-btn hidden" onclick="installApp()">+ ADD TO HOME SCREEN</button>
+
         <div class="input-group">
             <input type="text" id="titleIn" placeholder="PROJECT TITLE">
             <select id="genreIn">
@@ -92,7 +94,8 @@
                 </div>
                 <div id="buddyGallery" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
             </div>
-            <button onclick="resetGame()" style="background:#333; margin-top:20px; font-size:0.6rem;">RESET DATA</button>
+            <button class="install-btn hidden" onclick="installApp()" style="margin-top:20px;">+ ADD TO HOME SCREEN</button>
+            <button onclick="resetGame()" style="background:#333; margin-top:10px; font-size:0.6rem;">RESET DATA</button>
         </div>
 
         <div class="side-container">
@@ -106,6 +109,19 @@
                 <div id="daysLeftDisplay" style="font-size: 3rem; font-weight: 900; line-height: 1; margin: 5px 0; color: var(--neon);">--</div>
                 <div style="font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase;">DAYS REMAINING</div>
             </div>
+        </div>
+    </div>
+
+    <div id="iosInstallOverlay" class="overlay" onclick="closeIOSInstall()">
+        <div class="congrats-box">
+            <h2 style="color: var(--neon);">INSTALL APP</h2>
+            <p style="margin: 20px 0; line-height: 1.8;">
+                Tap the <strong>Share</strong> button&nbsp;
+                <span style="font-size: 1.3rem;">⎋</span>
+                at the bottom of your browser,<br>then select<br>
+                <strong>"Add to Home Screen"</strong>
+            </p>
+            <div style="font-size: 0.7rem; opacity: 0.6;">TAP ANYWHERE TO CLOSE</div>
         </div>
     </div>
 
