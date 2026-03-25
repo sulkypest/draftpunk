@@ -90,8 +90,8 @@ onAuthStateChanged(auth, async user => {
         if (needsReload) {
             location.reload();
         } else {
-            // New user — show setup screen if no project yet
-            if (window.showProjectForm) window.showProjectForm();
+            const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+            if (!dpData.active && window.showProjectForm) window.showProjectForm();
         }
     }
 });
