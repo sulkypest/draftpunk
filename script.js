@@ -209,6 +209,7 @@ window.onload = function() {
     const nav = document.querySelector('.app-nav');
     if (localStorage.getItem('justSignedOut')) {
         localStorage.removeItem('justSignedOut');
+        history.replaceState({}, '', 'index.html');
         document.getElementById('authScreen').style.display = 'flex';
         document.getElementById('setup').style.display = 'none';
         document.getElementById('mainDashboard').classList.add('hidden');

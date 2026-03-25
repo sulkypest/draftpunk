@@ -120,9 +120,10 @@ window.signInWithGoogle = async function() {
 window.signOutUser = async function() {
     if (!confirm('Sign out?')) return;
     clearTimeout(syncTimeout);
+    await signOut(auth);
     localStorage.removeItem('authDecisionMade');
     localStorage.setItem('justSignedOut', '1');
-    await signOut(auth);
+    window.location.href = 'index.html?' + Date.now();
 };
 
 // ── Update the nav to reflect signed-in state ─────────────────────────────────
