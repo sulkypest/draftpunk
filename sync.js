@@ -110,6 +110,10 @@ window.signOutUser = async function() {
     if (!confirm('Sign out?')) return;
     clearTimeout(syncTimeout);
     await signOut(auth);
+    localStorage.removeItem('authDecisionMade');
+    localStorage.removeItem('dpLastUpdated');
+    localStorage.setItem('justSignedOut', '1');
+    location.reload();
 };
 
 // ── Update the nav to reflect signed-in state ─────────────────────────────────

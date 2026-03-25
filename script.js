@@ -207,6 +207,14 @@ window.onload = function() {
     }
 
     const nav = document.querySelector('.app-nav');
+    if (localStorage.getItem('justSignedOut')) {
+        localStorage.removeItem('justSignedOut');
+        document.getElementById('authScreen').style.display = 'flex';
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('mainDashboard').classList.add('hidden');
+        if (nav) nav.style.display = 'none';
+        return;
+    }
     if (state.active) {
         localStorage.setItem('authDecisionMade', '1');
         document.getElementById('authScreen').style.display = 'none';
