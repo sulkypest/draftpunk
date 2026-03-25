@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -18,8 +18,6 @@ const auth     = getAuth(app);
 const db       = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Handle redirect sign-in result (fires after Google redirects back)
-getRedirectResult(auth).catch(err => console.error('Redirect result:', err.message));
 
 const DATA_KEYS = ['draftPunkData', 'beatNotesData', 'charactersData', 'wordRunnerData'];
 
@@ -101,9 +99,10 @@ onAuthStateChanged(auth, async user => {
 // ── Public sign-in / sign-out ─────────────────────────────────────────────────
 window.signInWithGoogle = async function() {
     try {
-        await signInWithRedirect(auth, provider);
+        await signInWithPopup(auth, provider);
     } catch (err) {
         console.error('Sign-in error:', err.message);
+        alert('Sign-in failed: ' + err.message);
     }
 };
 
