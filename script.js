@@ -7,7 +7,6 @@ const isStandalone = window.navigator.standalone || window.matchMedia('(display-
 window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
-    document.querySelectorAll('.install-btn').forEach(b => b.classList.remove('hidden'));
 });
 
 window.addEventListener('appinstalled', () => {
@@ -15,14 +14,14 @@ window.addEventListener('appinstalled', () => {
 });
 
 window.installApp = function() {
-    if (isIOS) {
-        document.getElementById('iosInstallOverlay').style.display = 'flex';
-    } else if (deferredPrompt) {
+    if (deferredPrompt) {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then(() => {
             deferredPrompt = null;
             document.querySelectorAll('.install-btn').forEach(b => b.classList.add('hidden'));
         });
+    } else {
+        document.getElementById('iosInstallOverlay').style.display = 'flex';
     }
 };
 
@@ -189,7 +188,7 @@ window.showBuddyZoom = function(src) {
 window.closeBuddyZoom = function() { document.getElementById('buddyZoomOverlay').style.display = 'none'; };
 window.resetGame = function() { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); }};
 window.onload = function() {
-    if (isIOS && !isStandalone) {
+    if (!isStandalone) {
         document.querySelectorAll('.install-btn').forEach(b => b.classList.remove('hidden'));
     }
 
