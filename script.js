@@ -192,11 +192,14 @@ window.showBuddyZoom = function(src) {
 };
 window.closeBuddyZoom = function() { document.getElementById('buddyZoomOverlay').style.display = 'none'; };
 window.resetGame = function() { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); }};
+window.skipAuth = function() {
+    localStorage.setItem('authDecisionMade', '1');
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('setup').style.display = 'block';
+};
 window.showProjectForm = function() {
-    const signIn = document.getElementById('setupSignIn');
-    const form   = document.getElementById('projectForm');
-    if (signIn) signIn.style.display = 'none';
-    if (form)   form.style.display   = '';
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('setup').style.display = 'block';
 };
 window.onload = function() {
     if (!isStandalone) {
@@ -204,11 +207,17 @@ window.onload = function() {
     }
 
     if (state.active) {
+        document.getElementById('authScreen').style.display = 'none';
         document.getElementById('setup').style.display = 'none';
         document.getElementById('mainDashboard').classList.remove('hidden');
-        updateUI(); 
+        updateUI();
         initGraph();
+    } else if (!localStorage.getItem('authDecisionMade')) {
+        document.getElementById('authScreen').style.display = 'flex';
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('mainDashboard').classList.add('hidden');
     } else {
+        document.getElementById('authScreen').style.display = 'none';
         document.getElementById('setup').style.display = 'block';
         document.getElementById('mainDashboard').classList.add('hidden');
     }

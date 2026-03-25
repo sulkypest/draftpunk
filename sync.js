@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -84,12 +84,15 @@ onAuthStateChanged(auth, async user => {
     currentUser = user;
     updateNavUI(user);
     if (user) {
+        localStorage.setItem('authDecisionMade', '1');
+        const authScreen = document.getElementById('authScreen');
+        if (authScreen) authScreen.style.display = 'none';
         setSyncStatus('pending');
         const needsReload = await pullFromCloud(user);
         if (needsReload) {
             location.reload();
         } else {
-            // New user or local data is current — show project form if setup screen is visible
+            // New user — show setup screen if no project yet
             if (window.showProjectForm) window.showProjectForm();
         }
     }
@@ -98,15 +101,9 @@ onAuthStateChanged(auth, async user => {
 // ── Public sign-in / sign-out ─────────────────────────────────────────────────
 window.signInWithGoogle = async function() {
     try {
-        await signInWithPopup(auth, provider);
+        await signInWithRedirect(auth, provider);
     } catch (err) {
-        if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
-            // Fall back to redirect (reliable on mobile / strict browsers)
-            await signInWithRedirect(auth, provider);
-        } else {
-            console.error('Sign-in error:', err.message);
-            alert('Sign-in failed: ' + err.message);
-        }
+        console.error('Sign-in error:', err.message);
     }
 };
 
