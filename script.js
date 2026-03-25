@@ -207,18 +207,19 @@ window.onload = function() {
     }
 
     if (state.active) {
+        localStorage.setItem('authDecisionMade', '1');
         document.getElementById('authScreen').style.display = 'none';
         document.getElementById('setup').style.display = 'none';
         document.getElementById('mainDashboard').classList.remove('hidden');
         updateUI();
         initGraph();
-    } else if (!localStorage.getItem('authDecisionMade')) {
-        document.getElementById('authScreen').style.display = 'flex';
-        document.getElementById('setup').style.display = 'none';
-        document.getElementById('mainDashboard').classList.add('hidden');
-    } else {
+    } else if (localStorage.getItem('authDecisionMade')) {
         document.getElementById('authScreen').style.display = 'none';
         document.getElementById('setup').style.display = 'block';
+        document.getElementById('mainDashboard').classList.add('hidden');
+    } else {
+        document.getElementById('authScreen').style.display = 'flex';
+        document.getElementById('setup').style.display = 'none';
         document.getElementById('mainDashboard').classList.add('hidden');
     }
 };
