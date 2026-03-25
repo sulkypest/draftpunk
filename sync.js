@@ -113,7 +113,7 @@ window.signOutUser = async function() {
     localStorage.removeItem('authDecisionMade');
     localStorage.removeItem('dpLastUpdated');
     localStorage.setItem('justSignedOut', '1');
-    location.reload();
+    window.location.href = 'index.html';
 };
 
 // ── Update the nav to reflect signed-in state ─────────────────────────────────
