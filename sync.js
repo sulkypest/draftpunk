@@ -123,14 +123,18 @@ function updateNavUI(user) {
     const avatarEl = document.getElementById('navAvatar');
     const nameEl   = document.getElementById('navUserName');
 
+    const dashPrompt = document.getElementById('dashSignInPrompt');
+
     if (user) {
-        if (signInEl) signInEl.style.display = 'none';
-        if (userEl)   userEl.style.display   = 'flex';
+        if (signInEl)   signInEl.style.display   = 'none';
+        if (userEl)     userEl.style.display      = 'flex';
+        if (dashPrompt) dashPrompt.style.display  = 'none';
         if (avatarEl && user.photoURL) avatarEl.src = user.photoURL;
-        if (nameEl)   nameEl.innerText = (user.displayName || 'USER').split(' ')[0].toUpperCase();
+        if (nameEl)     nameEl.innerText = (user.displayName || 'USER').split(' ')[0].toUpperCase();
     } else {
-        if (signInEl) signInEl.style.display = 'flex';
-        if (userEl)   userEl.style.display   = 'none';
+        if (signInEl)   signInEl.style.display   = 'flex';
+        if (userEl)     userEl.style.display      = 'none';
+        if (dashPrompt) dashPrompt.style.display  = 'block';
         setSyncStatus(null);
     }
 }
