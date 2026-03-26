@@ -102,6 +102,20 @@ body {
 .nav-dropdown-item:hover { color: var(--neon); }
 a.nav-dropdown-item { text-decoration: none; display: block; }
 
+.nav-badge {
+    display: inline-block;
+    background: #ff4500;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 900;
+    line-height: 1;
+    padding: 2px 5px;
+    border-radius: 8px;
+    margin-left: 5px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+
 .nav-link {
     padding: 12px 20px;
     color: var(--text-dim);

@@ -3,14 +3,11 @@
     if (!d.active) window.location.replace('index.html');
 })();
 
-// Called by sync.js once auth state is known (via onAuthStateChanged triggering updateNavUI)
-// We poll because sync.js module loads async
 let groupsInitDone = false;
 
 function waitForAuth() {
     const user = window.getCurrentUser && window.getCurrentUser();
     if (user === undefined) {
-        // getCurrentUser not yet available — sync.js still loading
         setTimeout(waitForAuth, 100);
         return;
     }
@@ -27,19 +24,62 @@ function waitForAuth() {
     }
 }
 
-// Also re-init if sign-in happens after page load
 document.addEventListener('DOMContentLoaded', function() {
     waitForAuth();
-    // Re-check after a short delay to catch auth resolving
-    setTimeout(function() {
-        if (!groupsInitDone) waitForAuth();
-    }, 2000);
+    setTimeout(function() { if (!groupsInitDone) waitForAuth(); }, 2000);
 });
 
 function loadAll() {
-    loadLeaderboard();
+    loadPendingRequests();
     loadFriends();
+    loadLeaderboard();
 }
+
+// ── Pending friend requests ───────────────────────────────────────────────────
+async function loadPendingRequests() {
+    const section   = document.getElementById('pendingRequestsSection');
+    const container = document.getElementById('pendingRequestsList');
+    if (!section || !container) return;
+
+    const result = await window.getPendingRequests();
+
+    if (!result || result.error || result.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    container.innerHTML = result.map(req => `
+        <div class="lb-row" style="gap:8px;">
+            <span class="lb-name" style="flex:1;">${req.fromUsername || 'UNKNOWN'}</span>
+            <button onclick="doAccept('${req.id}', '${req.from}')"
+                style="font-size:0.7rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">
+                ✓ ACCEPT
+            </button>
+            <button onclick="doDecline('${req.id}')"
+                style="font-size:0.7rem;padding:6px 10px;letter-spacing:1px;background:#333;white-space:nowrap;">
+                ✕ DECLINE
+            </button>
+        </div>
+    `).join('');
+
+    window.updateRequestBadge(result.length);
+}
+
+window.doAccept = async function(requestId, fromUid) {
+    const result = await window.acceptFriendRequest(requestId, fromUid);
+    if (result.success) {
+        loadPendingRequests();
+        loadFriends();
+    } else {
+        alert(result.error || 'Could not accept request.');
+    }
+};
+
+window.doDecline = async function(requestId) {
+    const result = await window.declineFriendRequest(requestId);
+    if (result.success) loadPendingRequests();
+};
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 async function loadLeaderboard() {
@@ -98,23 +138,22 @@ async function loadFriends() {
 
 // ── Add friend ────────────────────────────────────────────────────────────────
 window.doAddFriend = async function() {
-    const input   = document.getElementById('friendUsernameInput');
-    const msg     = document.getElementById('addFriendMsg');
+    const input    = document.getElementById('friendUsernameInput');
+    const msg      = document.getElementById('addFriendMsg');
     const username = input.value.trim();
     if (!username) return;
 
-    msg.style.color   = 'var(--text-dim)';
-    msg.textContent   = 'SEARCHING...';
+    msg.style.color = 'var(--text-dim)';
+    msg.textContent = 'SEARCHING...';
 
     const result = await window.addFriend(username);
     if (result.success) {
-        input.value       = '';
-        msg.style.color   = 'var(--neon)';
-        msg.textContent   = username + ' ADDED!';
-        loadFriends();
+        input.value     = '';
+        msg.style.color = 'var(--neon)';
+        msg.textContent = 'REQUEST SENT TO ' + username;
     } else {
-        msg.style.color   = '#ff4500';
-        msg.textContent   = result.error || 'COULD NOT ADD FRIEND';
+        msg.style.color = '#ff4500';
+        msg.textContent = result.error || 'COULD NOT SEND REQUEST';
     }
     setTimeout(() => { msg.textContent = ''; }, 3000);
 };

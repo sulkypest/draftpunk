@@ -2,8 +2,8 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-    getFirestore, doc, setDoc, getDoc, writeBatch,
-    collection, query, orderBy, limit, getDocs, arrayUnion, arrayRemove
+    getFirestore, doc, setDoc, getDoc, deleteDoc, writeBatch,
+    collection, query, orderBy, limit, where, getDocs, arrayUnion, arrayRemove
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -32,11 +32,10 @@ async function pushToCloud(user) {
         const raw = localStorage.getItem(k);
         payload[k] = raw ? JSON.parse(raw) : null;
     });
-    // Keep public profile fields up to date
     const dpData = payload.draftPunkData;
-    payload.totalWords   = (dpData && dpData.total)       || 0;
-    payload.displayName  = user.displayName || '';
-    payload.photoURL     = user.photoURL    || '';
+    payload.totalWords  = (dpData && dpData.total) || 0;
+    payload.displayName = user.displayName || '';
+    payload.photoURL    = user.photoURL    || '';
     await setDoc(doc(db, 'users', user.uid), payload, { merge: true });
     setSyncStatus('synced');
 }
@@ -74,14 +73,13 @@ function schedulePush() {
 }
 window.schedulePush = schedulePush;
 
-// Intercept localStorage writes so any data change auto-syncs
 const _setItem = localStorage.setItem.bind(localStorage);
 localStorage.setItem = function(key, value) {
     _setItem(key, value);
     if (DATA_KEYS.includes(key) && currentUser) schedulePush();
 };
 
-// ── Username prompt (injected dynamically, works on any page) ─────────────────
+// ── Username prompt ───────────────────────────────────────────────────────────
 function showUsernamePrompt(onComplete) {
     let overlay = document.getElementById('dpUsernameOverlay');
     if (!overlay) {
@@ -135,9 +133,9 @@ function showUsernamePrompt(onComplete) {
         try {
             const existing = await getDoc(doc(db, 'usernames', name));
             if (existing.exists() && existing.data().uid !== currentUser.uid) {
-                errorEl.textContent     = 'Username taken. Try another.';
-                btn.disabled            = false;
-                btn.textContent         = 'CONFIRM USERNAME';
+                errorEl.textContent = 'Username taken. Try another.';
+                btn.disabled        = false;
+                btn.textContent     = 'CONFIRM USERNAME';
                 return;
             }
 
@@ -163,6 +161,53 @@ function showUsernamePrompt(onComplete) {
     };
 }
 
+// ── Friend request badge ──────────────────────────────────────────────────────
+function updateRequestBadge(count) {
+    const btn = document.querySelector('[onclick*="toggleDraftMenu"]');
+    if (!btn) return;
+    let badge = btn.querySelector('.nav-badge');
+    if (count > 0) {
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'nav-badge';
+            btn.appendChild(badge);
+        }
+        badge.textContent = count;
+    } else {
+        if (badge) badge.remove();
+    }
+}
+window.updateRequestBadge = updateRequestBadge;
+
+// ── Check & process social notifications ─────────────────────────────────────
+async function checkPendingRequests(user) {
+    try {
+        const q    = query(collection(db, 'friendRequests'), where('to', '==', user.uid));
+        const snap = await getDocs(q);
+        updateRequestBadge(snap.size);
+    } catch (err) { /* silent */ }
+}
+
+// When a friend accepts your request they write a friendAcceptance so you
+// can add them back to your own friends array (cross-user write workaround).
+async function processFriendAcceptances(user) {
+    try {
+        const q    = query(collection(db, 'friendAcceptances'), where('addTo', '==', user.uid));
+        const snap = await getDocs(q);
+        if (snap.empty) return;
+
+        const batch = writeBatch(db);
+        const newFriends = [];
+        snap.docs.forEach(d => {
+            newFriends.push(d.data().addFriend);
+            batch.delete(doc(db, 'friendAcceptances', d.id));
+        });
+        batch.set(doc(db, 'users', user.uid),
+            { friends: arrayUnion(...newFriends) }, { merge: true });
+        await batch.commit();
+    } catch (err) { /* silent */ }
+}
+
 // ── Post-sign-in flow ─────────────────────────────────────────────────────────
 async function handleSignedIn(user) {
     localStorage.setItem('authDecisionMade', '1');
@@ -170,8 +215,7 @@ async function handleSignedIn(user) {
     if (authScreen) authScreen.style.display = 'none';
     setSyncStatus('pending');
 
-    // Check if this user has chosen a username yet
-    const userSnap   = await getDoc(doc(db, 'users', user.uid));
+    const userSnap    = await getDoc(doc(db, 'users', user.uid));
     const hasUsername = userSnap.exists() && userSnap.data().username;
 
     if (!hasUsername) {
@@ -188,6 +232,9 @@ async function continueAfterAuth(user) {
     } else {
         const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
         if (!dpData.active && window.showProjectForm) window.showProjectForm();
+        // Social housekeeping — run in background
+        checkPendingRequests(user);
+        processFriendAcceptances(user);
     }
 }
 
@@ -230,24 +277,24 @@ window.signOutUser = async function() {
     window.location.href = 'index.html?' + Date.now();
 };
 
-// ── Update nav to reflect signed-in state ─────────────────────────────────────
+// ── Nav UI ────────────────────────────────────────────────────────────────────
 function updateNavUI(user) {
-    const signInEl  = document.getElementById('navSignIn');
-    const userEl    = document.getElementById('navUserInfo');
-    const avatarEl  = document.getElementById('navAvatar');
-    const nameEl    = document.getElementById('navUserName');
+    const signInEl   = document.getElementById('navSignIn');
+    const userEl     = document.getElementById('navUserInfo');
+    const avatarEl   = document.getElementById('navAvatar');
+    const nameEl     = document.getElementById('navUserName');
     const dashPrompt = document.getElementById('dashSignInPrompt');
 
     if (user) {
-        if (signInEl)    signInEl.style.display   = 'none';
-        if (userEl)      userEl.style.display      = 'flex';
-        if (dashPrompt)  dashPrompt.style.display  = 'none';
+        if (signInEl)    signInEl.style.display  = 'none';
+        if (userEl)      userEl.style.display     = 'flex';
+        if (dashPrompt)  dashPrompt.style.display = 'none';
         if (avatarEl && user.photoURL) avatarEl.src = user.photoURL;
         if (nameEl) nameEl.innerText = (user.displayName || 'USER').split(' ')[0].toUpperCase();
     } else {
-        if (signInEl)    signInEl.style.display   = 'flex';
-        if (userEl)      userEl.style.display      = 'none';
-        if (dashPrompt)  dashPrompt.style.display  = 'block';
+        if (signInEl)    signInEl.style.display  = 'flex';
+        if (userEl)      userEl.style.display     = 'none';
+        if (dashPrompt)  dashPrompt.style.display = 'block';
         setSyncStatus(null);
     }
 }
@@ -261,18 +308,16 @@ function setSyncStatus(state) {
     if (!state)              { dot.style.background = 'transparent'; dot.title = ''; }
 }
 
-// ── Social / Groups functions (used by groups.js) ─────────────────────────────
+// ── Social functions (used by groups.js) ──────────────────────────────────────
 
 window.getCurrentUser = function() { return currentUser; };
 
 window.getLeaderboard = async function() {
     if (!currentUser) return { error: 'not-signed-in' };
     try {
-        const q = query(collection(db, 'users'), orderBy('totalWords', 'desc'), limit(25));
+        const q    = query(collection(db, 'users'), orderBy('totalWords', 'desc'), limit(25));
         const snap = await getDocs(q);
-        return snap.docs
-            .map(d => ({ uid: d.id, ...d.data() }))
-            .filter(u => u.username);
+        return snap.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => u.username);
     } catch (err) {
         console.error('Leaderboard error:', err);
         return { error: err.message };
@@ -286,28 +331,101 @@ window.getFriends = async function() {
         if (!userSnap.exists()) return [];
         const friends = userSnap.data().friends || [];
         if (friends.length === 0) return [];
-        const results = await Promise.all(
-            friends.map(uid => getDoc(doc(db, 'users', uid)))
-        );
-        return results
-            .filter(s => s.exists())
-            .map(s => ({ uid: s.id, ...s.data() }))
-            .filter(u => u.username);
+        const results = await Promise.all(friends.map(uid => getDoc(doc(db, 'users', uid))));
+        return results.filter(s => s.exists())
+                      .map(s => ({ uid: s.id, ...s.data() }))
+                      .filter(u => u.username);
     } catch (err) {
-        console.error('Friends error:', err);
         return { error: err.message };
     }
 };
 
+// Send a friend request (does NOT add directly)
 window.addFriend = async function(username) {
     if (!currentUser) return { error: 'Not signed in.' };
     try {
         const unameSnap = await getDoc(doc(db, 'usernames', username));
         if (!unameSnap.exists()) return { error: 'User not found.' };
-        const friendUid = unameSnap.data().uid;
-        if (friendUid === currentUser.uid) return { error: 'That\'s you!' };
-        await setDoc(doc(db, 'users', currentUser.uid),
-            { friends: arrayUnion(friendUid) }, { merge: true });
+
+        const toUid = unameSnap.data().uid;
+        if (toUid === currentUser.uid) return { error: "That's you!" };
+
+        // Already friends?
+        const mySnap   = await getDoc(doc(db, 'users', currentUser.uid));
+        const myData   = mySnap.exists() ? mySnap.data() : {};
+        const friends  = myData.friends || [];
+        if (friends.includes(toUid)) return { error: 'Already friends.' };
+
+        // Already sent a request?
+        const reqId     = `${currentUser.uid}_${toUid}`;
+        const existing  = await getDoc(doc(db, 'friendRequests', reqId));
+        if (existing.exists()) return { error: 'Request already sent.' };
+
+        await setDoc(doc(db, 'friendRequests', reqId), {
+            from:         currentUser.uid,
+            to:           toUid,
+            fromUsername: myData.username || '',
+            toUsername:   username,
+            createdAt:    Date.now()
+        });
+        return { success: true };
+    } catch (err) {
+        return { error: err.message };
+    }
+};
+
+window.getPendingRequests = async function() {
+    if (!currentUser) return { error: 'not-signed-in' };
+    try {
+        const q    = query(collection(db, 'friendRequests'), where('to', '==', currentUser.uid));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (err) {
+        return { error: err.message };
+    }
+};
+
+// Accept: add sender to our friends, write a friendAcceptance so they auto-add us back
+window.acceptFriendRequest = async function(requestId, fromUid) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        const mySnap     = await getDoc(doc(db, 'users', currentUser.uid));
+        const myUsername = mySnap.exists() ? mySnap.data().username : '';
+
+        const batch = writeBatch(db);
+        // Add sender to our friends
+        batch.set(doc(db, 'users', currentUser.uid),
+            { friends: arrayUnion(fromUid) }, { merge: true });
+        // Let the sender auto-add us back next time they sign in
+        batch.set(doc(db, 'friendAcceptances', `${fromUid}_${currentUser.uid}`), {
+            addTo:       fromUid,
+            addFriend:   currentUser.uid,
+            byUsername:  myUsername,
+            createdAt:   Date.now()
+        });
+        // Delete the request
+        batch.delete(doc(db, 'friendRequests', requestId));
+        await batch.commit();
+
+        // Update badge
+        const q    = query(collection(db, 'friendRequests'), where('to', '==', currentUser.uid));
+        const snap = await getDocs(q);
+        updateRequestBadge(snap.size);
+
+        return { success: true };
+    } catch (err) {
+        return { error: err.message };
+    }
+};
+
+window.declineFriendRequest = async function(requestId) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        await deleteDoc(doc(db, 'friendRequests', requestId));
+        // Update badge
+        const q    = query(collection(db, 'friendRequests'), where('to', '==', currentUser.uid));
+        const snap = await getDocs(q);
+        updateRequestBadge(snap.size);
         return { success: true };
     } catch (err) {
         return { error: err.message };
