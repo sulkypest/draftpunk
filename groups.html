@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BEAT NOTES</title>
+    <title>WRITING GROUPS</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,17 +14,17 @@
 
     <nav class="app-nav">
         <div class="nav-dropdown">
-            <button class="nav-dropdown-btn" onclick="toggleDraftMenu()">DRAFT PUNK</button>
+            <button class="nav-dropdown-btn active" onclick="toggleDraftMenu()">DRAFT PUNK</button>
             <div class="nav-dropdown-menu" id="draftMenu">
                 <a href="index.html" class="nav-dropdown-item">DRAFT PUNK</a>
                 <a href="wordrunner.html" class="nav-dropdown-item">WORDRUNNER</a>
-                <a href="groups.html" class="nav-dropdown-item">WRITING GROUPS</a>
+                <a href="groups.html" class="nav-dropdown-item" style="color:var(--neon);">WRITING GROUPS</a>
             </div>
         </div>
         <div class="nav-dropdown" style="margin-left:auto;">
-            <button class="nav-dropdown-btn active" onclick="toggleNotesMenu()">NOTES</button>
+            <button class="nav-dropdown-btn" onclick="toggleNotesMenu()">NOTES</button>
             <div class="nav-dropdown-menu" id="notesMenu">
-                <a href="beat-notes.html" class="nav-dropdown-item" style="color:var(--neon);">BEATS</a>
+                <a href="beat-notes.html" class="nav-dropdown-item">BEATS</a>
                 <a href="characters.html" class="nav-dropdown-item">CHARS</a>
             </div>
         </div>
@@ -51,15 +51,49 @@
 
     <div class="notes-page">
         <div class="app">
-            <h1>BEAT NOTES</h1>
-            <h2 id="projectTitle" style="font-size:0.9rem;opacity:0.5;margin-top:-10px;margin-bottom:20px;"></h2>
-            <div id="beatContainer"></div>
+            <h1>WRITING GROUPS</h1>
+
+            <!-- Sign-in gate -->
+            <div id="groupsSignInGate" style="display:none;text-align:center;padding:40px 0;">
+                <p style="font-size:0.8rem;opacity:0.5;letter-spacing:1px;margin-bottom:20px;">SIGN IN TO ACCESS LEADERBOARDS AND FRIENDS</p>
+                <button onclick="signInWithGoogle()" style="width:100%;max-width:300px;">⊕ SIGN IN WITH GOOGLE</button>
+            </div>
+
+            <!-- Main content (shown when signed in) -->
+            <div id="groupsContent" style="display:none;">
+
+                <!-- Add friend -->
+                <div style="margin-bottom:30px;">
+                    <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">ADD FRIEND BY USERNAME</label>
+                    <div style="display:flex;gap:8px;margin-top:8px;">
+                        <input type="text" id="friendUsernameInput" placeholder="USERNAME"
+                            style="flex:1;text-transform:uppercase;"
+                            oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9_]/g,'')"
+                            onkeydown="if(event.key==='Enter') doAddFriend()">
+                        <button onclick="doAddFriend()" style="white-space:nowrap;">+ ADD</button>
+                    </div>
+                    <p id="addFriendMsg" style="font-size:0.75rem;height:1.2em;margin-top:6px;letter-spacing:1px;"></p>
+                </div>
+
+                <!-- Friends leaderboard -->
+                <div style="margin-bottom:30px;">
+                    <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">YOUR FRIENDS</label>
+                    <div id="friendsList" style="margin-top:10px;"></div>
+                </div>
+
+                <!-- Global leaderboard -->
+                <div>
+                    <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">GLOBAL LEADERBOARD</label>
+                    <div id="leaderboardList" style="margin-top:10px;"></div>
+                </div>
+
+            </div>
         </div>
     </div>
 
     <script src="theme.js"></script>
     <script src="backup.js"></script>
-    <script src="beat-notes.js"></script>
+    <script src="groups.js"></script>
     <script type="module" src="sync.js"></script>
     <script>
         if ('serviceWorker' in navigator) {

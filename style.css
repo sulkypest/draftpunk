@@ -137,6 +137,42 @@ a.nav-dropdown-item { text-decoration: none; display: block; }
     max-width: 700px;
 }
 
+/* LEADERBOARD */
+.lb-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 4px;
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+}
+
+.lb-row-me { border-color: var(--neon); }
+
+.lb-rank  { width: 32px; opacity: 0.5; flex-shrink: 0; }
+.lb-name  { flex: 1; font-weight: 900; color: var(--text); }
+.lb-words { opacity: 0.6; white-space: nowrap; }
+
+.lb-remove-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 2px 4px;
+    flex-shrink: 0;
+}
+.lb-remove-btn:hover { color: #ff4500; }
+
+.lb-loading, .lb-empty {
+    font-size: 0.75rem;
+    opacity: 0.4;
+    letter-spacing: 1px;
+    padding: 12px 0;
+}
+
 /* ACCORDIONS */
 .accordion {
     border: 1px solid var(--border);
