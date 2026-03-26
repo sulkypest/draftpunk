@@ -3,17 +3,8 @@
     if (!d.active) window.location.replace('index.html');
 })();
 
-let groupsInitDone = false;
-
-function waitForAuth() {
-    const user = window.getCurrentUser && window.getCurrentUser();
-    if (user === undefined) {
-        setTimeout(waitForAuth, 100);
-        return;
-    }
-    if (groupsInitDone) return;
-    groupsInitDone = true;
-
+// ── Auth handling ─────────────────────────────────────────────────────────────
+function handleAuthState(user) {
     if (!user) {
         document.getElementById('groupsSignInGate').style.display = 'block';
         document.getElementById('groupsContent').style.display    = 'none';
@@ -24,11 +15,18 @@ function waitForAuth() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    waitForAuth();
-    setTimeout(function() { if (!groupsInitDone) waitForAuth(); }, 2000);
+// React to auth state dispatched by sync.js
+document.addEventListener('dpAuthChanged', function(e) {
+    handleAuthState(e.detail.user);
 });
 
+// Fallback: if auth already resolved before this listener registered
+document.addEventListener('DOMContentLoaded', function() {
+    const user = window.getCurrentUser && window.getCurrentUser();
+    if (user !== undefined) handleAuthState(user);
+});
+
+// ── Load everything ───────────────────────────────────────────────────────────
 function loadAll() {
     loadPendingRequests();
     loadFriends();
@@ -121,7 +119,7 @@ async function loadFriends() {
         return;
     }
     if (result.length === 0) {
-        container.innerHTML = '<div class="lb-empty">NO FRIENDS YET — ADD SOME BELOW</div>';
+        container.innerHTML = '<div class="lb-empty">NO FRIENDS YET — SEND A REQUEST BELOW</div>';
         return;
     }
 

@@ -22,7 +22,7 @@ const provider = new GoogleAuthProvider();
 
 const DATA_KEYS = ['draftPunkData', 'beatNotesData', 'charactersData', 'wordRunnerData'];
 
-let currentUser = null;
+let currentUser = undefined; // undefined = auth not yet resolved; null = resolved, not signed in
 let syncTimeout = null;
 
 // ── Push local data up to Firestore ──────────────────────────────────────────
@@ -96,26 +96,28 @@ function showUsernamePrompt(onComplete) {
         color:var(--text,#fff);
     `;
     overlay.innerHTML = `
-        <h2 style="color:var(--neon,#e8e8e8);margin-bottom:8px;letter-spacing:2px;">CHOOSE A USERNAME</h2>
-        <p style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;margin-bottom:24px;text-align:center;max-width:320px;">
-            This is how you'll appear on leaderboards and to friends.<br>
-            Letters, numbers and _ only. 3–20 characters.
-        </p>
-        <input id="dpUsernameInput" type="text" maxlength="20" placeholder="USERNAME"
-            style="width:100%;max-width:320px;margin-bottom:8px;
-                   font-family:'Courier New',monospace;font-size:1rem;
-                   background:var(--panel,#161616);border:1px solid var(--border,#2a2a2a);
-                   color:var(--text,#fff);padding:10px;text-transform:uppercase;letter-spacing:2px;"
-            oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9_]/g,'')">
-        <p id="dpUsernameError" style="color:#ff4500;font-size:0.75rem;height:1.4em;margin-bottom:12px;letter-spacing:1px;"></p>
-        <button id="dpUsernameBtn" onclick="window._dpSubmitUsername()"
-            style="width:100%;max-width:320px;
-                   background:var(--neon,#e8e8e8);color:var(--bg,#0a0a0a);
-                   font-family:'Courier New',monospace;font-weight:900;
-                   font-size:0.85rem;letter-spacing:2px;padding:12px;
-                   border:none;cursor:pointer;">
-            CONFIRM USERNAME
-        </button>
+        <div style="width:100%;max-width:340px;padding:0 10px;box-sizing:border-box;">
+            <h2 style="color:var(--neon,#e8e8e8);margin:0 0 8px;letter-spacing:2px;font-size:1.1rem;">CHOOSE A USERNAME</h2>
+            <p style="font-size:0.72rem;opacity:0.5;letter-spacing:1px;margin:0 0 20px;line-height:1.6;">
+                This is how you'll appear on leaderboards and to friends.<br>
+                Letters, numbers and _ only. 3–20 characters.
+            </p>
+            <input id="dpUsernameInput" type="text" maxlength="20" placeholder="USERNAME"
+                style="width:100%;box-sizing:border-box;margin-bottom:6px;
+                       font-family:'Courier New',monospace;font-size:0.9rem;
+                       background:var(--panel,#161616);border:1px solid var(--border,#2a2a2a);
+                       color:var(--text,#fff);padding:10px;text-transform:uppercase;letter-spacing:2px;"
+                oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9_]/g,'')">
+            <p id="dpUsernameError" style="color:#ff4500;font-size:0.72rem;height:1.2em;margin:0 0 10px;letter-spacing:1px;"></p>
+            <button id="dpUsernameBtn" onclick="window._dpSubmitUsername()"
+                style="width:100%;box-sizing:border-box;
+                       background:var(--neon,#e8e8e8);color:var(--bg,#0a0a0a);
+                       font-family:'Courier New',monospace;font-weight:900;
+                       font-size:0.85rem;letter-spacing:2px;padding:12px;
+                       border:none;cursor:pointer;">
+                CONFIRM USERNAME
+            </button>
+        </div>
     `;
 
     window._dpSubmitUsername = async function() {
@@ -240,8 +242,10 @@ async function continueAfterAuth(user) {
 
 // ── Auth state changes ────────────────────────────────────────────────────────
 onAuthStateChanged(auth, async user => {
-    currentUser = user;
+    currentUser = user; // null when not signed in, User object when signed in
     updateNavUI(user);
+    // Let other scripts (e.g. groups.js) react to auth state
+    document.dispatchEvent(new CustomEvent('dpAuthChanged', { detail: { user } }));
     if (user) {
         await handleSignedIn(user);
     } else if (localStorage.getItem('justSignedOut')) {

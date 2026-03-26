@@ -75,8 +75,15 @@ body {
     background: var(--panel2);
     border: 1px solid var(--border);
     border-top: none;
-    min-width: 180px;
+    min-width: 160px;
+    max-width: calc(100vw - 10px);
     z-index: 200;
+}
+
+/* Leftmost dropdown opens rightward so it doesn't go off-screen */
+.nav-dropdown:first-child .nav-dropdown-menu {
+    left: 0;
+    right: auto;
 }
 
 .nav-dropdown-menu.open { display: block; }
