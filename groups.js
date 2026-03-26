@@ -119,7 +119,7 @@ async function loadFriends() {
         return;
     }
     if (result.length === 0) {
-        container.innerHTML = '<div class="lb-empty">NO FRIENDS YET — SEND A REQUEST BELOW</div>';
+        container.innerHTML = '<div class="lb-empty">NO FRIENDS YET — ADD ONE ABOVE</div>';
         return;
     }
 
