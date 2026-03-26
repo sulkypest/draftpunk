@@ -15,15 +15,21 @@
     <nav class="app-nav">
         <a href="index.html" class="nav-link">DRAFT PUNK</a>
         <a href="wordrunner.html" class="nav-link">WORDRUNNER</a>
-        <a href="beat-notes.html" class="nav-link">BEATS</a>
-        <a href="characters.html" class="nav-link active">CHARS</a>
-        <button class="nav-theme-btn" id="themeToggle" onclick="toggleTheme()">LIGHT</button>
+        <div class="nav-dropdown" style="margin-left:auto;">
+            <button class="nav-dropdown-btn active" onclick="toggleNotesMenu()">NOTES</button>
+            <div class="nav-dropdown-menu" id="notesMenu">
+                <a href="beat-notes.html" class="nav-dropdown-item">BEATS</a>
+                <a href="characters.html" class="nav-dropdown-item" style="color:var(--neon);">CHARS</a>
+            </div>
+        </div>
         <div class="nav-dropdown">
-            <button class="nav-dropdown-btn" onclick="toggleDataMenu()">DATA <span id="syncDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:3px;vertical-align:middle;transition:background 0.4s;"></span></button>
+            <button class="nav-dropdown-btn" onclick="toggleDataMenu()">··· <span id="syncDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:2px;vertical-align:middle;transition:background 0.4s;"></span></button>
             <div class="nav-dropdown-menu" id="dataMenu">
+                <button class="nav-dropdown-item" id="themeToggle" onclick="toggleTheme()">LIGHT MODE</button>
+                <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
                 <button class="nav-dropdown-item" onclick="exportData(); toggleDataMenu()">⬇ BACKUP</button>
                 <button class="nav-dropdown-item" onclick="triggerImport(); toggleDataMenu()">⬆ RESTORE</button>
-                <div style="border-top:1px solid #333;margin:2px 0;"></div>
+                <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
                 <button id="navSignIn" class="nav-dropdown-item" onclick="signInWithGoogle(); toggleDataMenu()" style="color:var(--neon);">⊕ SIGN IN WITH GOOGLE</button>
                 <div id="navUserInfo" style="display:none;">
                     <div class="nav-dropdown-item" style="display:flex;align-items:center;gap:8px;cursor:default;">

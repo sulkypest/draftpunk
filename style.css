@@ -47,7 +47,6 @@ body {
 }
 
 .nav-dropdown {
-    margin-left: auto;
     position: relative;
 }
 
@@ -66,7 +65,7 @@ body {
     height: 100%;
 }
 
-.nav-dropdown-btn:hover { color: var(--neon); }
+.nav-dropdown-btn:hover, .nav-dropdown-btn.active { color: var(--neon); }
 
 .nav-dropdown-menu {
     display: none;
@@ -101,6 +100,7 @@ body {
 
 .nav-dropdown-item:last-child { border-bottom: none; }
 .nav-dropdown-item:hover { color: var(--neon); }
+a.nav-dropdown-item { text-decoration: none; display: block; }
 
 .nav-link {
     padding: 12px 20px;
