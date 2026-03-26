@@ -1,14 +1,32 @@
-:root { 
-    --neon: #0ff; 
-    --bg: #0a0a12; 
-    --panel: #151525; 
+:root {
+    --neon: #e8e8e8;
+    --bg: #0a0a0a;
+    --panel: #161616;
+    --panel2: #000000;
+    --text: #ffffff;
+    --text-dim: #888888;
+    --border: #2a2a2a;
+    --border-mid: #3a3a3a;
+    --border-light: #1e1e1e;
+}
+
+body.light-mode {
+    --neon: #1a1a1a;
+    --bg: #f0f0f0;
+    --panel: #ffffff;
+    --panel2: #e4e4e4;
+    --text: #111111;
+    --text-dim: #666666;
+    --border: #cccccc;
+    --border-mid: #bbbbbb;
+    --border-light: #dddddd;
 }
 
 * { box-sizing: border-box; }
 
 body {
     background: var(--bg);
-    color: #fff;
+    color: var(--text);
     font-family: 'Courier New', monospace;
     margin: 0;
     padding: 75px 20px 20px;
@@ -23,8 +41,8 @@ body {
     top: 0; left: 0; right: 0;
     display: flex;
     flex-wrap: wrap;
-    background: #000;
-    border-bottom: 1px solid #333;
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
     z-index: 100;
 }
 
@@ -35,7 +53,7 @@ body {
 
 .nav-dropdown-btn {
     padding: 12px 14px;
-    color: #bbb;
+    color: var(--text-dim);
     font-family: 'Courier New', monospace;
     font-weight: 900;
     font-size: 0.75rem;
@@ -43,7 +61,7 @@ body {
     cursor: pointer;
     background: transparent;
     border: none;
-    border-left: 1px solid #333;
+    border-left: 1px solid var(--border);
     text-transform: uppercase;
     height: 100%;
 }
@@ -55,10 +73,10 @@ body {
     position: absolute;
     top: 100%;
     right: 0;
-    background: #000;
-    border: 1px solid #333;
+    background: var(--panel2);
+    border: 1px solid var(--border);
     border-top: none;
-    min-width: 130px;
+    min-width: 180px;
     z-index: 200;
 }
 
@@ -68,7 +86,7 @@ body {
     display: block;
     width: 100%;
     padding: 10px 14px;
-    color: #bbb;
+    color: var(--text-dim);
     font-family: 'Courier New', monospace;
     font-weight: 900;
     font-size: 0.72rem;
@@ -76,7 +94,7 @@ body {
     text-transform: uppercase;
     background: transparent;
     border: none;
-    border-bottom: 1px solid #222;
+    border-bottom: 1px solid var(--border-light);
     text-align: left;
     cursor: pointer;
 }
@@ -86,16 +104,32 @@ body {
 
 .nav-link {
     padding: 12px 20px;
-    color: #bbb;
+    color: var(--text-dim);
     text-decoration: none;
     font-family: 'Courier New', monospace;
     font-weight: 900;
     font-size: 0.8rem;
     letter-spacing: 1px;
-    border-right: 1px solid #333;
+    border-right: 1px solid var(--border);
 }
 
 .nav-link.active, .nav-link:hover { color: var(--neon); }
+
+.nav-theme-btn {
+    padding: 12px 14px;
+    color: var(--text-dim);
+    font-family: 'Courier New', monospace;
+    font-weight: 900;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    border-left: 1px solid var(--border);
+    text-transform: uppercase;
+}
+
+.nav-theme-btn:hover { color: var(--neon); }
 
 /* NOTES PAGES */
 .notes-page {
@@ -105,7 +139,7 @@ body {
 
 /* ACCORDIONS */
 .accordion {
-    border: 1px solid #333;
+    border: 1px solid var(--border);
     margin-bottom: 8px;
 }
 
@@ -114,7 +148,7 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 12px 15px;
-    background: #000;
+    background: var(--panel2);
     border-left: 3px solid var(--neon);
     cursor: pointer;
     user-select: none;
@@ -186,58 +220,55 @@ body {
 .main-layout { display: flex; width: 100%; max-width: 1000px; gap: 15px; }
 
 .side-container { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; gap: 15px; }
-.side-box { 
-    background: rgba(0,0,0,0.6); 
-    border: 1px solid #333; 
-    padding: 15px; 
-    text-align: center; 
-    border-top: 3px solid var(--neon); 
+.side-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 15px;
+    text-align: center;
+    border-top: 3px solid var(--neon);
 }
 
-.app { 
-    flex: 1; 
-    max-width: 620px; 
-    background: var(--panel); 
-    border: 2px solid var(--neon); 
-    padding: 25px; 
-    display: flex; 
-    flex-direction: column; 
+.app {
+    flex: 1;
+    max-width: 620px;
+    background: var(--panel);
+    border: 2px solid var(--neon);
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
 }
 
-.chart-shield { 
-    position: relative; 
-    width: 100%; 
-    height: 200px; 
-    margin-bottom: 30px; 
-    background: #000; 
-    border: 1px solid #222; 
+.chart-shield {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    margin-bottom: 30px;
+    background: var(--panel2);
+    border: 1px solid var(--border-light);
 }
 
-.boss-zone { 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    gap: 10px; 
-    background: #000; 
-    padding: 15px; 
-    margin-bottom: 20px; 
-    border-left: 5px solid var(--neon); 
+.boss-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--panel2);
+    padding: 15px;
+    margin-bottom: 20px;
+    border-left: 5px solid var(--neon);
     height: 120px;
-    overflow: visible; /* Allows the glow to spread outside the box */
+    overflow: visible;
 }
 
-.boss-sprite { 
-    width: 80px; 
-    height: 80px; 
-    image-rendering: pixelated; 
+.boss-sprite {
+    width: 80px;
+    height: 80px;
+    image-rendering: pixelated;
     object-fit: contain;
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    
-    /* TRIPLE-LAYER NEON GLOW */
-    filter: drop-shadow(0 0 5px var(--neon)) 
-            drop-shadow(0 0 15px var(--neon)) 
+    filter: drop-shadow(0 0 5px var(--neon))
+            drop-shadow(0 0 15px var(--neon))
             drop-shadow(0 0 25px var(--neon));
-            
     position: relative;
     z-index: 10;
 }
@@ -256,64 +287,68 @@ body {
     100% { transform: translate(0px, 0px) rotate(0deg); }
 }
 
-.bar-container { 
-    height: 35px; 
-    background: #000; 
-    border: 1px solid var(--neon); 
-    position: relative; 
-    margin-bottom: 25px; 
-    overflow: hidden; 
+.bar-container {
+    height: 35px;
+    background: var(--panel2);
+    border: 1px solid var(--neon);
+    position: relative;
+    margin-bottom: 25px;
+    overflow: hidden;
 }
 
-.bar-fill { 
-    height: 100%; 
-    background: var(--neon); 
-    width: 0%; 
-    transition: 0.5s; 
+.bar-fill {
+    height: 100%;
+    background: var(--neon);
+    width: 0%;
+    transition: 0.5s;
 }
 
-#hpText { 
-    position: absolute; 
-    width: 100%; 
-    text-align: center; 
-    top: 8px; 
-    font-weight: 900; 
-    color: #fff; 
-    z-index: 5; 
+#hpText {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    top: 8px;
+    font-weight: 900;
+    color: var(--bg);
+    z-index: 5;
 }
 
-.intel-btn { 
-    background: transparent; 
-    color: var(--neon); 
-    border: 1px solid var(--neon); 
-    margin-bottom: 10px; 
-    padding: 8px; 
-    cursor: pointer; 
-    font-family: inherit; 
+.intel-btn {
+    background: transparent;
+    color: var(--neon);
+    border: 1px solid var(--neon);
+    margin-bottom: 10px;
+    padding: 8px;
+    cursor: pointer;
+    font-family: inherit;
 }
 
-.lore-container, .tips-container { 
-    background: #000; 
-    padding: 12px; 
-    border: 1px solid #333; 
-    margin-bottom: 10px; 
-    font-size: 0.85rem; 
-    border-left: 3px solid var(--neon); 
+.lore-container, .tips-container {
+    background: var(--panel2);
+    padding: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+    border-left: 3px solid var(--neon);
 }
 
 .input-zone { display: flex; gap: 10px; margin-bottom: 30px; }
-input, select { 
-    background: #000; 
-    border: 1px solid #444; 
-    color: #fff; 
-    padding: 10px; 
-    flex: 1; 
+
+input, select {
+    background: var(--panel2);
+    border: 1px solid var(--border-mid);
+    color: var(--text);
+    padding: 10px;
+    flex: 1;
+    font-family: 'Courier New', monospace;
 }
+
 button {
     background: var(--neon);
-    color: #000;
+    color: var(--bg);
     border: none;
     padding: 10px 15px;
+    font-family: 'Courier New', monospace;
     font-weight: 900;
     cursor: pointer;
     text-transform: uppercase;
@@ -332,8 +367,8 @@ button {
     display: flex;
     flex-direction: column;
     padding: 15px;
-    background: rgba(0,0,0,0.4);
-    border: 1px dashed #444;
+    background: var(--panel2);
+    border: 1px dashed var(--border-mid);
     min-height: 80px;
     margin-top: 10px;
 }
@@ -348,13 +383,13 @@ button {
     filter: drop-shadow(0 0 6px var(--neon));
 }
 
-.setup-screen { 
-    background: var(--panel); 
-    border: 2px solid var(--neon); 
-    padding: 40px; 
-    text-align: center; 
-    width: 350px; 
-    margin-top: 10vh; 
+.setup-screen {
+    background: var(--panel);
+    border: 2px solid var(--neon);
+    padding: 40px;
+    text-align: center;
+    width: 350px;
+    margin-top: 10vh;
 }
 
 #appLogo, #authLogo {
@@ -374,42 +409,40 @@ button {
     height: auto;
     margin-top: 10px;
     display: inline-block;
-    image-rendering: pixelated; 
+    image-rendering: pixelated;
     transition: transform 0.2s;
 }
 
-#partnerLogo:hover {
-    transform: scale(1.05);
-}
+#partnerLogo:hover { transform: scale(1.05); }
 
 #sideLevelNumber {
     font-family: 'Arial Black', sans-serif;
     text-shadow: 0 0 10px var(--neon);
 }
 
-.input-group { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 10px; 
-    margin-top: 15px; 
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
 }
 
-.overlay { 
-    position: fixed; 
-    inset: 0; 
-    background: rgba(0,0,0,0.95); 
-    display: none; 
-    align-items: center; 
-    justify-content: center; 
-    z-index: 9999; 
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
 }
 
-.congrats-box { 
-    border: 3px solid var(--neon); 
-    padding: 40px; 
-    background: #000; 
-    text-align: center; 
-    max-width: 80%; 
+.congrats-box {
+    border: 3px solid var(--neon);
+    padding: 40px;
+    background: var(--panel);
+    text-align: center;
+    max-width: 80%;
 }
 
 #newBuddySprite {
@@ -458,9 +491,9 @@ button {
 .sprint-textarea {
     width: 100%;
     min-height: 200px;
-    background: #000;
-    border: 1px solid #333;
-    color: #fff;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text);
     padding: 15px;
     font-family: 'Courier New', monospace;
     font-size: 0.95rem;
@@ -470,7 +503,7 @@ button {
 }
 
 .challenge-box {
-    background: #000;
+    background: var(--panel2);
     border-left: 5px solid var(--neon);
     padding: 15px;
     margin-bottom: 15px;
@@ -495,15 +528,15 @@ button {
 }
 
 .tier-card {
-    background: #000;
-    border: 1px solid #333;
+    background: var(--panel2);
+    border: 1px solid var(--border);
     padding: 8px 4px;
     text-align: center;
     cursor: pointer;
     transition: border-color 0.2s;
 }
 
-.tier-card:hover { border-color: #666; }
+.tier-card:hover { border-color: var(--border-mid); }
 
 .tier-card.selected {
     border-color: var(--neon);
@@ -538,7 +571,7 @@ button {
     justify-content: space-between;
     align-items: center;
     padding: 10px 0;
-    border-bottom: 1px solid #222;
+    border-bottom: 1px solid var(--border-light);
     margin-bottom: 10px;
     font-size: 0.8rem;
     letter-spacing: 1px;
@@ -551,6 +584,14 @@ button {
     cursor: pointer;
     flex: 0 0 auto;
     min-height: unset;
+}
+
+.bar-label {
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    margin-bottom: 6px;
+    display: block;
 }
 
 @media (max-width: 700px) {

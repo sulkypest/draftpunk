@@ -100,9 +100,14 @@ window.addWords = function() {
     document.getElementById('wordIn').value = "";
 };
 
+window.updateChartTheme = function() {
+    if (!chart) return;
+    const neon = getComputedStyle(document.documentElement).getPropertyValue('--neon').trim();
+    chart.data.datasets[0].borderColor = neon;
+    chart.update();
+};
+
 function updateUI() {
-    const color = GENRE_STYLES[state.genre] || "#0ff";
-    document.documentElement.style.setProperty('--neon', color);
     
     const progress = (state.total / state.goal) * 100;
     const curIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
@@ -157,11 +162,11 @@ function initGraph() {
         type: 'line',
         data: {
             labels: state.logs.map(l => l.date),
-            datasets: [{ 
-                data: state.logs.map(l => l.total), 
-                borderColor: GENRE_STYLES[state.genre], 
-                tension: 0.2, 
-                fill: false 
+            datasets: [{
+                data: state.logs.map(l => l.total),
+                borderColor: getComputedStyle(document.documentElement).getPropertyValue('--neon').trim(),
+                tension: 0.2,
+                fill: false
             }]
         },
         options: { 
