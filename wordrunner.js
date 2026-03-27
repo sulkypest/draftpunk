@@ -15,7 +15,6 @@ let sprint = {
     remaining: 0,
     target: 0,
     isCustom: false,
-    addToDraftPunk: false,
     intervalId: null
 };
 
@@ -122,7 +121,6 @@ window.selectTier = function(idx) {
 
 window.startSprint = function() {
     sprint.isCustom = document.getElementById('customToggle').checked;
-    sprint.addToDraftPunk = document.getElementById('dpToggle').checked;
 
     if (sprint.isCustom) {
         sprint.duration = parseInt(document.getElementById('durationSelect').value) * 60;
@@ -182,15 +180,6 @@ window.onSprintInput = function() {
 
 function endSprint(won) {
     const words = countWords(document.getElementById('sprintText').value);
-
-    if (sprint.addToDraftPunk && words > 0) {
-        const dpState = JSON.parse(localStorage.getItem('draftPunkData'));
-        if (dpState && dpState.active) {
-            dpState.total += words;
-            dpState.logs.push({ date: new Date().toLocaleDateString(), total: dpState.total });
-            localStorage.setItem('draftPunkData', JSON.stringify(dpState));
-        }
-    }
 
     document.getElementById('sprintControls').classList.add('hidden');
     document.getElementById('challengeSetup').classList.remove('hidden');
@@ -301,14 +290,6 @@ function updateWRUI() {
         if (!selectedTierIdx !== null) {
             document.getElementById('wrBuddySprite').style.filter = 'grayscale(100%) brightness(0.4)';
         }
-    }
-
-    const dpState = JSON.parse(localStorage.getItem('draftPunkData'));
-    if (dpState && dpState.active) {
-        document.getElementById('dpToggleContainer').classList.remove('hidden');
-        document.getElementById('dpProjectName').innerText = dpState.title;
-    } else {
-        document.getElementById('dpToggleContainer').classList.add('hidden');
     }
 
     renderTierGrid();

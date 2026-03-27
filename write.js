@@ -249,6 +249,82 @@ window.syncToTracker = function() {
     alert('✓ ' + delta.toLocaleString() + ' words added to your tracker!');
 };
 
+// ── Export story as RTF ───────────────────────────────────────────────────────
+window.exportStory = function() {
+    if (!writingData || !writingData.chapters.length) {
+        alert('No chapters to export.');
+        return;
+    }
+
+    const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+    const proj   = dpData.projects && dpData.projects[activeProjectId];
+    const title  = (proj && proj.title) || 'MY STORY';
+
+    const rtf      = buildRtf(title, writingData.chapters);
+    const blob     = new Blob([rtf], { type: 'application/rtf' });
+    const url      = URL.createObjectURL(blob);
+    const a        = document.createElement('a');
+    a.href         = url;
+    a.download     = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.rtf';
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
+function buildRtf(storyTitle, chapters) {
+    const parts = [];
+    parts.push('{\\rtf1\\ansi\\ansicpg1252\\deff0');
+    parts.push('{\\fonttbl{\\f0\\froman\\fcharset0 Times New Roman;}{\\f1\\fswiss\\fcharset0 Courier New;}}');
+    parts.push('\\f0\\fs24\\sa240\\sl360\\slmult1');
+    parts.push('{\\f1\\fs36\\b ' + rtfEscape(storyTitle.toUpperCase()) + '}\\par\\par');
+
+    chapters.forEach(ch => {
+        parts.push('{\\f1\\fs28\\b ' + rtfEscape(ch.title.toUpperCase()) + '}\\par\\par');
+        parts.push(htmlToRtf(ch.content));
+        parts.push('\\par\\par');
+    });
+
+    parts.push('}');
+    return parts.join('\n');
+}
+
+function rtfEscape(text) {
+    return text.split('').map(c => {
+        const code = c.charCodeAt(0);
+        if (code > 127) return "\\'" + code.toString(16).padStart(2, '0');
+        if (c === '\\') return '\\\\';
+        if (c === '{')  return '\\{';
+        if (c === '}')  return '\\}';
+        return c;
+    }).join('');
+}
+
+function htmlToRtf(html) {
+    if (!html) return '';
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return Array.from(div.childNodes).map(nodeToRtf).join('');
+}
+
+function nodeToRtf(node) {
+    if (node.nodeType === 3) return rtfEscape(node.textContent); // text node
+    if (node.nodeType !== 1) return '';                           // not an element
+
+    const tag   = node.tagName.toLowerCase();
+    const inner = Array.from(node.childNodes).map(nodeToRtf).join('');
+
+    switch (tag) {
+        case 'b': case 'strong': return '{\\b '  + inner + '}';
+        case 'i': case 'em':     return '{\\i '  + inner + '}';
+        case 'u':                return '{\\ul ' + inner + '}';
+        case 'h2':               return '{\\b\\fs28 ' + inner + '}\\par';
+        case 'h3':               return '{\\b\\fs26 ' + inner + '}\\par';
+        case 'br':               return '\\par ';
+        case 'p':                return inner + '\\par ';
+        case 'div':              return inner + '\\par ';
+        default:                 return inner;
+    }
+}
+
 // ── Save status indicator ─────────────────────────────────────────────────────
 let saveStatusTimer = null;
 function setSaveStatus(state) {
