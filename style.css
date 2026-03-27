@@ -187,6 +187,22 @@ a.nav-dropdown-item { text-decoration: none; display: block; }
 }
 .lb-remove-btn:hover { color: #ff4500; }
 
+.lb-period-btn {
+    flex: 1;
+    padding: 6px 4px;
+    font-size: 0.6rem;
+    letter-spacing: 1px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Courier New', monospace;
+    font-weight: 900;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.lb-period-btn:hover     { color: var(--neon); border-color: var(--neon); }
+.lb-period-active        { color: var(--neon); border-color: var(--neon); }
+
 .lb-loading, .lb-empty {
     font-size: 0.75rem;
     opacity: 0.4;

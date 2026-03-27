@@ -32,10 +32,15 @@ async function pushToCloud(user) {
         const raw = localStorage.getItem(k);
         payload[k] = raw ? JSON.parse(raw) : null;
     });
-    const dpData = payload.draftPunkData;
-    payload.totalWords  = (dpData && dpData.total) || 0;
-    payload.displayName = user.displayName || '';
-    payload.photoURL    = user.photoURL    || '';
+    // Compute totals across all projects for leaderboard fields
+    const dpData   = payload.draftPunkData || {};
+    const projects = Object.values(dpData.projects || {});
+    payload.totalWords     = projects.reduce((s, p) => s + (p.total          || 0), 0);
+    payload.wordsThisWeek  = projects.reduce((s, p) => s + (p.wordsThisWeek  || 0), 0);
+    payload.wordsThisMonth = projects.reduce((s, p) => s + (p.wordsThisMonth || 0), 0);
+    payload.wordsThisYear  = projects.reduce((s, p) => s + (p.wordsThisYear  || 0), 0);
+    payload.displayName    = user.displayName || '';
+    payload.photoURL       = user.photoURL    || '';
     await setDoc(doc(db, 'users', user.uid), payload, { merge: true });
     setSyncStatus('synced');
 }
@@ -232,9 +237,12 @@ async function continueAfterAuth(user) {
     if (needsReload) {
         location.reload();
     } else {
-        const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
-        if (!dpData.active && window.showProjectForm) window.showProjectForm();
-        // Social housekeeping — run in background
+        const dpData    = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+        const hasActive = dpData.activeProjectId &&
+                          dpData.projects &&
+                          dpData.projects[dpData.activeProjectId] &&
+                          dpData.projects[dpData.activeProjectId].active;
+        if (!hasActive && window.showProjectForm) window.showProjectForm();
         checkPendingRequests(user);
         processFriendAcceptances(user);
     }
@@ -316,10 +324,10 @@ function setSyncStatus(state) {
 
 window.getCurrentUser = function() { return currentUser; };
 
-window.getLeaderboard = async function() {
+window.getLeaderboard = async function(field = 'totalWords') {
     if (!currentUser) return { error: 'not-signed-in' };
     try {
-        const q    = query(collection(db, 'users'), orderBy('totalWords', 'desc'), limit(25));
+        const q    = query(collection(db, 'users'), orderBy(field, 'desc'), limit(25));
         const snap = await getDocs(q);
         return snap.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => u.username);
     } catch (err) {

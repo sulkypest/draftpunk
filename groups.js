@@ -1,7 +1,4 @@
-(function() {
-    const d = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
-    if (!d.active) window.location.replace('index.html');
-})();
+(function() { const _dp = JSON.parse(localStorage.getItem('draftPunkData') || '{}'); const _ok = _dp.activeProjectId && _dp.projects && _dp.projects[_dp.activeProjectId] && _dp.projects[_dp.activeProjectId].active; if (!_ok) window.location.replace('index.html'); })();
 
 // ── Auth handling ─────────────────────────────────────────────────────────────
 function handleAuthState(user) {
@@ -80,28 +77,47 @@ window.doDecline = async function(requestId) {
 };
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
+const PERIOD_FIELD = {
+    week:  'wordsThisWeek',
+    month: 'wordsThisMonth',
+    year:  'wordsThisYear',
+    all:   'totalWords'
+};
+let currentPeriod = 'week';
+
+window.setLeaderboardPeriod = function(period) {
+    currentPeriod = period;
+    document.querySelectorAll('.lb-period-btn').forEach(btn => {
+        btn.classList.toggle('lb-period-active', btn.dataset.period === period);
+    });
+    loadLeaderboard();
+};
+
 async function loadLeaderboard() {
     const container = document.getElementById('leaderboardList');
     if (!container) return;
     container.innerHTML = '<div class="lb-loading">LOADING...</div>';
 
-    const result = await window.getLeaderboard();
+    const field  = PERIOD_FIELD[currentPeriod] || 'totalWords';
+    const result = await window.getLeaderboard(field);
 
     if (!result || result.error) {
         container.innerHTML = '<div class="lb-empty">COULD NOT LOAD LEADERBOARD</div>';
         return;
     }
-    if (result.length === 0) {
-        container.innerHTML = '<div class="lb-empty">NO ENTRIES YET — BE THE FIRST!</div>';
+
+    const active = result.filter(u => (u[field] || 0) > 0);
+    if (active.length === 0) {
+        container.innerHTML = '<div class="lb-empty">NO ENTRIES FOR THIS PERIOD YET</div>';
         return;
     }
 
     const currentUser = window.getCurrentUser();
-    container.innerHTML = result.map((u, i) => `
+    container.innerHTML = active.map((u, i) => `
         <div class="lb-row ${currentUser && u.uid === currentUser.uid ? 'lb-row-me' : ''}">
             <span class="lb-rank">#${i + 1}</span>
             <span class="lb-name">${u.username}</span>
-            <span class="lb-words">${(u.totalWords || 0).toLocaleString()} WDS</span>
+            <span class="lb-words">${(u[field] || 0).toLocaleString()} WDS</span>
         </div>
     `).join('');
 }
