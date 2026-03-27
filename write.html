@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BEAT NOTES</title>
+    <title>WRITE</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,18 +14,18 @@
 
     <nav class="app-nav">
         <div class="nav-dropdown">
-            <button class="nav-dropdown-btn" onclick="toggleDraftMenu()">DRAFT PUNK</button>
+            <button class="nav-dropdown-btn active" onclick="toggleDraftMenu()">DRAFT PUNK</button>
             <div class="nav-dropdown-menu" id="draftMenu">
                 <a href="index.html" class="nav-dropdown-item">DRAFT PUNK</a>
                 <a href="wordrunner.html" class="nav-dropdown-item">WORDRUNNER</a>
-                <a href="write.html" class="nav-dropdown-item">WRITE</a>
+                <a href="write.html" class="nav-dropdown-item" style="color:var(--neon);">WRITE</a>
                 <a href="groups.html" class="nav-dropdown-item">WRITING GROUPS</a>
             </div>
         </div>
         <div class="nav-dropdown" style="margin-left:auto;">
-            <button class="nav-dropdown-btn active" onclick="toggleNotesMenu()">NOTES</button>
+            <button class="nav-dropdown-btn" onclick="toggleNotesMenu()">NOTES</button>
             <div class="nav-dropdown-menu" id="notesMenu">
-                <a href="beat-notes.html" class="nav-dropdown-item" style="color:var(--neon);">BEATS</a>
+                <a href="beat-notes.html" class="nav-dropdown-item">BEATS</a>
                 <a href="characters.html" class="nav-dropdown-item">CHARACTERS</a>
             </div>
         </div>
@@ -52,15 +52,25 @@
 
     <div class="notes-page">
         <div class="app">
-            <h1>BEAT NOTES</h1>
-            <h2 id="projectTitle" style="font-size:0.9rem;opacity:0.5;margin-top:-10px;margin-bottom:20px;"></h2>
-            <div id="beatContainer"></div>
+            <h1 id="writeProjectTitle">WRITE</h1>
+
+            <div id="writeChapterList"></div>
+
+            <button onclick="addChapter()" style="width:100%;margin-top:10px;">+ ADD CHAPTER</button>
+
+            <div class="write-footer">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span id="writeTotalWords" style="font-size:0.75rem;opacity:0.6;letter-spacing:1px;">TOTAL: 0 WORDS</span>
+                    <span id="writeSaveStatus" style="font-size:0.65rem;opacity:0.4;letter-spacing:1px;"></span>
+                </div>
+                <button id="syncWordsBtn" onclick="syncToTracker()" style="width:100%;margin-top:10px;" disabled>ALL WORDS SYNCED</button>
+            </div>
         </div>
     </div>
 
     <script src="theme.js"></script>
     <script src="backup.js"></script>
-    <script src="beat-notes.js"></script>
+    <script src="write.js"></script>
     <script type="module" src="sync.js"></script>
     <script>
         if ('serviceWorker' in navigator) {

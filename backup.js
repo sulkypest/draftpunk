@@ -38,6 +38,7 @@ window.exportData = function() {
         beatNotesData:  JSON.parse(localStorage.getItem('beatNotesData')  || 'null'),
         charactersData: JSON.parse(localStorage.getItem('charactersData') || 'null'),
         wordRunnerData: JSON.parse(localStorage.getItem('wordRunnerData') || 'null'),
+        writingData:    JSON.parse(localStorage.getItem('writingData')    || 'null'),
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -76,6 +77,7 @@ window.importData = function(event) {
             if (data.beatNotesData)  localStorage.setItem('beatNotesData',  JSON.stringify(data.beatNotesData));
             if (data.charactersData) localStorage.setItem('charactersData', JSON.stringify(data.charactersData));
             if (data.wordRunnerData) localStorage.setItem('wordRunnerData', JSON.stringify(data.wordRunnerData));
+            if (data.writingData)    localStorage.setItem('writingData',    JSON.stringify(data.writingData));
 
             location.reload();
         } catch (err) {

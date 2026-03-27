@@ -455,6 +455,33 @@ window.removeFriend = async function(friendUid) {
     }
 };
 
+// ── Writing subcollection sync ─────────────────────────────────────────────────
+window.pushWritingChapterToCloud = async function(chapter) {
+    if (!currentUser) return;
+    try {
+        await setDoc(doc(db, 'users', currentUser.uid, 'writing', chapter.id), chapter, { merge: true });
+    } catch (err) { console.error('Writing push error:', err); }
+};
+
+window.deleteWritingChapterFromCloud = async function(chapterId) {
+    if (!currentUser) return;
+    try {
+        await deleteDoc(doc(db, 'users', currentUser.uid, 'writing', chapterId));
+    } catch (err) { console.error('Writing delete error:', err); }
+};
+
+window.pullWritingFromCloud = async function(projectId) {
+    if (!currentUser) return null;
+    try {
+        const snap = await getDocs(collection(db, 'users', currentUser.uid, 'writing'));
+        const chapters = snap.docs
+            .map(d => ({ ...d.data(), id: d.id }))
+            .filter(ch => ch.projectId === projectId)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
+        return chapters.length ? chapters : null;
+    } catch (err) { console.error('Writing pull error:', err); return null; }
+};
+
 window.getCurrentUsername = async function() {
     if (!currentUser) return null;
     const snap = await getDoc(doc(db, 'users', currentUser.uid));
