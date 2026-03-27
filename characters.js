@@ -94,6 +94,58 @@ window.updateField = function(id, key, value) {
     save();
 };
 
+// ── Export character sheets as RTF ────────────────────────────────────────────
+function rtfEsc(text) {
+    return (text || '').split('').map(c => {
+        const code = c.charCodeAt(0);
+        if (code > 127) return "\\'" + code.toString(16).padStart(2, '0');
+        if (c === '\\') return '\\\\';
+        if (c === '{')  return '\\{';
+        if (c === '}')  return '\\}';
+        if (c === '\n') return '\\par ';
+        return c;
+    }).join('');
+}
+
+window.exportCharacters = function() {
+    if (!charData.chars.length) { alert('No characters to export.'); return; }
+
+    const dpData   = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+    const activeId = dpData.activeProjectId;
+    const proj     = activeId && dpData.projects && dpData.projects[activeId];
+    const title    = (proj && proj.title) || 'MY PROJECT';
+
+    const parts = [];
+    parts.push('{\\rtf1\\ansi\\ansicpg1252\\deff0');
+    parts.push('{\\fonttbl{\\f0\\froman\\fcharset0 Times New Roman;}{\\f1\\fswiss\\fcharset0 Courier New;}}');
+    parts.push('\\f0\\fs24\\sa200\\sl360\\slmult1');
+    parts.push('{\\f1\\fs32\\b ' + rtfEsc('CHARACTER SHEETS — ' + title.toUpperCase()) + '}\\par\\par');
+
+    charData.chars.forEach((char, idx) => {
+        const name = char.name || 'UNNAMED CHARACTER';
+        parts.push('{\\f1\\fs28\\b ' + rtfEsc((idx + 1) + '. ' + name.toUpperCase()) + '}\\par');
+
+        CHAR_FIELDS.forEach(f => {
+            const val = (char[f.key] || '').trim();
+            if (!val) return;
+            parts.push('{\\b ' + rtfEsc(f.label) + '}\\par');
+            parts.push(rtfEsc(val) + '\\par\\par');
+        });
+
+        parts.push('\\par');
+    });
+
+    parts.push('}');
+
+    const blob = new Blob([parts.join('\n')], { type: 'application/rtf' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '_characters.rtf';
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
 window.onload = function() {
     const dpState = JSON.parse(localStorage.getItem('draftPunkData'));
     if (dpState && dpState.title) {
