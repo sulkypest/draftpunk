@@ -125,6 +125,8 @@ function renderAll() {
                         ${isLast ? 'disabled' : ''}>↓</button>
                     <button class="write-ch-btn write-ch-del" onmousedown="event.preventDefault()"
                         onclick="deleteChapter('${ch.id}'); event.stopPropagation()">✕</button>
+                    <button class="write-ch-btn write-ch-focus" onmousedown="event.preventDefault()"
+                        onclick="focusChapter('${ch.id}'); event.stopPropagation()" title="Focus mode">⛶</button>
                 </div>
                 <div class="write-chapter-body">
                     <div class="write-toolbar">
@@ -168,6 +170,12 @@ window.onEditorInput = function(id) {
     updateFooter();
     setSaveStatus('saving');
     scheduleCloudSave(ch);
+
+    // Keep focus bar word count live
+    if (window._focusedChapterId === id) {
+        const fcWc = document.getElementById('focusWc');
+        if (fcWc) fcWc.textContent = wc.toLocaleString() + ' WDS';
+    }
 };
 
 window.onEditorFocus = function(id) {
@@ -248,6 +256,43 @@ window.syncToTracker = function() {
     updateFooter();
     alert('✓ ' + delta.toLocaleString() + ' words added to your tracker!');
 };
+
+// ── Focus mode ────────────────────────────────────────────────────────────────
+window._focusedChapterId = null;
+
+window.focusChapter = function(id) {
+    const ch = writingData.chapters.find(c => c.id === id);
+    if (!ch) return;
+
+    const chEl = document.getElementById('chap_' + id);
+    if (chEl) {
+        chEl.classList.add('open');
+        chEl.classList.add('write-focus-target');
+    }
+
+    document.body.classList.add('write-focus');
+    window._focusedChapterId = id;
+
+    const titleEl = document.getElementById('focusChapterTitle');
+    const wcEl    = document.getElementById('focusWc');
+    if (titleEl) titleEl.textContent = ch.title.toUpperCase();
+    if (wcEl)    wcEl.textContent    = (ch.wordCount || 0).toLocaleString() + ' WDS';
+
+    setTimeout(() => {
+        const editor = document.getElementById('cheditor_' + id);
+        if (editor) editor.focus();
+    }, 50);
+};
+
+window.exitFocus = function() {
+    document.body.classList.remove('write-focus');
+    document.querySelectorAll('.write-focus-target').forEach(el => el.classList.remove('write-focus-target'));
+    window._focusedChapterId = null;
+};
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.body.classList.contains('write-focus')) exitFocus();
+});
 
 // ── Export story as RTF ───────────────────────────────────────────────────────
 window.exportStory = function() {
