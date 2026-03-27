@@ -228,6 +228,7 @@ function updateUI() {
     const progressInBeat = progress - curB.pct;
     const hp = Math.max(0, 100 - (progressInBeat / (beatSpan || 1) * 100));
 
+    document.getElementById('wcMain').innerText = state.total.toLocaleString();
     document.getElementById('wipDisplay').innerText = state.title;
     document.getElementById('lvlName').innerText = `BEAT ${curIdx + 1}: ${curB.name.toUpperCase()}`;
     document.getElementById('bossName').innerText = nxtB.name.toUpperCase();
