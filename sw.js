@@ -1,4 +1,4 @@
-const CACHE = 'draftpunk-v18';
+const CACHE = 'draftpunk-v19';
 
 const PRECACHE = [
     './',
@@ -56,16 +56,30 @@ self.addEventListener('activate', event => {
     self.clients.claim();
 });
 
-// Cache-first for everything
+// Network-first for HTML/JS/CSS — always serve fresh code, fall back to cache offline
+// Cache-first for images — they rarely change
 self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request).then(cached => {
-            if (cached) return cached;
-            return fetch(event.request).then(response => {
+    const url = new URL(event.request.url);
+    const isImage = /\.(png|jpg|jpeg|gif|svg|webp|ico)$/i.test(url.pathname);
+
+    if (isImage) {
+        event.respondWith(
+            caches.match(event.request).then(cached => {
+                if (cached) return cached;
+                return fetch(event.request).then(response => {
+                    const clone = response.clone();
+                    caches.open(CACHE).then(cache => cache.put(event.request, clone));
+                    return response;
+                });
+            })
+        );
+    } else {
+        event.respondWith(
+            fetch(event.request).then(response => {
                 const clone = response.clone();
                 caches.open(CACHE).then(cache => cache.put(event.request, clone));
                 return response;
-            });
-        })
-    );
+            }).catch(() => caches.match(event.request))
+        );
+    }
 });
