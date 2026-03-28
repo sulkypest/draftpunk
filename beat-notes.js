@@ -36,6 +36,49 @@ window.onBeatInput = function(idx) {
     save();
 };
 
+// ── Export beat sheet as RTF ──────────────────────────────────────────────────
+function rtfEsc(text) {
+    return (text || '').split('').map(c => {
+        const code = c.charCodeAt(0);
+        if (code > 127) return "\\'" + code.toString(16).padStart(2, '0');
+        if (c === '\\') return '\\\\';
+        if (c === '{')  return '\\{';
+        if (c === '}')  return '\\}';
+        if (c === '\n') return '\\par ';
+        return c;
+    }).join('');
+}
+
+window.exportBeats = function() {
+    const dpData  = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+    const activeId = dpData.activeProjectId;
+    const proj    = activeId && dpData.projects && dpData.projects[activeId];
+    const title   = (proj && proj.title) || 'MY PROJECT';
+
+    const parts = [];
+    parts.push('{\\rtf1\\ansi\\ansicpg1252\\deff0');
+    parts.push('{\\fonttbl{\\f0\\froman\\fcharset0 Times New Roman;}{\\f1\\fswiss\\fcharset0 Courier New;}}');
+    parts.push('\\f0\\fs24\\sa200\\sl360\\slmult1');
+    parts.push('{\\f1\\fs32\\b ' + rtfEsc('BEAT NOTES — ' + title.toUpperCase()) + '}\\par\\par');
+
+    BEATS.forEach((beat, i) => {
+        const notes = beatData[beat.name] || '';
+        parts.push('{\\f1\\fs26\\b ' + rtfEsc((i + 1) + '. ' + beat.name.toUpperCase()) + '}\\par');
+        parts.push('{\\i\\fs20 ' + rtfEsc(beat.lore) + '}\\par');
+        parts.push(notes ? rtfEsc(notes) + '\\par\\par' : '{\\i\\fs20 —}\\par\\par');
+    });
+
+    parts.push('}');
+
+    const blob = new Blob([parts.join('\n')], { type: 'application/rtf' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '_beats.rtf';
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
 window.onload = function() {
     const dpState = JSON.parse(localStorage.getItem('draftPunkData'));
     if (dpState && dpState.title) {
