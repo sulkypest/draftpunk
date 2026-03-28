@@ -232,6 +232,14 @@ async function handleSignedIn(user) {
     if (authScreen) authScreen.style.display = 'none';
     setSyncStatus('pending');
 
+    // If a different user was previously stored locally, wipe their data first
+    const storedUid = localStorage.getItem('dpUserId');
+    if (storedUid && storedUid !== user.uid) {
+        DATA_KEYS.forEach(k => localStorage.removeItem(k));
+        localStorage.removeItem('dpLastUpdated');
+    }
+    localStorage.setItem('dpUserId', user.uid);
+
     const userSnap    = await getDoc(doc(db, 'users', user.uid));
     const hasUsername = userSnap.exists() && userSnap.data().username;
 
@@ -295,6 +303,7 @@ window.signOutUser = async function() {
     clearTimeout(syncTimeout);
     await signOut(auth);
     localStorage.removeItem('authDecisionMade');
+    localStorage.removeItem('dpUserId');
     localStorage.setItem('justSignedOut', '1');
     window.location.href = 'index.html?' + Date.now();
 };
