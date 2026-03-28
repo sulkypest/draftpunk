@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, deleteUser }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
     getFirestore, doc, setDoc, getDoc, deleteDoc, writeBatch,
@@ -168,8 +168,10 @@ function showUsernamePrompt(onComplete) {
             overlay.style.display = 'none';
             onComplete();
         } catch (err) {
-            errorEl.textContent = 'Error — try again.';
-            console.error(err);
+            console.error('Username save error:', err);
+            errorEl.textContent = err.code === 'permission-denied'
+                ? 'Permission denied — check Firestore rules.'
+                : (err.message || 'Error — try again.');
             btn.disabled    = false;
             btn.textContent = 'CONFIRM USERNAME';
         }
@@ -297,6 +299,129 @@ window.signOutUser = async function() {
     window.location.href = 'index.html?' + Date.now();
 };
 
+// ── Account overlay ───────────────────────────────────────────────────────────
+async function showAccountOverlay() {
+    const user = currentUser;
+    if (!user) return;
+
+    const snap       = await getDoc(doc(db, 'users', user.uid));
+    const data       = snap.exists() ? snap.data() : {};
+    const username   = data.username || '—';
+    const totalWords = (data.totalWords || 0).toLocaleString();
+
+    let overlay = document.getElementById('dpAccountOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'dpAccountOverlay';
+        document.body.appendChild(overlay);
+    }
+
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.85);
+        display:flex;align-items:center;justify-content:center;padding:20px;
+        font-family:'Courier New',monospace;color:var(--text,#fff);
+    `;
+
+    overlay.innerHTML = `
+        <div style="width:100%;max-width:360px;background:var(--panel,#161616);
+                    border:1px solid var(--border,#2a2a2a);padding:28px 24px;box-sizing:border-box;">
+            <div style="text-align:center;margin-bottom:24px;">
+                ${user.photoURL
+                    ? `<img src="${user.photoURL}" style="width:72px;height:72px;border-radius:50%;border:2px solid var(--neon,#0ff);display:block;margin:0 auto 12px;">`
+                    : `<div style="width:72px;height:72px;border-radius:50%;border:2px solid var(--neon,#0ff);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;">◎</div>`
+                }
+                <div style="font-size:1rem;font-weight:900;letter-spacing:2px;">${(user.displayName || 'USER').toUpperCase()}</div>
+                <div style="font-size:0.7rem;opacity:0.5;letter-spacing:1px;margin-top:4px;">@${username}</div>
+                <div style="font-size:0.7rem;opacity:0.4;letter-spacing:1px;margin-top:4px;">${totalWords} WORDS WRITTEN</div>
+            </div>
+
+            <button onclick="signOutUser()" style="width:100%;margin-bottom:6px;">⊖ SIGN OUT</button>
+
+            <div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 16px;"></div>
+            <div style="font-size:0.6rem;opacity:0.4;letter-spacing:2px;margin-bottom:12px;">DANGER ZONE</div>
+
+            <button id="dpResetBtn" onclick="window._dpResetCloudData()"
+                style="width:100%;margin-bottom:6px;background:#333;">
+                ⚠ RESET CLOUD DATA
+            </button>
+            <p style="font-size:0.62rem;opacity:0.4;letter-spacing:1px;margin:0 0 14px;line-height:1.5;">
+                Wipes your cloud backup. Local data is preserved. Useful for testing a fresh sign-up.
+            </p>
+
+            <button id="dpDeleteBtn" onclick="window._dpDeleteAccount()"
+                style="width:100%;margin-bottom:6px;background:#ff4500;">
+                ✕ DELETE ACCOUNT
+            </button>
+            <p style="font-size:0.62rem;opacity:0.4;letter-spacing:1px;margin:0 0 20px;line-height:1.5;">
+                Permanently deletes your account, username, and all cloud data.
+            </p>
+
+            <button onclick="document.getElementById('dpAccountOverlay').style.display='none'"
+                style="width:100%;background:#222;">CLOSE</button>
+
+            <p id="dpAccountError" style="color:#ff4500;font-size:0.7rem;margin:10px 0 0;text-align:center;min-height:1.2em;letter-spacing:1px;"></p>
+        </div>
+    `;
+
+    overlay.style.display = 'flex';
+
+    window._dpResetCloudData = async function() {
+        if (!confirm('Reset all cloud data? Your local data will be preserved but your cloud backup will be wiped.')) return;
+        const btn = document.getElementById('dpResetBtn');
+        btn.disabled = true; btn.textContent = 'RESETTING...';
+        try {
+            // Delete writing subcollection
+            const writingSnap = await getDocs(collection(db, 'users', user.uid, 'writing'));
+            const batch = writeBatch(db);
+            writingSnap.docs.forEach(d => batch.delete(d.ref));
+            // Reset user doc (keep username and auth fields, wipe data)
+            batch.set(doc(db, 'users', user.uid), {
+                username:    data.username || '',
+                displayName: user.displayName || '',
+                photoURL:    user.photoURL || '',
+                totalWords: 0, wordsThisWeek: 0, wordsThisMonth: 0, wordsThisYear: 0,
+                updatedAt:   0
+            });
+            await batch.commit();
+            btn.textContent = 'RESET COMPLETE';
+        } catch (err) {
+            console.error(err);
+            document.getElementById('dpAccountError').textContent = err.message || 'Error — try again.';
+            btn.disabled = false; btn.textContent = '⚠ RESET CLOUD DATA';
+        }
+    };
+
+    window._dpDeleteAccount = async function() {
+        if (!confirm('Delete your account? This permanently removes your account, username, and all cloud data. This cannot be undone.')) return;
+        const btn = document.getElementById('dpDeleteBtn');
+        btn.disabled = true; btn.textContent = 'DELETING...';
+        try {
+            // Delete writing subcollection
+            const writingSnap = await getDocs(collection(db, 'users', user.uid, 'writing'));
+            const batch = writeBatch(db);
+            writingSnap.docs.forEach(d => batch.delete(d.ref));
+            // Delete username reservation
+            if (data.username) batch.delete(doc(db, 'usernames', data.username));
+            // Delete user doc
+            batch.delete(doc(db, 'users', user.uid));
+            await batch.commit();
+            // Delete Firebase Auth account
+            await deleteUser(user);
+            // Clear local storage and redirect
+            localStorage.clear();
+            window.location.href = 'index.html?' + Date.now();
+        } catch (err) {
+            console.error(err);
+            const msg = err.code === 'auth/requires-recent-login'
+                ? 'Please sign out and sign back in, then try again.'
+                : (err.message || 'Error — try again.');
+            document.getElementById('dpAccountError').textContent = msg;
+            btn.disabled = false; btn.textContent = '✕ DELETE ACCOUNT';
+        }
+    };
+}
+window.showAccountOverlay = showAccountOverlay;
+
 // ── Nav UI ────────────────────────────────────────────────────────────────────
 function updateNavUI(user) {
     const signInEl   = document.getElementById('navSignIn');
@@ -311,6 +436,15 @@ function updateNavUI(user) {
         if (dashPrompt)  dashPrompt.style.display = 'none';
         if (avatarEl && user.photoURL) avatarEl.src = user.photoURL;
         if (nameEl) nameEl.innerText = (user.displayName || 'USER').split(' ')[0].toUpperCase();
+        // Inject account button once
+        if (userEl && !document.getElementById('dpAccountNavBtn')) {
+            const btn = document.createElement('button');
+            btn.id        = 'dpAccountNavBtn';
+            btn.className = 'nav-dropdown-item';
+            btn.textContent = '⊙ ACCOUNT';
+            btn.onclick   = () => { showAccountOverlay(); if (window.toggleDataMenu) toggleDataMenu(); };
+            userEl.appendChild(btn);
+        }
     } else {
         if (signInEl)    signInEl.style.display  = 'flex';
         if (userEl)      userEl.style.display     = 'none';
