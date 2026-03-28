@@ -17,10 +17,34 @@ const BEATS = [
     { name: "Final Image",      lore: "The 'after' world — completely changed." },
 ];
 
-let beatData = JSON.parse(localStorage.getItem('beatNotesData')) || {};
+// ── Per-project beat data ─────────────────────────────────────────────────────
+const _dpInit       = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+const activeProjectId = _dpInit.activeProjectId;
+
+let allBeatData = JSON.parse(localStorage.getItem('beatNotesData')) || {};
+
+// Migrate old flat format: if top-level keys are beat names, move under project id
+if (activeProjectId && !allBeatData[activeProjectId]) {
+    const isFlatFormat = BEATS.some(b => allBeatData[b.name] !== undefined);
+    if (isFlatFormat) {
+        allBeatData = { [activeProjectId]: allBeatData };
+        localStorage.setItem('beatNotesData', JSON.stringify(allBeatData));
+    }
+}
+
+let beatData = activeProjectId ? (allBeatData[activeProjectId] || {}) : {};
 
 function save() {
-    localStorage.setItem('beatNotesData', JSON.stringify(beatData));
+    if (!activeProjectId) return;
+    const all = JSON.parse(localStorage.getItem('beatNotesData')) || {};
+    all[activeProjectId] = beatData;
+    localStorage.setItem('beatNotesData', JSON.stringify(all));
+}
+
+function updateFillRate() {
+    const filled = BEATS.filter(b => beatData[b.name] && beatData[b.name].trim()).length;
+    const el = document.getElementById('beatFillRate');
+    if (el) el.innerText = filled + ' / ' + BEATS.length + ' BEATS FILLED';
 }
 
 window.toggleBeat = function(idx) {
@@ -34,6 +58,7 @@ window.toggleBeat = function(idx) {
 window.onBeatInput = function(idx) {
     beatData[BEATS[idx].name] = document.getElementById(`beat-text-${idx}`).value;
     save();
+    updateFillRate();
 };
 
 // ── Export beat sheet as RTF ──────────────────────────────────────────────────
@@ -81,8 +106,10 @@ window.exportBeats = function() {
 
 window.onload = function() {
     const dpState = JSON.parse(localStorage.getItem('draftPunkData'));
-    if (dpState && dpState.title) {
-        document.getElementById('projectTitle').innerText = dpState.title.toUpperCase();
+    const projId  = dpState && dpState.activeProjectId;
+    const proj    = projId && dpState.projects && dpState.projects[projId];
+    if (proj && proj.title) {
+        document.getElementById('projectTitle').innerText = proj.title.toUpperCase();
     }
 
     document.getElementById('beatContainer').innerHTML = BEATS.map((beat, i) => `
@@ -106,4 +133,6 @@ window.onload = function() {
             </div>
         </div>
     `).join('');
+
+    updateFillRate();
 };

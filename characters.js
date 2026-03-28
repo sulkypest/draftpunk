@@ -11,10 +11,25 @@ const CHAR_FIELDS = [
     { key: 'plotRole',    label: 'PLOT ROLE',            type: 'textarea', wide: true  },
 ];
 
-let charData = JSON.parse(localStorage.getItem('charactersData')) || { chars: [] };
+// ── Per-project character data ────────────────────────────────────────────────
+const _dpInit       = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+const activeProjectId = _dpInit.activeProjectId;
+
+let allCharData = JSON.parse(localStorage.getItem('charactersData')) || {};
+
+// Migrate old flat format: { chars: [...] } → { [projectId]: { chars: [...] } }
+if (activeProjectId && allCharData.chars !== undefined && !allCharData[activeProjectId]) {
+    allCharData = { [activeProjectId]: allCharData };
+    localStorage.setItem('charactersData', JSON.stringify(allCharData));
+}
+
+let charData = activeProjectId ? (allCharData[activeProjectId] || { chars: [] }) : { chars: [] };
 
 function save() {
-    localStorage.setItem('charactersData', JSON.stringify(charData));
+    if (!activeProjectId) return;
+    const all = JSON.parse(localStorage.getItem('charactersData')) || {};
+    all[activeProjectId] = charData;
+    localStorage.setItem('charactersData', JSON.stringify(all));
 }
 
 function esc(str) {
@@ -148,8 +163,10 @@ window.exportCharacters = function() {
 
 window.onload = function() {
     const dpState = JSON.parse(localStorage.getItem('draftPunkData'));
-    if (dpState && dpState.title) {
-        document.getElementById('projectTitle').innerText = dpState.title.toUpperCase();
+    const projId  = dpState && dpState.activeProjectId;
+    const proj    = projId && dpState.projects && dpState.projects[projId];
+    if (proj && proj.title) {
+        document.getElementById('projectTitle').innerText = proj.title.toUpperCase();
     }
     renderAll();
 };

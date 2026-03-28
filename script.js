@@ -180,6 +180,28 @@ window.addWords = function() {
     document.getElementById('wordIn').value = '';
 };
 
+// ── Correct word count ────────────────────────────────────────────────────────
+window.showCorrectWords = function() {
+    document.getElementById('correctInput').value = state.total;
+    document.getElementById('correctOverlay').style.display = 'flex';
+    document.getElementById('correctInput').select();
+};
+window.closeCorrectOverlay = function() {
+    document.getElementById('correctOverlay').style.display = 'none';
+};
+window.applyCorrection = function() {
+    const newTotal = parseInt(document.getElementById('correctInput').value);
+    if (isNaN(newTotal) || newTotal < 0) return;
+    const delta    = newTotal - state.total;
+    state.total           = newTotal;
+    state.wordsThisWeek   = Math.max(0, (state.wordsThisWeek  || 0) + delta);
+    state.wordsThisMonth  = Math.max(0, (state.wordsThisMonth || 0) + delta);
+    state.wordsThisYear   = Math.max(0, (state.wordsThisYear  || 0) + delta);
+    state.logs.push({ date: new Date().toLocaleDateString(), total: state.total });
+    save(); updateUI(); updateGraph();
+    closeCorrectOverlay();
+};
+
 // ── Chart ─────────────────────────────────────────────────────────────────────
 let chart;
 

@@ -139,6 +139,7 @@
             <div class="input-zone">
                 <input type="number" id="wordIn" placeholder="WORDS">
                 <button onclick="addWords()">ADD</button>
+                <button onclick="showCorrectWords()" style="background:#333;">CORRECT</button>
                 <button onclick="showGrenade()" style="background:#ff4500; color:#fff;">GRENADE</button>
             </div>
 
@@ -242,6 +243,18 @@
             <div id="buddyZoomName" style="font-size:1.4rem;font-weight:900;color:var(--neon);margin:15px 0 8px;letter-spacing:2px;"></div>
             <div id="buddyZoomFact" style="font-size:0.85rem;line-height:1.6;opacity:0.8;"></div>
             <div style="font-size:0.65rem;opacity:0.4;margin-top:15px;">CLICK TO CLOSE</div>
+        </div>
+    </div>
+
+    <div id="correctOverlay" class="overlay" style="display:none;">
+        <div class="congrats-box" style="max-width:340px;width:90%;">
+            <h2 style="color:var(--neon);margin-bottom:16px;">CORRECT WORD COUNT</h2>
+            <p style="font-size:0.75rem;opacity:0.6;margin-bottom:16px;letter-spacing:1px;">Set your actual total word count. Period stats (weekly/monthly/yearly) will be adjusted by the difference.</p>
+            <input type="number" id="correctInput" placeholder="TOTAL WORDS" style="width:100%;box-sizing:border-box;margin-bottom:12px;">
+            <div style="display:flex;gap:10px;">
+                <button onclick="applyCorrection()" style="flex:1;">APPLY</button>
+                <button onclick="closeCorrectOverlay()" style="flex:1;background:#333;">CANCEL</button>
+            </div>
         </div>
     </div>
 

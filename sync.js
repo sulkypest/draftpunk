@@ -78,6 +78,14 @@ function schedulePush() {
 }
 window.schedulePush = schedulePush;
 
+// Flush any pending sync immediately when the page is closing
+window.addEventListener('beforeunload', () => {
+    if (currentUser && syncTimeout) {
+        clearTimeout(syncTimeout);
+        pushToCloud(currentUser);
+    }
+});
+
 const _setItem = localStorage.setItem.bind(localStorage);
 localStorage.setItem = function(key, value) {
     _setItem(key, value);

@@ -195,12 +195,28 @@ function endSprint(won) {
             if (!wrState.rescued.includes(rescuedBuddy)) {
                 wrState.rescued.push(rescuedBuddy);
             }
-            // Add to Draft Punk inventory
-            const dpState = JSON.parse(localStorage.getItem('draftPunkData'));
-            if (dpState && !dpState.inventory.includes(rescuedBuddy)) {
-                dpState.inventory.push(rescuedBuddy);
+            // Add to Draft Punk project inventory
+            const dpState = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+            const _projId = dpState.activeProjectId;
+            const _proj   = _projId && dpState.projects && dpState.projects[_projId];
+            if (_proj && !_proj.inventory.includes(rescuedBuddy)) {
+                _proj.inventory.push(rescuedBuddy);
                 localStorage.setItem('draftPunkData', JSON.stringify(dpState));
             }
+        }
+
+        // Add sprint words to active project tracker
+        const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+        const projId = dpData.activeProjectId;
+        if (projId && dpData.projects && dpData.projects[projId] && words > 0) {
+            const proj = dpData.projects[projId];
+            proj.total          = (proj.total          || 0) + words;
+            proj.wordsThisWeek  = (proj.wordsThisWeek  || 0) + words;
+            proj.wordsThisMonth = (proj.wordsThisMonth || 0) + words;
+            proj.wordsThisYear  = (proj.wordsThisYear  || 0) + words;
+            proj.logs           = proj.logs || [];
+            proj.logs.push({ date: new Date().toLocaleDateString(), total: proj.total });
+            localStorage.setItem('draftPunkData', JSON.stringify(dpData));
         }
 
         wrSave();
@@ -210,10 +226,10 @@ function endSprint(won) {
         document.getElementById('wrRescuedSprite').src = rescuedBuddy ? `buddies/${rescuedBuddy}` : '';
         document.getElementById('wrRescuedSprite').style.display = rescuedBuddy ? 'block' : 'none';
         document.getElementById('wrWinMessage').innerText = sprint.isCustom
-            ? `${words.toLocaleString()} words written!`
+            ? `${words.toLocaleString()} words written!\n+${words.toLocaleString()} added to tracker.`
             : rescuedBuddy
-                ? `${words.toLocaleString()} words written.\nTry again for a new rescue mission!`
-                : `${words.toLocaleString()} words written.\nAll buddies in this tier already rescued!`;
+                ? `${words.toLocaleString()} words written.\n+${words.toLocaleString()} added to tracker.`
+                : `${words.toLocaleString()} words written.\n+${words.toLocaleString()} added to tracker.\nAll buddies in this tier already rescued!`;
         document.getElementById('wrWinOverlay').style.display = 'flex';
 
         const app = document.querySelector('.app');
