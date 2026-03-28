@@ -157,11 +157,14 @@ function showUsernamePrompt(onComplete) {
             const batch = writeBatch(db);
             batch.set(doc(db, 'usernames', name), { uid: currentUser.uid });
             batch.set(doc(db, 'users', currentUser.uid), {
-                username:    name,
-                displayName: currentUser.displayName || '',
-                photoURL:    currentUser.photoURL    || '',
-                totalWords:  0,
-                friends:     []
+                username:       name,
+                displayName:    currentUser.displayName || '',
+                photoURL:       currentUser.photoURL    || '',
+                totalWords:     0,
+                wordsThisWeek:  0,
+                wordsThisMonth: 0,
+                wordsThisYear:  0,
+                friends:        []
             }, { merge: true });
             await batch.commit();
 
@@ -478,9 +481,16 @@ window.getCurrentUser = function() { return currentUser; };
 window.getLeaderboard = async function(field = 'totalWords') {
     if (!currentUser) return { error: 'not-signed-in' };
     try {
-        const q    = query(collection(db, 'users'), orderBy(field, 'desc'), limit(25));
+        // Query by totalWords (guaranteed present on all users) to avoid
+        // Firestore excluding docs where the period field is missing.
+        // Sort client-side by the requested period field.
+        const q    = query(collection(db, 'users'), orderBy('totalWords', 'desc'), limit(100));
         const snap = await getDocs(q);
-        return snap.docs.map(d => ({ uid: d.id, ...d.data() })).filter(u => u.username);
+        const users = snap.docs
+            .map(d => ({ uid: d.id, ...d.data() }))
+            .filter(u => u.username);
+        users.sort((a, b) => (b[field] || 0) - (a[field] || 0));
+        return users.slice(0, 25);
     } catch (err) {
         console.error('Leaderboard error:', err);
         return { error: err.message };
