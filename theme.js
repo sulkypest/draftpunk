@@ -13,9 +13,10 @@
     };
 
     const saved = localStorage.getItem('dpTheme');
+    const isLight = saved === null ? true : saved === 'light';
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () { applyTheme(saved === 'light'); });
+        document.addEventListener('DOMContentLoaded', function () { applyTheme(isLight); });
     } else {
-        applyTheme(saved === 'light');
+        applyTheme(isLight);
     }
 })();
