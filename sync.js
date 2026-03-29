@@ -272,6 +272,7 @@ async function continueAfterAuth(user) {
         if (!hasActive && window.showProjectForm) window.showProjectForm();
         checkPendingRequests(user);
         processFriendAcceptances(user);
+        checkUnreadMessages(user);
     }
 }
 
@@ -659,6 +660,86 @@ window.getCurrentUsername = async function() {
     return snap.exists() ? snap.data().username : null;
 };
 
+// ── Messaging ─────────────────────────────────────────────────────────────────
+
+window.sendMessage = async function(toUid, toUsername, body) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        const snap         = await getDoc(doc(db, 'users', currentUser.uid));
+        const fromUsername = snap.exists() ? (snap.data().username || '') : '';
+        const msgRef       = doc(collection(db, 'messages'));
+        await setDoc(msgRef, {
+            from:         currentUser.uid,
+            to:           toUid,
+            fromUsername,
+            toUsername,
+            body:         body.trim().slice(0, 500),
+            read:         false,
+            createdAt:    Date.now()
+        });
+        return { success: true };
+    } catch (err) {
+        return { error: err.message };
+    }
+};
+
+window.getInbox = async function() {
+    if (!currentUser) return [];
+    try {
+        const q    = query(collection(db, 'messages'), where('to', '==', currentUser.uid));
+        const snap = await getDocs(q);
+        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        return msgs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } catch (err) {
+        return { error: err.message };
+    }
+};
+
+window.getSent = async function() {
+    if (!currentUser) return [];
+    try {
+        const q    = query(collection(db, 'messages'), where('from', '==', currentUser.uid));
+        const snap = await getDocs(q);
+        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        return msgs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } catch (err) {
+        return { error: err.message };
+    }
+};
+
+window.markMessageRead = async function(messageId) {
+    if (!currentUser) return;
+    try {
+        await setDoc(doc(db, 'messages', messageId), { read: true }, { merge: true });
+    } catch (err) { /* silent */ }
+};
+
+window.deleteMessage = async function(messageId) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        await deleteDoc(doc(db, 'messages', messageId));
+        return { success: true };
+    } catch (err) {
+        return { error: err.message };
+    }
+};
+
+async function checkUnreadMessages(user) {
+    try {
+        const q    = query(collection(db, 'messages'), where('to', '==', user.uid), where('read', '==', false));
+        const snap = await getDocs(q);
+        updateMessageBadge(snap.size);
+    } catch (err) { /* silent */ }
+}
+
+function updateMessageBadge(count) {
+    document.querySelectorAll('a[href="messages.html"]').forEach(link => {
+        link.textContent = count > 0 ? `MESSAGES (${count})` : 'MESSAGES';
+        link.style.color = count > 0 ? 'var(--neon)' : '';
+    });
+}
+window.updateMessageBadge = updateMessageBadge;
+
 // ── Chapter sharing ────────────────────────────────────────────────────────────
 
 window.createShare = async function({ projectId, projectTitle, chapterId, chapterTitle, content, wordCount, sharedWithUid, sharedWithUsername }) {
@@ -706,5 +787,18 @@ window.deleteShare = async function(shareId) {
         return { success: true };
     } catch (err) {
         return { error: err.message };
+    }
+};
+
+window.getMySharesForChapter = async function(chapterId) {
+    if (!currentUser) return [];
+    try {
+        const q    = query(collection(db, 'shares'),
+                           where('ownerId',   '==', currentUser.uid),
+                           where('chapterId', '==', chapterId));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (err) {
+        return [];
     }
 };

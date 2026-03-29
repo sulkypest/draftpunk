@@ -65,16 +65,21 @@ window.doSendMessage = async function() {
     msg.style.color = '';
     msg.textContent = 'SENDING...';
 
-    const result = await window.sendMessage(uid, username, body);
-    if (result && result.success) {
-        textarea.value  = '';
-        if (charCount) charCount.textContent = '0 / 500';
-        msg.style.color = 'var(--neon)';
-        msg.textContent = 'SENT!';
-        setTimeout(() => { msg.textContent = ''; }, 2000);
-    } else {
+    try {
+        const result = await window.sendMessage(uid, username, body);
+        if (result && result.success) {
+            textarea.value  = '';
+            if (charCount) charCount.textContent = '0 / 500';
+            msg.style.color = 'var(--neon)';
+            msg.textContent = 'SENT!';
+            setTimeout(() => { msg.textContent = ''; }, 2000);
+        } else {
+            msg.style.color = '#ff4500';
+            msg.textContent = (result && result.error) || 'COULD NOT SEND';
+        }
+    } catch (err) {
         msg.style.color = '#ff4500';
-        msg.textContent = (result && result.error) || 'COULD NOT SEND';
+        msg.textContent = err.message || 'COULD NOT SEND';
     }
 };
 
