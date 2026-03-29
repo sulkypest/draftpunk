@@ -277,13 +277,52 @@ window.shareChapter = async function(id) {
     select.innerHTML = '<option value="">LOADING...</option>';
     document.getElementById('shareOverlay').style.display = 'flex';
 
-    const friends = await window.getFriends();
+    const [friends, activeShares] = await Promise.all([
+        window.getFriends(),
+        window.getMySharesForChapter(id)
+    ]);
+
+    // Show active shares with revoke buttons
+    const activeSection = document.getElementById('activeSharesSection');
+    const activeList    = document.getElementById('activeSharesList');
+    if (activeShares && activeShares.length > 0) {
+        activeSection.style.display = 'block';
+        activeList.innerHTML = activeShares.map(s => `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <span style="flex:1;font-size:0.8rem;letter-spacing:1px;">${s.sharedWithUsernames && s.sharedWithUsernames[0] || '?'}</span>
+                <button onclick="revokeShare('${s.id}')"
+                    style="font-size:0.65rem;padding:4px 8px;background:#333;letter-spacing:1px;white-space:nowrap;">
+                    ✕ REVOKE
+                </button>
+            </div>`).join('');
+    } else {
+        activeSection.style.display = 'none';
+    }
+
+    // Populate friend picker (exclude already-shared friends)
+    const sharedUids = new Set((activeShares || []).map(s => s.sharedWith && s.sharedWith[0]));
     if (!friends || friends.error || friends.length === 0) {
         select.innerHTML = '<option value="">NO FRIENDS YET</option>';
         return;
     }
-    select.innerHTML = '<option value="">— SELECT FRIEND —</option>' +
-        friends.map(f => `<option value="${f.uid}">${f.username}</option>`).join('');
+    const available = friends.filter(f => !sharedUids.has(f.uid));
+    if (available.length === 0) {
+        select.innerHTML = '<option value="">ALL FRIENDS ALREADY HAVE ACCESS</option>';
+    } else {
+        select.innerHTML = '<option value="">— SELECT FRIEND —</option>' +
+            available.map(f => `<option value="${f.uid}">${f.username}</option>`).join('');
+    }
+};
+
+window.revokeShare = async function(shareId) {
+    const result = await window.deleteShare(shareId);
+    if (result && result.success) {
+        // Refresh the overlay with the same chapter
+        window.shareChapter(_sharingChapterId);
+    } else {
+        document.getElementById('shareMsg').style.color = '#ff4500';
+        document.getElementById('shareMsg').textContent = 'COULD NOT REVOKE';
+    }
 };
 
 window.closeShareOverlay = function() {
