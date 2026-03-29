@@ -127,6 +127,8 @@ function renderAll() {
                         onclick="deleteChapter('${ch.id}'); event.stopPropagation()">✕</button>
                     <button class="write-ch-btn write-ch-focus" onmousedown="event.preventDefault()"
                         onclick="focusChapter('${ch.id}'); event.stopPropagation()" title="Focus mode">⛶</button>
+                    <button class="write-ch-btn" onmousedown="event.preventDefault()"
+                        onclick="shareChapter('${ch.id}'); event.stopPropagation()" title="Share chapter">⤴</button>
                 </div>
                 <div class="write-chapter-body">
                     <div class="write-toolbar">

@@ -658,3 +658,53 @@ window.getCurrentUsername = async function() {
     const snap = await getDoc(doc(db, 'users', currentUser.uid));
     return snap.exists() ? snap.data().username : null;
 };
+
+// ── Chapter sharing ────────────────────────────────────────────────────────────
+
+window.createShare = async function({ projectId, projectTitle, chapterId, chapterTitle, content, wordCount, sharedWithUid, sharedWithUsername }) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        const snap         = await getDoc(doc(db, 'users', currentUser.uid));
+        const ownerUsername = snap.exists() ? (snap.data().username || '') : '';
+
+        // Re-use same shareId per owner+chapter+recipient so re-shares just update
+        const shareId = `${currentUser.uid}_${chapterId}_${sharedWithUid}`;
+        await setDoc(doc(db, 'shares', shareId), {
+            ownerId:             currentUser.uid,
+            ownerUsername,
+            projectId,
+            projectTitle,
+            chapterId,
+            chapterTitle,
+            content,
+            wordCount,
+            sharedWith:          [sharedWithUid],
+            sharedWithUsernames: [sharedWithUsername],
+            updatedAt:           Date.now()
+        });
+        return { success: true };
+    } catch (err) {
+        return { error: err.message };
+    }
+};
+
+window.getSharedWithMe = async function() {
+    if (!currentUser) return [];
+    try {
+        const q    = query(collection(db, 'shares'), where('sharedWith', 'array-contains', currentUser.uid));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (err) {
+        return { error: err.message };
+    }
+};
+
+window.deleteShare = async function(shareId) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        await deleteDoc(doc(db, 'shares', shareId));
+        return { success: true };
+    } catch (err) {
+        return { error: err.message };
+    }
+};
