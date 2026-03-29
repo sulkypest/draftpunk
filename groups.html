@@ -92,6 +92,12 @@
                     <div id="friendsList" style="margin-top:10px;"></div>
                 </div>
 
+                <!-- Shared with me -->
+                <div style="margin-bottom:30px;">
+                    <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">SHARED WITH ME</label>
+                    <div id="sharedWithMeList" style="margin-top:10px;"></div>
+                </div>
+
                 <!-- Global leaderboard -->
                 <div>
                     <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">GLOBAL LEADERBOARD</label>
@@ -105,6 +111,19 @@
                 </div>
 
             </div>
+        </div>
+    </div>
+
+    <div id="shareViewOverlay" class="overlay" style="display:none;" onclick="if(event.target===this)closeShareView()">
+        <div class="congrats-box" style="max-width:600px;width:95%;max-height:80vh;display:flex;flex-direction:column;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px;">
+                <div>
+                    <h2 id="shareViewTitle" style="color:var(--neon);margin:0 0 4px;"></h2>
+                    <div id="shareViewMeta" style="font-size:0.65rem;opacity:0.4;letter-spacing:1px;"></div>
+                </div>
+                <button onclick="closeShareView()" style="background:#333;min-width:unset;width:auto;padding:4px 10px;font-size:0.7rem;white-space:nowrap;flex-shrink:0;">✕ CLOSE</button>
+            </div>
+            <div id="shareViewContent" style="flex:1;overflow-y:auto;margin-top:12px;font-size:0.9rem;line-height:1.8;text-align:left;border-top:1px solid var(--border);padding-top:12px;"></div>
         </div>
     </div>
 

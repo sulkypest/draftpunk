@@ -259,6 +259,74 @@ window.syncToTracker = function() {
     alert('✓ ' + delta.toLocaleString() + ' words added to your tracker!');
 };
 
+// ── Chapter sharing ────────────────────────────────────────────────────────────
+let _sharingChapterId = null;
+
+window.shareChapter = async function(id) {
+    const user = window.getCurrentUser && window.getCurrentUser();
+    if (!user) { alert('Sign in to share chapters.'); return; }
+
+    const ch = writingData.chapters.find(c => c.id === id);
+    if (!ch) return;
+
+    _sharingChapterId = id;
+    document.getElementById('shareChapterName').textContent = ch.title.toUpperCase();
+    document.getElementById('shareMsg').textContent = '';
+
+    const select = document.getElementById('shareFriendSelect');
+    select.innerHTML = '<option value="">LOADING...</option>';
+    document.getElementById('shareOverlay').style.display = 'flex';
+
+    const friends = await window.getFriends();
+    if (!friends || friends.error || friends.length === 0) {
+        select.innerHTML = '<option value="">NO FRIENDS YET</option>';
+        return;
+    }
+    select.innerHTML = '<option value="">— SELECT FRIEND —</option>' +
+        friends.map(f => `<option value="${f.uid}">${f.username}</option>`).join('');
+};
+
+window.closeShareOverlay = function() {
+    document.getElementById('shareOverlay').style.display = 'none';
+    _sharingChapterId = null;
+};
+
+window.confirmShare = async function() {
+    const select = document.getElementById('shareFriendSelect');
+    const msg    = document.getElementById('shareMsg');
+    const uid    = select.value;
+    if (!uid) { msg.style.color = '#ff4500'; msg.textContent = 'SELECT A FRIEND FIRST'; return; }
+
+    const ch = writingData.chapters.find(c => c.id === _sharingChapterId);
+    if (!ch) return;
+
+    const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+    const proj   = dpData.projects && dpData.projects[activeProjectId];
+
+    msg.style.color = 'var(--text-dim)';
+    msg.textContent = 'SHARING...';
+
+    const result = await window.createShare({
+        projectId:           activeProjectId,
+        projectTitle:        (proj && proj.title) || 'UNTITLED',
+        chapterId:           ch.id,
+        chapterTitle:        ch.title,
+        content:             ch.content,
+        wordCount:           ch.wordCount || 0,
+        sharedWithUid:       uid,
+        sharedWithUsername:  select.options[select.selectedIndex].text
+    });
+
+    if (result && result.success) {
+        msg.style.color = 'var(--neon)';
+        msg.textContent = 'SHARED!';
+        setTimeout(window.closeShareOverlay, 1200);
+    } else {
+        msg.style.color = '#ff4500';
+        msg.textContent = (result && result.error) || 'COULD NOT SHARE';
+    }
+};
+
 // ── Focus mode ────────────────────────────────────────────────────────────────
 window._focusedChapterId = null;
 

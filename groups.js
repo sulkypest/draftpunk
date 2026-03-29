@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function loadAll() {
     loadPendingRequests();
     loadFriends();
+    loadSharedWithMe();
     loadLeaderboard();
 }
 
@@ -191,6 +192,51 @@ window.doAddFriend = async function() {
         msg.textContent = result.error || 'COULD NOT SEND REQUEST';
     }
     setTimeout(() => { msg.textContent = ''; }, 3000);
+};
+
+// ── Shared with me ────────────────────────────────────────────────────────────
+let _sharedWithMeData = [];
+
+async function loadSharedWithMe() {
+    const container = document.getElementById('sharedWithMeList');
+    if (!container) return;
+    container.innerHTML = '<div class="lb-loading">LOADING...</div>';
+
+    const result = await window.getSharedWithMe();
+
+    if (!result || result.error) {
+        container.innerHTML = '<div class="lb-empty">COULD NOT LOAD</div>';
+        return;
+    }
+    if (result.length === 0) {
+        container.innerHTML = '<div class="lb-empty">NOTHING SHARED WITH YOU YET</div>';
+        return;
+    }
+
+    _sharedWithMeData = result;
+    container.innerHTML = result.map(share => `
+        <div class="lb-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px;">
+            <div style="display:flex;width:100%;align-items:center;gap:8px;">
+                <span class="lb-name" style="flex:1;">${share.chapterTitle}</span>
+                <span class="lb-words">${(share.wordCount || 0).toLocaleString()} WDS</span>
+                <button onclick="viewShare('${share.id}')" style="font-size:0.7rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">READ</button>
+            </div>
+            <div style="font-size:0.65rem;opacity:0.4;letter-spacing:1px;">${share.projectTitle} — FROM ${share.ownerUsername}</div>
+        </div>
+    `).join('');
+}
+
+window.viewShare = function(shareId) {
+    const share = _sharedWithMeData.find(s => s.id === shareId);
+    if (!share) return;
+    document.getElementById('shareViewTitle').textContent = share.chapterTitle.toUpperCase();
+    document.getElementById('shareViewMeta').textContent  = share.projectTitle + ' — BY ' + share.ownerUsername;
+    document.getElementById('shareViewContent').innerHTML = share.content || '<em style="opacity:0.4;">No content.</em>';
+    document.getElementById('shareViewOverlay').style.display = 'flex';
+};
+
+window.closeShareView = function() {
+    document.getElementById('shareViewOverlay').style.display = 'none';
 };
 
 // ── Remove friend ─────────────────────────────────────────────────────────────
