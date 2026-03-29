@@ -57,10 +57,16 @@ async function pullFromCloud(user) {
     const cloudTime = cloud.updatedAt || 0;
 
     if (cloudTime > localTime) {
+        // Cancel any pending push and use the raw _setItem to bypass the
+        // localStorage override — otherwise each key set triggers schedulePush,
+        // which pushes to Firestore with updatedAt=now, making the cloud newer
+        // again on the next load and causing an infinite reload loop.
+        clearTimeout(syncTimeout);
+        syncTimeout = null;
         DATA_KEYS.forEach(k => {
-            if (cloud[k] != null) localStorage.setItem(k, JSON.stringify(cloud[k]));
+            if (cloud[k] != null) _setItem(k, JSON.stringify(cloud[k]));
         });
-        localStorage.setItem('dpLastUpdated', cloudTime.toString());
+        _setItem('dpLastUpdated', Date.now().toString());
         return true;
     } else {
         await pushToCloud(user);
@@ -305,6 +311,10 @@ window.signOutUser = async function() {
     if (!confirm('Sign out?')) return;
     clearTimeout(syncTimeout);
     await signOut(auth);
+    // Clear all local data so the next user (or same user on next sign-in)
+    // starts clean — prevents stale data flashing before auth resolves.
+    DATA_KEYS.forEach(k => localStorage.removeItem(k));
+    localStorage.removeItem('dpLastUpdated');
     localStorage.removeItem('authDecisionMade');
     localStorage.removeItem('dpUserId');
     localStorage.setItem('justSignedOut', '1');
