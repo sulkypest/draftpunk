@@ -86,6 +86,9 @@
                 <!-- Friends leaderboard -->
                 <div style="margin-bottom:30px;">
                     <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">YOUR FRIENDS</label>
+                    <input type="text" id="friendsSearch" placeholder="SEARCH FRIENDS"
+                        style="width:100%;box-sizing:border-box;margin-top:8px;text-transform:uppercase;"
+                        oninput="filterFriends(this.value)">
                     <div id="friendsList" style="margin-top:10px;"></div>
                 </div>
 

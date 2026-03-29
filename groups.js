@@ -123,6 +123,31 @@ async function loadLeaderboard() {
 }
 
 // ── Friends list ──────────────────────────────────────────────────────────────
+let _friendsData = [];
+
+function renderFriends(list) {
+    const container = document.getElementById('friendsList');
+    if (!container) return;
+    if (list.length === 0) {
+        container.innerHTML = '<div class="lb-empty">NO MATCHES</div>';
+        return;
+    }
+    container.innerHTML = list.map(u => `
+        <div class="lb-row">
+            <span class="lb-rank">✦</span>
+            <span class="lb-name">${u.username}</span>
+            <span class="lb-words">${(u.totalWords || 0).toLocaleString()} WDS</span>
+            <button class="lb-remove-btn" onclick="doRemoveFriend('${u.uid}', '${u.username}')">✕</button>
+        </div>
+    `).join('');
+}
+
+window.filterFriends = function(query) {
+    const q = query.trim().toUpperCase();
+    const filtered = q ? _friendsData.filter(u => u.username.toUpperCase().includes(q)) : _friendsData;
+    renderFriends(filtered);
+};
+
 async function loadFriends() {
     const container = document.getElementById('friendsList');
     if (!container) return;
@@ -139,15 +164,11 @@ async function loadFriends() {
         return;
     }
 
-    const sorted = [...result].sort((a, b) => (b.totalWords || 0) - (a.totalWords || 0));
-    container.innerHTML = sorted.map(u => `
-        <div class="lb-row">
-            <span class="lb-rank">✦</span>
-            <span class="lb-name">${u.username}</span>
-            <span class="lb-words">${(u.totalWords || 0).toLocaleString()} WDS</span>
-            <button class="lb-remove-btn" onclick="doRemoveFriend('${u.uid}', '${u.username}')">✕</button>
-        </div>
-    `).join('');
+    _friendsData = [...result].sort((a, b) => (b.totalWords || 0) - (a.totalWords || 0));
+    const searchVal = document.getElementById('friendsSearch');
+    const q = searchVal ? searchVal.value.trim().toUpperCase() : '';
+    const filtered = q ? _friendsData.filter(u => u.username.toUpperCase().includes(q)) : _friendsData;
+    renderFriends(filtered);
 }
 
 // ── Add friend ────────────────────────────────────────────────────────────────
