@@ -54,7 +54,7 @@
     <div class="write-focus-bar">
         <span id="focusChapterTitle" style="font-size:0.7rem;letter-spacing:1px;opacity:0.4;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
         <span id="focusWc" style="font-size:0.7rem;letter-spacing:1px;opacity:0.5;white-space:nowrap;"></span>
-        <button onclick="exitFocus()" style="background:var(--neon);border:none;color:#000;font-family:inherit;font-size:0.7rem;font-weight:900;letter-spacing:1px;padding:4px 12px;min-height:unset;width:auto;cursor:pointer;">✕ EXIT FOCUS</button>
+        <button onclick="exitFocus()" style="background:var(--neon);border:none;color:var(--bg);font-family:inherit;font-size:0.7rem;font-weight:900;letter-spacing:1px;padding:4px 12px;min-height:unset;width:auto;cursor:pointer;">✕ EXIT FOCUS</button>
     </div>
 
     <div class="notes-page">
@@ -73,6 +73,21 @@
                 <button id="syncWordsBtn" onclick="syncToTracker()" style="width:100%;margin-top:10px;" disabled>ALL WORDS SYNCED</button>
                 <button onclick="exportStory()" style="width:100%;margin-top:8px;background:#333;">⬇ EXPORT STORY</button>
             </div>
+        </div>
+    </div>
+
+    <div id="shareOverlay" class="overlay" style="display:none;" onclick="if(event.target===this)closeShareOverlay()">
+        <div class="congrats-box" style="max-width:360px;width:90%;">
+            <h2 style="color:var(--neon);margin-bottom:8px;">SHARE CHAPTER</h2>
+            <div id="shareChapterName" style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;margin-bottom:20px;"></div>
+            <label style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;">SHARE WITH FRIEND</label>
+            <select id="shareFriendSelect" style="width:100%;margin-top:8px;margin-bottom:16px;"></select>
+            <p id="shareMsg" style="font-size:0.75rem;height:1.2em;margin-bottom:12px;letter-spacing:1px;"></p>
+            <div style="display:flex;gap:10px;">
+                <button onclick="confirmShare()" style="flex:1;">⤴ SHARE</button>
+                <button onclick="closeShareOverlay()" style="flex:1;background:#333;">CANCEL</button>
+            </div>
+            <p style="font-size:0.62rem;opacity:0.3;margin-top:14px;line-height:1.5;letter-spacing:1px;">SHARED CHAPTERS ARE READ-ONLY FOR THE RECIPIENT.</p>
         </div>
     </div>
 
