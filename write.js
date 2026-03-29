@@ -364,8 +364,8 @@ function nodeToRtf(node) {
         case 'h2':               return '{\\b\\fs28 ' + inner + '}\\par';
         case 'h3':               return '{\\b\\fs26 ' + inner + '}\\par';
         case 'br':               return '\\par ';
-        case 'p':                return inner + '\\par ';
-        case 'div':              return inner + '\\par ';
+        case 'p':                return '\\fi720 ' + inner + '\\par ';
+        case 'div':              return '\\fi720 ' + inner + '\\par ';
         default:                 return inner;
     }
 }

@@ -910,6 +910,11 @@ button {
     word-break: break-word;
 }
 
+.write-area p,
+.write-area div {
+    text-indent: 2em;
+}
+
 .write-area h2 {
     font-family: 'Courier New', monospace;
     font-size: 0.85rem;
