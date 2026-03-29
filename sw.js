@@ -1,4 +1,4 @@
-const CACHE = 'draftpunk-v19';
+const CACHE = 'draftpunk-v20';
 
 const PRECACHE = [
     './',
@@ -38,6 +38,8 @@ const PRECACHE = [
     './groups.js',
     './write.html',
     './write.js',
+    './messages.html',
+    './messages.js',
 ];
 
 self.addEventListener('install', event => {

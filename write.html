@@ -20,6 +20,7 @@
                 <a href="index.html" class="nav-dropdown-item">DRAFT PUNK</a>
                 <a href="wordrunner.html" class="nav-dropdown-item">WORDRUNNER</a>
                 <a href="groups.html" class="nav-dropdown-item">WRITING GROUPS</a>
+                <a href="messages.html" class="nav-dropdown-item">MESSAGES</a>
             </div>
         </div>
         <a href="write.html" class="nav-center-btn active">WRITE</a>
@@ -79,7 +80,14 @@
     <div id="shareOverlay" class="overlay" style="display:none;" onclick="if(event.target===this)closeShareOverlay()">
         <div class="congrats-box" style="max-width:360px;width:90%;">
             <h2 style="color:var(--neon);margin-bottom:8px;">SHARE CHAPTER</h2>
-            <div id="shareChapterName" style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;margin-bottom:20px;"></div>
+            <div id="shareChapterName" style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;margin-bottom:16px;"></div>
+
+            <div id="activeSharesSection" style="display:none;margin-bottom:16px;">
+                <label style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;">CURRENTLY SHARED WITH</label>
+                <div id="activeSharesList" style="margin-top:8px;"></div>
+                <div style="border-top:1px solid var(--border);margin:14px 0;"></div>
+            </div>
+
             <label style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;">SHARE WITH FRIEND</label>
             <select id="shareFriendSelect" style="width:100%;margin-top:8px;margin-bottom:16px;"></select>
             <p id="shareMsg" style="font-size:0.75rem;height:1.2em;margin-bottom:12px;letter-spacing:1px;"></p>
