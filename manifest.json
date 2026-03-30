@@ -2,10 +2,13 @@
     "name": "Draft Punk",
     "short_name": "Draft Punk",
     "description": "Gamified writing progress tracker",
-    "start_url": "/draftpunk/",
+    "start_url": "/",
+    "scope": "/",
     "display": "standalone",
+    "orientation": "portrait",
     "background_color": "#0a0a12",
     "theme_color": "#0a0a12",
+    "categories": ["productivity", "lifestyle"],
     "icons": [
         {
             "src": "icon-192.png",
