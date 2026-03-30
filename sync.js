@@ -5,6 +5,8 @@ import {
     getFirestore, doc, setDoc, getDoc, deleteDoc, writeBatch,
     collection, query, orderBy, limit, where, getDocs, arrayUnion, arrayRemove
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { initializeAppCheck, ReCaptchaV3Provider }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js';
 
 const firebaseConfig = {
     apiKey:            "AIzaSyA6UdbZT_t5gNuhQ3W6mMgzxrsB9y87ozE",
@@ -19,6 +21,22 @@ const app      = initializeApp(firebaseConfig);
 const auth     = getAuth(app);
 const db       = getFirestore(app);
 const provider = new GoogleAuthProvider();
+
+// ── App Check — prevents API abuse from scripts / bots ────────────────────────
+// 1. Go to https://www.google.com/recaptcha/admin/create
+// 2. Choose reCAPTCHA v3, add draft-punk.com as a domain
+// 3. Copy the site key and paste below
+// 4. In Firebase console → App Check → Apps → register your web app
+const RECAPTCHA_KEY = 'YOUR_RECAPTCHA_V3_SITE_KEY';
+if (RECAPTCHA_KEY !== 'YOUR_RECAPTCHA_V3_SITE_KEY') {
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; // prints debug token to console
+    }
+    initializeAppCheck(app, {
+        provider:                 new ReCaptchaV3Provider(RECAPTCHA_KEY),
+        isTokenAutoRefreshEnabled: true
+    });
+}
 
 const DATA_KEYS = ['draftPunkData', 'beatNotesData', 'charactersData', 'wordRunnerData'];
 
