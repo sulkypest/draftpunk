@@ -49,6 +49,9 @@
                     </div>
                     <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
                 </div>
+                <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
+                <a href="privacy.html" class="nav-dropdown-item">PRIVACY POLICY</a>
+                <a href="terms.html" class="nav-dropdown-item">TERMS OF SERVICE</a>
             </div>
         </div>
     </nav>
@@ -85,12 +88,12 @@
             <div id="shareChapterName" style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;margin-bottom:16px;"></div>
 
             <div id="activeSharesSection" style="display:none;margin-bottom:16px;">
-                <label style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;">CURRENTLY SHARED WITH</label>
+                <span style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;">CURRENTLY SHARED WITH</span>
                 <div id="activeSharesList" style="margin-top:8px;"></div>
                 <div style="border-top:1px solid var(--border);margin:14px 0;"></div>
             </div>
 
-            <label style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;">SHARE WITH FRIEND</label>
+            <label for="shareFriendSelect" style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;">SHARE WITH FRIEND</label>
             <select id="shareFriendSelect" style="width:100%;margin-top:8px;margin-bottom:16px;"></select>
             <p id="shareMsg" style="font-size:0.75rem;height:1.2em;margin-bottom:12px;letter-spacing:1px;"></p>
             <div style="display:flex;gap:10px;">

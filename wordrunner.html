@@ -49,6 +49,9 @@
                     </div>
                     <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
                 </div>
+                <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
+                <a href="privacy.html" class="nav-dropdown-item">PRIVACY POLICY</a>
+                <a href="terms.html" class="nav-dropdown-item">TERMS OF SERVICE</a>
             </div>
         </div>
     </nav>
@@ -86,7 +89,7 @@
 
                 <!-- Tier grid -->
                 <div id="tierGridWrapper">
-                    <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">SELECT MISSION TIER</label>
+                    <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">SELECT MISSION TIER</span>
                     <div class="tier-grid" id="tierGrid"></div>
                 </div>
 
@@ -150,12 +153,12 @@
 
         <div class="side-container">
             <div class="side-box">
-                <label>RANK</label>
+                <span>RANK</span>
                 <div id="wrLevelNumber" style="font-size:3rem;font-weight:900;line-height:1;margin:5px 0;color:var(--neon);">1</div>
                 <div id="wrRankName" style="font-size:0.8rem;letter-spacing:1px;text-transform:uppercase;">--</div>
             </div>
             <div class="side-box">
-                <label>RESCUED</label>
+                <span>RESCUED</span>
                 <div id="wrSprintsWon" style="font-size:3rem;font-weight:900;line-height:1;margin:5px 0;color:var(--neon);">0</div>
             </div>
         </div>

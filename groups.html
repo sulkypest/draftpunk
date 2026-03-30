@@ -49,6 +49,9 @@
                     </div>
                     <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
                 </div>
+                <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
+                <a href="privacy.html" class="nav-dropdown-item">PRIVACY POLICY</a>
+                <a href="terms.html" class="nav-dropdown-item">TERMS OF SERVICE</a>
             </div>
         </div>
     </nav>
@@ -69,13 +72,13 @@
 
                 <!-- Pending friend requests -->
                 <div id="pendingRequestsSection" style="display:none;margin-bottom:30px;">
-                    <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">FRIEND REQUESTS</label>
+                    <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">FRIEND REQUESTS</span>
                     <div id="pendingRequestsList" style="margin-top:10px;"></div>
                 </div>
 
                 <!-- Add friend -->
                 <div style="margin-bottom:30px;">
-                    <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">ADD FRIEND BY USERNAME</label>
+                    <label for="friendUsernameInput" style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">ADD FRIEND BY USERNAME</label>
                     <div style="display:flex;gap:8px;margin-top:8px;">
                         <input type="text" id="friendUsernameInput" placeholder="USERNAME"
                             style="flex:1;text-transform:uppercase;"
@@ -88,7 +91,7 @@
 
                 <!-- Friends leaderboard -->
                 <div style="margin-bottom:30px;">
-                    <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">YOUR FRIENDS</label>
+                    <label for="friendsSearch" style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">YOUR FRIENDS</label>
                     <input type="text" id="friendsSearch" placeholder="SEARCH FRIENDS"
                         style="width:100%;box-sizing:border-box;margin-top:8px;text-transform:uppercase;"
                         oninput="filterFriends(this.value)">
@@ -97,13 +100,13 @@
 
                 <!-- Shared with me -->
                 <div style="margin-bottom:30px;">
-                    <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">SHARED WITH ME</label>
+                    <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">SHARED WITH ME</span>
                     <div id="sharedWithMeList" style="margin-top:10px;"></div>
                 </div>
 
                 <!-- Global leaderboard -->
                 <div>
-                    <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">GLOBAL LEADERBOARD</label>
+                    <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">GLOBAL LEADERBOARD</span>
                     <div style="display:flex;gap:4px;margin-top:8px;margin-bottom:8px;">
                         <button class="lb-period-btn lb-period-active" data-period="week"  onclick="setLeaderboardPeriod('week')" >THIS WEEK</button>
                         <button class="lb-period-btn"                  data-period="month" onclick="setLeaderboardPeriod('month')">THIS MONTH</button>

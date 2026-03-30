@@ -49,6 +49,9 @@
                     </div>
                     <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
                 </div>
+                <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
+                <a href="privacy.html" class="nav-dropdown-item">PRIVACY POLICY</a>
+                <a href="terms.html" class="nav-dropdown-item">TERMS OF SERVICE</a>
             </div>
         </div>
     </nav>
@@ -69,7 +72,7 @@
 
                 <!-- Compose -->
                 <div style="margin-bottom:30px;">
-                    <label style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">NEW MESSAGE</label>
+                    <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">NEW MESSAGE</span>
                     <select id="composeToSelect" style="width:100%;margin-top:8px;margin-bottom:8px;"></select>
                     <textarea id="composeBody" maxlength="500" placeholder="WRITE YOUR MESSAGE..."
                         oninput="updateCharCount(this)"

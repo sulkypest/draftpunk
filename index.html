@@ -50,6 +50,9 @@
                     </div>
                     <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
                 </div>
+                <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
+                <a href="privacy.html" class="nav-dropdown-item">PRIVACY POLICY</a>
+                <a href="terms.html" class="nav-dropdown-item">TERMS OF SERVICE</a>
             </div>
         </div>
     </nav>
@@ -134,7 +137,7 @@
                 <div class="wc-display-label">WORDS WRITTEN</div>
             </div>
 
-            <label class="bar-label">TOTAL PROGRESS</label>
+            <span class="bar-label">TOTAL PROGRESS</span>
             <div class="bar-container">
                 <div id="hpBar" class="bar-fill"></div>
                 <div id="hpText">0 / 0</div>
@@ -154,7 +157,7 @@
 
             <div class="buddy-container">
                 <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <label>BUDDIES</label>
+                    <span>BUDDIES</span>
                     <div id="buddyCountDisplay" style="font-size: 1.5rem;">0</div>
                 </div>
                 <div id="buddyGallery" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
@@ -168,12 +171,12 @@
 
         <div class="side-container">
             <div class="side-box">
-                <label>LEVEL</label>
+                <span>LEVEL</span>
                 <div id="sideLevelNumber" style="font-size: 3rem; font-weight: 900; line-height: 1; margin: 5px 0; color: var(--neon);">1</div>
                 <div id="sideRankName" style="font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase;">--</div>
             </div>
             <div class="side-box">
-                <label>DEADLINE</label>
+                <span>DEADLINE</span>
                 <div id="daysLeftDisplay" style="font-size: 3rem; font-weight: 900; line-height: 1; margin: 5px 0; color: var(--neon);">--</div>
                 <div style="font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase;">DAYS REMAINING</div>
             </div>
