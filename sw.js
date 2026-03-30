@@ -1,4 +1,4 @@
-const CACHE = 'draftpunk-v21';
+const CACHE = 'draftpunk-v22';
 
 const PRECACHE = [
     './',
@@ -64,6 +64,9 @@ self.addEventListener('activate', event => {
 // Network-first for HTML/JS/CSS — always serve fresh code, fall back to cache offline
 // Cache-first for images — they rarely change
 self.addEventListener('fetch', event => {
+    // Cache API only supports GET — skip everything else (Firebase POST calls etc.)
+    if (event.request.method !== 'GET') return;
+
     const url = new URL(event.request.url);
     const isImage = /\.(png|jpg|jpeg|gif|svg|webp|ico)$/i.test(url.pathname);
 
