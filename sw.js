@@ -1,4 +1,4 @@
-const CACHE = 'draftpunk-v22';
+const CACHE = 'draftpunk-v23';
 
 const PRECACHE = [
     './',
@@ -75,6 +75,7 @@ self.addEventListener('fetch', event => {
             caches.match(event.request).then(cached => {
                 if (cached) return cached;
                 return fetch(event.request).then(response => {
+                    if (!response.ok) return response;
                     const clone = response.clone();
                     caches.open(CACHE).then(cache => cache.put(event.request, clone));
                     return response;
@@ -84,6 +85,7 @@ self.addEventListener('fetch', event => {
     } else {
         event.respondWith(
             fetch(event.request).then(response => {
+                if (!response.ok) return response;
                 const clone = response.clone();
                 caches.open(CACHE).then(cache => cache.put(event.request, clone));
                 return response;
