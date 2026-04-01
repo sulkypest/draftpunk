@@ -1,1 +1,10 @@
-
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.draft_punk.twa",
+    "sha256_cert_fingerprints": [
+      "3A:FE:CD:0E:C1:70:3A:2B:16:7E:24:1F:4D:99:08:47:05:B7:1B:1F:A6:D0:D4:B5:61:8F:AC:FE:A5:51:39:58"
+    ]
+  }
+}]
