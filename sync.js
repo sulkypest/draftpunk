@@ -27,7 +27,7 @@ const provider = new GoogleAuthProvider();
 // 2. Choose reCAPTCHA v3, add draft-punk.com as a domain
 // 3. Copy the site key and paste below
 // 4. In Firebase console → App Check → Apps → register your web app
-const RECAPTCHA_KEY = 'YOUR_RECAPTCHA_V3_SITE_KEY';
+const RECAPTCHA_KEY = '6LfWQZ4sAAAAAMnYSJFsFsCDB2PCHCBFAkwyvT3z';
 if (RECAPTCHA_KEY !== 'YOUR_RECAPTCHA_V3_SITE_KEY') {
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
         self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; // prints debug token to console
