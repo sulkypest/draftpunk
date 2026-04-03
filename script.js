@@ -110,7 +110,7 @@ window.start = function() {
     });
     dpData.activeProjectId = id;
     localStorage.setItem('draftPunkData', JSON.stringify(dpData));
-    location.reload();
+    window.location.href = 'write.html';
 };
 
 // ── Switch to an existing project ─────────────────────────────────────────────
