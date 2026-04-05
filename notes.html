@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHARACTERS</title>
+    <title>NOTES</title>
     <link rel="icon" href="DRAFTPUNK.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <script src="sentry.js"></script>
@@ -29,9 +29,9 @@
         <div class="nav-dropdown" style="margin-left:auto;">
             <button class="nav-dropdown-btn active" onclick="toggleNotesMenu()">NOTES</button>
             <div class="nav-dropdown-menu" id="notesMenu">
-                <a href="notes.html" class="nav-dropdown-item">NOTES</a>
+                <a href="notes.html" class="nav-dropdown-item" style="color:var(--neon);">NOTES</a>
                 <a href="beat-notes.html" class="nav-dropdown-item">BEATS</a>
-                <a href="characters.html" class="nav-dropdown-item" style="color:var(--neon);">CHARACTERS</a>
+                <a href="characters.html" class="nav-dropdown-item">CHARACTERS</a>
             </div>
         </div>
         <div class="nav-dropdown">
@@ -60,17 +60,16 @@
 
     <div class="notes-page">
         <div class="app">
-            <h1>CHARACTERS</h1>
-            <h2 id="projectTitle" style="font-size:0.9rem;opacity:0.5;margin-top:-10px;margin-bottom:20px;"></h2>
-            <button onclick="addChar()" style="width:100%;margin-bottom:15px;">+ ADD CHARACTER</button>
-            <div id="charContainer"></div>
-            <button onclick="exportCharacters()" style="width:100%;margin-top:16px;background:#333;">⬇ EXPORT CHARACTER SHEETS</button>
+            <h1>NOTES</h1>
+            <h2 id="notesProjectTitle" style="font-size:0.9rem;opacity:0.5;margin-top:-10px;margin-bottom:20px;"></h2>
+            <button onclick="addNote()" style="width:100%;margin-bottom:20px;">+ NEW NOTE</button>
+            <div id="notesGrid" class="sticky-notes-grid"></div>
         </div>
     </div>
 
     <script src="theme.js"></script>
     <script src="backup.js"></script>
-    <script src="characters.js"></script>
+    <script src="notes.js"></script>
     <script type="module" src="sync.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
