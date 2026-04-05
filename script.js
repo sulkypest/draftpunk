@@ -397,13 +397,8 @@ window.onload = function() {
     const hasActive = activeId && dpData.projects && dpData.projects[activeId] && dpData.projects[activeId].active;
 
     if (hasActive) {
-        localStorage.setItem('authDecisionMade', '1');
-        checkPeriodResets();
-        document.getElementById('authScreen').style.display = 'none';
-        document.getElementById('setup').style.display = 'none';
-        document.getElementById('mainDashboard').classList.remove('hidden');
-        if (nav) nav.style.display = '';
-        updateUI(); initGraph();
+        window.location.replace('write.html');
+        return;
     } else if (localStorage.getItem('authDecisionMade')) {
         document.getElementById('authScreen').style.display = 'none';
         document.getElementById('setup').style.display = 'block';
