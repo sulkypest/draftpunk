@@ -1006,3 +1006,124 @@ body.write-focus .write-chapter.write-focus-target .write-area {
 body.write-focus .write-focus-bar {
     display: flex;
 }
+
+/* ── Write screen toast notifications ───────────────────────────────────────── */
+.write-toast {
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    background: var(--panel2);
+    border: 1px solid var(--neon);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 500;
+    transform: translateX(calc(100% + 24px));
+    transition: transform 0.3s ease;
+    max-width: 260px;
+    box-shadow: 0 0 20px rgba(0,255,255,0.15);
+}
+.write-toast.show {
+    transform: translateX(0);
+}
+.write-toast-sprite {
+    width: 48px;
+    height: 48px;
+    image-rendering: pixelated;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 6px var(--neon));
+}
+.write-toast-title {
+    font-size: 0.6rem;
+    color: var(--neon);
+    letter-spacing: 2px;
+    font-weight: 900;
+}
+.write-toast-sub {
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    margin-top: 4px;
+}
+
+/* ── Sticky notes ────────────────────────────────────────────────────────────── */
+.sticky-notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.sticky-note {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 160px;
+}
+
+.sticky-note-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sticky-note-title {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--neon);
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    padding: 4px 0;
+    text-transform: uppercase;
+    outline: none;
+}
+
+.sticky-note-title::placeholder {
+    opacity: 0.3;
+}
+
+.sticky-note-del {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.75rem;
+    opacity: 0.4;
+    padding: 2px 4px;
+    min-height: unset;
+    width: auto;
+    line-height: 1;
+}
+
+.sticky-note-del:hover {
+    opacity: 1;
+    color: #ff4500;
+}
+
+.sticky-note-body {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    min-height: 100px;
+    outline: none;
+    resize: none;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0;
+}
+
+.sticky-note-body::placeholder {
+    opacity: 0.25;
+    font-style: italic;
+}

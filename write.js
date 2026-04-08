@@ -244,20 +244,60 @@ window.syncToTracker = function() {
     const proj = dpData.projects[dpData.activeProjectId];
     if (!proj) { alert('No active project found.'); return; }
 
-    proj.total          = (proj.total          || 0) + delta;
+    const oldTotal     = proj.total || 0;
+    const oldLastLevel = proj.lastLevel || 0;
+    proj.inventory     = proj.inventory || [];
+
+    proj.total          = oldTotal + delta;
     proj.wordsThisWeek  = (proj.wordsThisWeek  || 0) + delta;
     proj.wordsThisMonth = (proj.wordsThisMonth || 0) + delta;
     proj.wordsThisYear  = (proj.wordsThisYear  || 0) + delta;
     proj.logs           = proj.logs || [];
     proj.logs.push({ date: new Date().toLocaleDateString(), total: proj.total });
+
+    // Boss beat check
+    const goal        = proj.goal || 80000;
+    const newProgress = (proj.total / goal) * 100;
+    const newLevelIdx = BOSS_BEATS.findLastIndex(b => newProgress >= b.pct);
+    if (newLevelIdx > oldLastLevel) {
+        proj.lastLevel = newLevelIdx;
+        const beat = BOSS_BEATS[newLevelIdx];
+        setTimeout(() => showWriteToast(`bosses/${newLevelIdx}.png`, 'BEAT DEFEATED', beat.name.toUpperCase()), 400);
+    }
+
+    // Buddy check
+    if (Math.floor(proj.total / 5000) > Math.floor(oldTotal / 5000)) {
+        const buddyID   = Math.floor(Math.random() * 100) + 1;
+        const buddyFile = `buddy${buddyID}.png`;
+        if (!proj.inventory.includes(buddyFile)) {
+            proj.inventory.push(buddyFile);
+            setTimeout(() => showWriteToast(`buddies/${buddyFile}`, 'NEW BUDDY!', 'CHECK YOUR COLLECTION'), 800);
+        }
+    }
+
     dpData.projects[dpData.activeProjectId] = proj;
-    localStorage.setItem('draftPunkData', JSON.stringify(dpData)); // triggers cloud sync
+    localStorage.setItem('draftPunkData', JSON.stringify(dpData));
 
     writingData.lastSyncedWordCount = total;
     saveMeta();
     updateFooter();
-    alert('✓ ' + delta.toLocaleString() + ' words added to your tracker!');
+    showWriteToast(null, '✓ SYNCED', delta.toLocaleString() + ' WORDS ADDED');
 };
+
+// ── Write screen toast notifications ─────────────────────────────────────────
+function showWriteToast(spriteSrc, title, subtitle) {
+    const el       = document.createElement('div');
+    el.className   = 'write-toast';
+    el.innerHTML   = (spriteSrc ? `<img src="${spriteSrc}" class="write-toast-sprite">` : '') +
+                     `<div><div class="write-toast-title">${title}</div>` +
+                     `<div class="write-toast-sub">${subtitle}</div></div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+    setTimeout(() => {
+        el.classList.remove('show');
+        setTimeout(() => el.remove(), 350);
+    }, 4000);
+}
 
 // ── Chapter sharing ────────────────────────────────────────────────────────────
 let _sharingChapterId = null;

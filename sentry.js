@@ -2,7 +2,7 @@
 // 1. Sign up at https://sentry.io (free tier)
 // 2. Create a new project → Browser JavaScript
 // 3. Copy your DSN and paste it below
-const SENTRY_DSN = 'YOUR_SENTRY_DSN_HERE';
+const SENTRY_DSN = 'https://f663d78c5f2fba08ba41cc3ccf663cbc@o4511132389670912.ingest.de.sentry.io/4511132446621776';
 
 if (SENTRY_DSN !== 'YOUR_SENTRY_DSN_HERE') {
     const script    = document.createElement('script');

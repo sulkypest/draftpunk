@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOTES</title>
+    <link rel="icon" href="DRAFTPUNK.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <script src="sentry.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Draft Punk">
+</head>
+<body>
+
+    <nav class="app-nav">
+        <div class="nav-dropdown">
+            <button class="nav-dropdown-btn" onclick="toggleDraftMenu()">DRAFT PUNK</button>
+            <div class="nav-dropdown-menu" id="draftMenu">
+                <a href="index.html" class="nav-dropdown-item">DRAFT PUNK</a>
+                <a href="wordrunner.html" class="nav-dropdown-item">WORDRUNNER</a>
+                <a href="groups.html" class="nav-dropdown-item">WRITING GROUPS</a>
+                <a href="messages.html" class="nav-dropdown-item">MESSAGES</a>
+            </div>
+        </div>
+        <a href="write.html" class="nav-center-btn">WRITE</a>
+        <div class="nav-dropdown" style="margin-left:auto;">
+            <button class="nav-dropdown-btn active" onclick="toggleNotesMenu()">NOTES</button>
+            <div class="nav-dropdown-menu" id="notesMenu">
+                <a href="notes.html" class="nav-dropdown-item" style="color:var(--neon);">NOTES</a>
+                <a href="beat-notes.html" class="nav-dropdown-item">BEATS</a>
+                <a href="characters.html" class="nav-dropdown-item">CHARACTERS</a>
+            </div>
+        </div>
+        <div class="nav-dropdown">
+            <button class="nav-dropdown-btn" onclick="toggleDataMenu()">··· <span id="syncDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:2px;vertical-align:middle;transition:background 0.4s;"></span></button>
+            <div class="nav-dropdown-menu" id="dataMenu">
+                <button class="nav-dropdown-item" id="themeToggle" onclick="toggleTheme()">LIGHT MODE</button>
+                <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
+                <button class="nav-dropdown-item" onclick="exportData(); toggleDataMenu()">⬇ BACKUP</button>
+                <button class="nav-dropdown-item" onclick="triggerImport(); toggleDataMenu()">⬆ RESTORE</button>
+                <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
+                <button id="navSignIn" class="nav-dropdown-item" onclick="signInWithGoogle(); toggleDataMenu()" style="color:var(--neon);">⊕ SIGN IN WITH GOOGLE</button>
+                <div id="navUserInfo" style="display:none;">
+                    <div class="nav-dropdown-item" style="display:flex;align-items:center;gap:8px;cursor:default;">
+                        <img id="navAvatar" src="" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--neon);">
+                        <span id="navUserName" style="color:var(--neon);font-size:0.7rem;"></span>
+                    </div>
+                    <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
+                </div>
+                <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
+                <a href="privacy.html" class="nav-dropdown-item">PRIVACY POLICY</a>
+                <a href="terms.html" class="nav-dropdown-item">TERMS OF SERVICE</a>
+            </div>
+        </div>
+    </nav>
+    <input type="file" id="importFileInput" accept=".json" onchange="importData(event)" style="display:none;">
+
+    <div class="notes-page">
+        <div class="app">
+            <h1>NOTES</h1>
+            <h2 id="notesProjectTitle" style="font-size:0.9rem;opacity:0.5;margin-top:-10px;margin-bottom:20px;"></h2>
+            <button onclick="addNote()" style="width:100%;margin-bottom:20px;">+ NEW NOTE</button>
+            <div id="notesGrid" class="sticky-notes-grid"></div>
+        </div>
+    </div>
+
+    <script src="theme.js"></script>
+    <script src="backup.js"></script>
+    <script src="notes.js"></script>
+    <script type="module" src="sync.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
+</body>
+</html>
