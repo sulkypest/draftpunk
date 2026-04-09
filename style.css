@@ -354,11 +354,12 @@ a.nav-dropdown-item { text-decoration: none; display: block; }
     border-left: 5px solid var(--neon);
     height: 120px;
     overflow: visible;
+    position: relative;
 }
 
 .boss-sprite {
-    width: 80px;
-    height: 80px;
+    width: 110px;
+    height: 110px;
     image-rendering: pixelated;
     object-fit: contain;
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -367,6 +368,154 @@ a.nav-dropdown-item { text-decoration: none; display: block; }
             drop-shadow(0 0 25px var(--neon));
     position: relative;
     z-index: 10;
+    cursor: pointer;
+}
+.boss-sprite:hover {
+    filter: drop-shadow(0 0 8px red)
+            drop-shadow(0 0 20px red);
+}
+
+/* JOURNEY MAP */
+.journey-map {
+    margin-bottom: 14px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    padding: 12px 14px 10px;
+}
+.journey-acts {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.journey-act {
+    flex: 1;
+    position: relative;
+}
+.journey-act-label {
+    font-size: 0.55rem;
+    letter-spacing: 2px;
+    opacity: 0.35;
+    margin-bottom: 5px;
+}
+.journey-act-track {
+    height: 4px;
+    background: #222;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.journey-act-fill {
+    height: 100%;
+    background: var(--neon);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 6px var(--neon);
+}
+.journey-act.act-danger .journey-act-fill {
+    background: red;
+    box-shadow: 0 0 6px red;
+}
+.journey-current-beat {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+.journey-beat-name {
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: var(--neon);
+}
+.journey-beat-next {
+    font-size: 0.6rem;
+    opacity: 0.4;
+    letter-spacing: 1px;
+}
+.journey-beat-pct {
+    font-size: 0.6rem;
+    opacity: 0.4;
+    margin-left: auto;
+    letter-spacing: 1px;
+}
+
+@keyframes pulse-node {
+    0%, 100% { box-shadow: 0 0 4px var(--neon); }
+    50% { box-shadow: 0 0 12px var(--neon), 0 0 20px var(--neon); }
+}
+
+/* COMBAT TOASTS */
+#toastContainer {
+    position: fixed;
+    bottom: 24px;
+    right: 16px;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: none;
+}
+.combat-toast {
+    background: var(--panel);
+    border: 1px solid #ff4500;
+    border-left: 4px solid #ff4500;
+    padding: 8px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 1.5px;
+    color: var(--text);
+    max-width: 220px;
+    animation: toast-in 0.25s ease-out, toast-out 0.3s ease-in 2.7s forwards;
+    box-shadow: 0 0 10px rgba(255,69,0,0.3);
+}
+.combat-toast .toast-label {
+    color: #ff4500;
+    font-size: 0.55rem;
+    letter-spacing: 2px;
+    margin-bottom: 3px;
+}
+.combat-toast .toast-name {
+    font-weight: 900;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.combat-toast .toast-emoji {
+    font-size: 1rem;
+    line-height: 1;
+}
+@keyframes toast-in {
+    from { opacity: 0; transform: translateX(30px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes toast-out {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(30px); }
+}
+
+/* DAMAGE NUMBERS */
+.damage-number {
+    position: absolute;
+    font-family: 'Courier New', monospace;
+    font-weight: 900;
+    font-size: 1.1rem;
+    color: #ff4500;
+    pointer-events: none;
+    z-index: 100;
+    animation: float-damage 1.1s ease-out forwards;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px #ff4500;
+    white-space: nowrap;
+}
+.damage-number.damage-crit {
+    font-size: 1.3rem;
+    color: #fff;
+    text-shadow: 0 0 10px var(--neon), 0 0 20px var(--neon);
+}
+@keyframes float-damage {
+    0%   { opacity: 1; transform: translateY(0); }
+    80%  { opacity: 1; transform: translateY(-50px); }
+    100% { opacity: 0; transform: translateY(-65px); }
 }
 
 /* SHAKE ANIMATION */

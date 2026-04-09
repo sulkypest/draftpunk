@@ -287,7 +287,8 @@ async function continueAfterAuth(user) {
                           dpData.projects &&
                           dpData.projects[dpData.activeProjectId] &&
                           dpData.projects[dpData.activeProjectId].active;
-        if (!hasActive && window.showProjectForm) window.showProjectForm();
+        if (hasActive && window.showDashboard) window.showDashboard();
+        else if (!hasActive && window.showProjectForm) window.showProjectForm();
         checkPendingRequests(user);
         processFriendAcceptances(user);
         checkUnreadMessages(user);

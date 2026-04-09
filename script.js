@@ -110,7 +110,7 @@ window.start = function() {
     });
     dpData.activeProjectId = id;
     localStorage.setItem('draftPunkData', JSON.stringify(dpData));
-    window.location.href = 'write.html';
+    window.location.href = 'index.html';
 };
 
 // ── Switch to an existing project ─────────────────────────────────────────────
@@ -134,6 +134,74 @@ window.deleteProject = function(id) {
     localStorage.setItem('draftPunkData', JSON.stringify(dpData));
     location.reload();
 };
+
+// ── Floating damage number ────────────────────────────────────────────────────
+function showDamageNumber(val) {
+    const zone = document.querySelector('.boss-zone');
+    if (!zone) return;
+    const isCrit = Math.random() < 0.2;
+    const el = document.createElement('div');
+    el.className = 'damage-number' + (isCrit ? ' damage-crit' : '');
+    el.textContent = isCrit ? `CRITICAL! -${val.toLocaleString()}` : `-${val.toLocaleString()}`;
+    el.style.left = (15 + Math.random() * 55) + '%';
+    el.style.bottom = '10px';
+    zone.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+}
+
+// ── Combat toast (non-interrupting corner notification) ───────────────────────
+function showCombatToast(label, name, emoji) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'combat-toast';
+    toast.innerHTML = `
+        <div class="toast-label">${label}</div>
+        <div class="toast-name">
+            ${emoji ? `<span class="toast-emoji">${emoji}</span>` : ''}${name.toUpperCase()}
+        </div>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// ── Journey map ───────────────────────────────────────────────────────────────
+function renderJourneyMap() {
+    const map = document.getElementById('journeyMap');
+    if (!map) return;
+    const progress  = state.goal > 0 ? (state.total / state.goal) * 100 : 0;
+    const curBeatIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
+    const curBeat   = BOSS_BEATS[curBeatIdx] || BOSS_BEATS[0];
+    const nextBeat  = BOSS_BEATS[curBeatIdx + 1] || null;
+
+    // Three acts: Act 1 = 0–25%, Act 2 = 25–75%, Act 3 = 75–100%
+    const acts = [
+        { label: 'ACT I',   from: 0,  to: 25,  danger: false },
+        { label: 'ACT II',  from: 25, to: 75,  danger: false },
+        { label: 'ACT III', from: 75, to: 100, danger: true  },
+    ];
+
+    const actBars = acts.map(act => {
+        const filled = Math.min(100, Math.max(0,
+            ((Math.min(progress, act.to) - act.from) / (act.to - act.from)) * 100
+        ));
+        return `<div class="journey-act ${act.danger ? 'act-danger' : ''}">
+            <div class="journey-act-label">${act.label}</div>
+            <div class="journey-act-track">
+                <div class="journey-act-fill" style="width:${filled}%"></div>
+            </div>
+        </div>`;
+    }).join('');
+
+    const nextLabel = nextBeat ? `→ ${nextBeat.name.toUpperCase()} AT ${nextBeat.pct}%` : '→ FINALE';
+
+    map.innerHTML = `
+        <div class="journey-acts">${actBars}</div>
+        <div class="journey-current-beat">
+            <div class="journey-beat-name">⚔ ${curBeat.name.toUpperCase()}</div>
+            <div class="journey-beat-next">${nextLabel}</div>
+            <div class="journey-beat-pct">${Math.floor(progress)}%</div>
+        </div>`;
+}
 
 // ── Add words ─────────────────────────────────────────────────────────────────
 window.addWords = function() {
@@ -176,7 +244,20 @@ window.addWords = function() {
     void sprite.offsetWidth;
     sprite.classList.add('hit-shake');
 
-    save(); updateUI(); updateGraph();
+    // 1–3% chance of floating damage number
+    if (Math.random() < (0.01 + Math.random() * 0.02)) showDamageNumber(val);
+
+    // Minion encounters
+    const newMinionIdx = MINIONS.findLastIndex(m => progress >= m.pct);
+    if (newMinionIdx > (state.lastMinionIdx ?? -1)) {
+        state.lastMinionIdx = newMinionIdx;
+        const minion = MINIONS[newMinionIdx];
+        const labels = ['HENCHMAN DEFEATED', 'MINION SUBDUED', 'FOE VANQUISHED', 'OBSTACLE CRUSHED'];
+        const label = labels[newMinionIdx % labels.length];
+        showCombatToast(label, minion.name, minion.emoji);
+    }
+
+    save(); updateUI(); updateGraph(); renderJourneyMap();
     document.getElementById('wordIn').value = '';
 };
 
@@ -283,6 +364,8 @@ function updateUI() {
     const projects = Object.keys(dpData.projects || {});
     const projCount = document.getElementById('projectCountLabel');
     if (projCount) projCount.textContent = projects.length > 1 ? projects.length + ' PROJECTS' : '';
+
+    renderJourneyMap();
 }
 
 // ── Overlays ──────────────────────────────────────────────────────────────────
@@ -291,9 +374,22 @@ window.showGrenade = function() {
     document.getElementById('inspireText').innerText = GRENADES[Math.floor(Math.random() * GRENADES.length)];
     document.getElementById('grenadeOverlay').style.display = 'flex';
 };
-window.closeGrenade    = function() { document.getElementById('grenadeOverlay').style.display = 'none'; };
-window.closeOverlay    = function() { document.getElementById('levelOverlay').style.display = 'none'; };
+window.closeGrenade      = function() { document.getElementById('grenadeOverlay').style.display = 'none'; };
+window.closeOverlay      = function() { document.getElementById('levelOverlay').style.display = 'none'; };
 window.closeBuddyOverlay = function() { document.getElementById('buddyOverlay').style.display = 'none'; };
+
+window.showBossZoom = function() {
+    const progress  = state.goal > 0 ? (state.total / state.goal) * 100 : 0;
+    const curBeatIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
+    const nextBeat  = BOSS_BEATS[curBeatIdx + 1] || BOSS_BEATS[curBeatIdx];
+    const spriteIdx = curBeatIdx + 1;
+    document.getElementById('bossZoomSprite').src = `bosses/${spriteIdx}.png`;
+    document.getElementById('bossZoomName').innerText = nextBeat.name.toUpperCase();
+    document.getElementById('bossZoomBeat').innerText = `BEAT ${curBeatIdx + 2} — DEFEAT AT ${nextBeat.pct}%`;
+    document.getElementById('bossZoomLore').innerText = nextBeat.lore;
+    document.getElementById('bossZoomOverlay').style.display = 'flex';
+};
+window.closeBossZoom = function() { document.getElementById('bossZoomOverlay').style.display = 'none'; };
 
 window.showBuddyZoom = function(src) {
     const match = src.match(/buddy(\d+)\.png/);
@@ -366,6 +462,24 @@ window.showNewProjectForm = function() {
     document.getElementById('setup').scrollIntoView();
 };
 
+// ── Show main dashboard ───────────────────────────────────────────────────────
+window.showDashboard = function() {
+    // Re-read data in case sync.js has updated localStorage since page load
+    dpData   = loadDpData();
+    activeId = dpData.activeProjectId || null;
+    state    = (activeId && dpData.projects && dpData.projects[activeId])
+               || emptyProject({ active: false });
+
+    const nav = document.querySelector('.app-nav');
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('mainDashboard').classList.remove('hidden');
+    if (nav) nav.style.display = '';
+    checkPeriodResets();
+    updateUI();
+    initGraph();
+};
+
 // ── Auth screen helpers ───────────────────────────────────────────────────────
 window.skipAuth = function() {
     localStorage.setItem('authDecisionMade', '1');
@@ -397,8 +511,7 @@ window.onload = function() {
     const hasActive = activeId && dpData.projects && dpData.projects[activeId] && dpData.projects[activeId].active;
 
     if (hasActive) {
-        window.location.replace('write.html');
-        return;
+        window.showDashboard();
     } else if (localStorage.getItem('authDecisionMade')) {
         document.getElementById('authScreen').style.display = 'none';
         document.getElementById('setup').style.display = 'block';

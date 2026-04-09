@@ -113,8 +113,10 @@
             <h1 id="wipDisplay">PROJECT</h1>
             <h2 id="lvlName">LEVEL</h2>
 
+            <div id="journeyMap" class="journey-map"></div>
+
             <div class="boss-zone">
-                <img id="bossSprite" class="boss-sprite" src="bosses/1.png">
+                <img id="bossSprite" class="boss-sprite" src="bosses/1.png" onclick="showBossZoom()" title="Click for info">
                 <div style="flex:1;">
                     <div id="bossName">BOSS</div>
                     <div class="bar-container" style="height:10px; margin-bottom:0; border-color: #333;">
@@ -250,6 +252,17 @@
         </div>
     </div>
 
+    <div id="bossZoomOverlay" class="overlay" onclick="closeBossZoom()">
+        <div class="congrats-box" style="text-align:center;max-width:340px;">
+            <div style="font-size:0.6rem;letter-spacing:3px;opacity:0.4;margin-bottom:8px;">CURRENT BOSS</div>
+            <img id="bossZoomSprite" src="" style="width:160px;height:160px;image-rendering:pixelated;object-fit:contain;filter:drop-shadow(0 0 20px red);display:block;margin:0 auto;">
+            <div id="bossZoomName" style="font-size:1.4rem;font-weight:900;color:red;margin:15px 0 8px;letter-spacing:2px;"></div>
+            <div id="bossZoomBeat" style="font-size:0.7rem;letter-spacing:2px;opacity:0.5;margin-bottom:12px;"></div>
+            <div id="bossZoomLore" style="font-size:0.85rem;line-height:1.6;opacity:0.8;"></div>
+            <div style="font-size:0.65rem;opacity:0.4;margin-top:15px;">CLICK TO CLOSE</div>
+        </div>
+    </div>
+
     <div id="buddyZoomOverlay" class="overlay" onclick="closeBuddyZoom()">
         <div class="congrats-box" style="text-align:center;max-width:340px;">
             <img id="buddyZoomSprite" src="" style="width:150px;height:150px;image-rendering:pixelated;object-fit:contain;filter:drop-shadow(0 0 20px var(--neon));display:block;margin:0 auto;">
@@ -278,6 +291,8 @@
             <p>Check your collection below.</p>
         </div>
     </div>
+
+    <div id="toastContainer"></div>
 
     <script src="theme.js"></script>
     <script src="data.js"></script>
