@@ -1,7 +1,9 @@
 const RANKS = [
-    "Inkslinger", "Plot Scout", "Draft Punk", "Scene Slasher", "Chapter Boss", 
-    "Word Runner", "Arc Architect", "Prose Pilot", "Theme Weaver", "Story Sorcerer", 
-    "Narrative Knight", "Manuscript Mage", "World Builder", "Legendary Author", "The Scribe-anator"
+    "Inkslinger", "Plot Scout", "Draft Punk", "Scene Slasher", "Chapter Boss",
+    "Word Runner", "Arc Architect", "Prose Pilot", "Theme Weaver", "Story Sorcerer",
+    "Narrative Knight", "Manuscript Mage", "World Builder", "Legendary Author", "The Scribe-anator",
+    "Grand Chronicler", "Ink Reaper", "Verse Vandal", "Lore Titan", "The Eternal Draft",
+    "Chaos Weaver", "Word Sovereign", "Myth Architect", "The Final Draft", "GODMODE SCRIBE"
 ];
 
 const BOSS_BEATS = [

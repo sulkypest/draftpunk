@@ -1,4 +1,9 @@
-(function() { const _dp = JSON.parse(localStorage.getItem('draftPunkData') || '{}'); const _ok = _dp.activeProjectId && _dp.projects && _dp.projects[_dp.activeProjectId] && _dp.projects[_dp.activeProjectId].active; if (!_ok) window.location.replace('index.html'); })();
+(function() {
+    const _dp = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+    const _ok = _dp.activeProjectId && _dp.projects && _dp.projects[_dp.activeProjectId] && _dp.projects[_dp.activeProjectId].active;
+    if (!_ok) window.location.replace('index.html');
+})();
+
 const BEATS = [
     { name: "Opening Image",    lore: "A snapshot of the 'before' world." },
     { name: "Theme Stated",     lore: "Someone hints at the life lesson needed." },
@@ -17,13 +22,13 @@ const BEATS = [
     { name: "Final Image",      lore: "The 'after' world — completely changed." },
 ];
 
-// ── Per-project beat data ─────────────────────────────────────────────────────
+// ── Data ──────────────────────────────────────────────────────────────────────
 const _dpInit       = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
 const activeProjectId = _dpInit.activeProjectId;
 
 let allBeatData = JSON.parse(localStorage.getItem('beatNotesData')) || {};
 
-// Migrate old flat format: if top-level keys are beat names, move under project id
+// Migrate old flat format (beat name keys at top level)
 if (activeProjectId && !allBeatData[activeProjectId]) {
     const isFlatFormat = BEATS.some(b => allBeatData[b.name] !== undefined);
     if (isFlatFormat) {
@@ -34,6 +39,23 @@ if (activeProjectId && !allBeatData[activeProjectId]) {
 
 let beatData = activeProjectId ? (allBeatData[activeProjectId] || {}) : {};
 
+// Migrate old format: string → array of sections
+function migrateBeat(val) {
+    if (typeof val === 'string') {
+        return [{ id: Date.now(), title: 'Notes', text: val }];
+    }
+    if (!Array.isArray(val)) return [];
+    return val;
+}
+
+BEATS.forEach(b => {
+    if (beatData[b.name] !== undefined) {
+        beatData[b.name] = migrateBeat(beatData[b.name]);
+    } else {
+        beatData[b.name] = [];
+    }
+});
+
 function save() {
     if (!activeProjectId) return;
     const all = JSON.parse(localStorage.getItem('beatNotesData')) || {};
@@ -42,26 +64,98 @@ function save() {
 }
 
 function updateFillRate() {
-    const filled = BEATS.filter(b => beatData[b.name] && beatData[b.name].trim()).length;
+    const filled = BEATS.filter(b =>
+        beatData[b.name] && beatData[b.name].some(s => s.text && s.text.trim())
+    ).length;
     const el = document.getElementById('beatFillRate');
     if (el) el.innerText = filled + ' / ' + BEATS.length + ' BEATS FILLED';
 }
 
+// ── Toggle accordion ──────────────────────────────────────────────────────────
 window.toggleBeat = function(idx) {
-    const body = document.getElementById(`beat-body-${idx}`);
+    const body  = document.getElementById(`beat-body-${idx}`);
     const arrow = document.getElementById(`beat-arrow-${idx}`);
     const isOpen = !body.classList.contains('hidden');
     body.classList.toggle('hidden', isOpen);
     arrow.innerText = isOpen ? '▶' : '▼';
 };
 
-window.onBeatInput = function(idx) {
-    beatData[BEATS[idx].name] = document.getElementById(`beat-text-${idx}`).value;
+// ── Render sections for one beat ──────────────────────────────────────────────
+function renderSections(beatIdx) {
+    const beat     = BEATS[beatIdx];
+    const sections = beatData[beat.name];
+    const container = document.getElementById(`beat-sections-${beatIdx}`);
+    if (!container) return;
+
+    container.innerHTML = sections.map((sec, sIdx) => `
+        <div class="beat-section" id="beat-sec-${beatIdx}-${sIdx}">
+            <div class="beat-section-header">
+                <input
+                    class="beat-section-title"
+                    type="text"
+                    value="${escHtml(sec.title || '')}"
+                    placeholder="SECTION TITLE"
+                    oninput="onSectionTitle(${beatIdx}, ${sIdx}, this.value)"
+                >
+                <button class="beat-section-del" onclick="deleteSection(${beatIdx}, ${sIdx})" title="Delete section">✕</button>
+            </div>
+            <textarea
+                class="sprint-textarea beat-section-text"
+                placeholder="Notes for this section..."
+                oninput="onSectionText(${beatIdx}, ${sIdx}, this.value)"
+            >${escHtml(sec.text || '')}</textarea>
+        </div>
+    `).join('');
+}
+
+function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Section callbacks ─────────────────────────────────────────────────────────
+window.onSectionTitle = function(beatIdx, sIdx, val) {
+    beatData[BEATS[beatIdx].name][sIdx].title = val;
+    save();
+};
+
+window.onSectionText = function(beatIdx, sIdx, val) {
+    beatData[BEATS[beatIdx].name][sIdx].text = val;
     save();
     updateFillRate();
 };
 
-// ── Export beat sheet as RTF ──────────────────────────────────────────────────
+window.addSection = function(beatIdx) {
+    const beat = BEATS[beatIdx];
+    beatData[beat.name].push({ id: Date.now(), title: '', text: '' });
+    save();
+    renderSections(beatIdx);
+    // Open accordion if closed
+    const body = document.getElementById(`beat-body-${beatIdx}`);
+    if (body && body.classList.contains('hidden')) {
+        body.classList.remove('hidden');
+        const arrow = document.getElementById(`beat-arrow-${beatIdx}`);
+        if (arrow) arrow.innerText = '▼';
+    }
+    // Focus the new title input
+    const sections = beatData[beat.name];
+    const lastIdx  = sections.length - 1;
+    setTimeout(() => {
+        const el = document.querySelector(`#beat-sec-${beatIdx}-${lastIdx} .beat-section-title`);
+        if (el) el.focus();
+    }, 50);
+};
+
+window.deleteSection = function(beatIdx, sIdx) {
+    const beat = BEATS[beatIdx];
+    if (beatData[beat.name].length > 0) {
+        beatData[beat.name].splice(sIdx, 1);
+        save();
+        renderSections(beatIdx);
+        updateFillRate();
+    }
+};
+
+// ── Export as RTF ─────────────────────────────────────────────────────────────
 function rtfEsc(text) {
     return (text || '').split('').map(c => {
         const code = c.charCodeAt(0);
@@ -87,10 +181,17 @@ window.exportBeats = function() {
     parts.push('{\\f1\\fs32\\b ' + rtfEsc('BEAT NOTES — ' + title.toUpperCase()) + '}\\par\\par');
 
     BEATS.forEach((beat, i) => {
-        const notes = beatData[beat.name] || '';
         parts.push('{\\f1\\fs26\\b ' + rtfEsc((i + 1) + '. ' + beat.name.toUpperCase()) + '}\\par');
         parts.push('{\\i\\fs20 ' + rtfEsc(beat.lore) + '}\\par');
-        parts.push(notes ? rtfEsc(notes) + '\\par\\par' : '{\\i\\fs20 —}\\par\\par');
+        const sections = beatData[beat.name] || [];
+        if (sections.length === 0) {
+            parts.push('{\\i\\fs20 —}\\par\\par');
+        } else {
+            sections.forEach(sec => {
+                if (sec.title) parts.push('{\\f1\\fs22\\b ' + rtfEsc(sec.title.toUpperCase()) + '}\\par');
+                parts.push(sec.text ? rtfEsc(sec.text) + '\\par\\par' : '{\\i\\fs20 —}\\par\\par');
+            });
+        }
     });
 
     parts.push('}');
@@ -104,6 +205,7 @@ window.exportBeats = function() {
     URL.revokeObjectURL(url);
 };
 
+// ── Init ──────────────────────────────────────────────────────────────────────
 window.onload = function() {
     const dpState = JSON.parse(localStorage.getItem('draftPunkData'));
     const projId  = dpState && dpState.activeProjectId;
@@ -112,27 +214,29 @@ window.onload = function() {
         document.getElementById('projectTitle').innerText = proj.title.toUpperCase();
     }
 
-    document.getElementById('beatContainer').innerHTML = BEATS.map((beat, i) => `
+    document.getElementById('beatContainer').innerHTML = BEATS.map((beat, i) => {
+        const sectionCount = (beatData[beat.name] || []).length;
+        const hasSections  = sectionCount > 0;
+        return `
         <div class="accordion">
             <div class="accordion-header" onclick="toggleBeat(${i})">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <span class="accordion-number">${i + 1}</span>
                     <span class="accordion-title">${beat.name.toUpperCase()}</span>
                 </div>
-                <span id="beat-arrow-${i}">▶</span>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    ${hasSections ? `<span style="font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;">${sectionCount} SECTION${sectionCount !== 1 ? 'S' : ''}</span>` : ''}
+                    <span id="beat-arrow-${i}">▶</span>
+                </div>
             </div>
             <div class="accordion-body hidden" id="beat-body-${i}">
                 <div class="beat-lore">${beat.lore}</div>
-                <textarea
-                    id="beat-text-${i}"
-                    class="sprint-textarea"
-                    style="min-height:120px;"
-                    placeholder="Your notes for this beat..."
-                    oninput="onBeatInput(${i})"
-                >${beatData[beat.name] || ''}</textarea>
+                <div id="beat-sections-${i}"></div>
+                <button class="beat-add-section" onclick="addSection(${i})">+ ADD SECTION</button>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 
+    BEATS.forEach((_, i) => renderSections(i));
     updateFillRate();
 };

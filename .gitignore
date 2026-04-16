@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Android signing key — keep this safe, never commit
+android.keystore
+
+# Claude project context
+.claude/
+
+# IDE
+.vscode/

@@ -32,18 +32,6 @@ function formatTime(s) {
     return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
-function getWRLevel() {
-    const n = wrState.rescued.length;
-    if (n < 5)  return 0;
-    if (n < 10) return 1;
-    if (n < 15) return 2;
-    if (n < 20) return 3;
-    if (n < 30) return 4;
-    if (n < 45) return 5;
-    if (n < 65) return 6;
-    if (n < 85) return 7;
-    return 8;
-}
 
 function countRescuedInTier(tier) {
     let count = 0;
@@ -161,6 +149,8 @@ function tick() {
         clearInterval(sprint.intervalId);
         sprint.active = false;
         endSprint(countWords(document.getElementById('sprintText').value) >= sprint.target);
+    } else if (sprint.remaining <= 5) {
+        if (window.SFX) SFX.tick();
     }
 }
 
@@ -231,6 +221,7 @@ function endSprint(won) {
                 ? `${words.toLocaleString()} words written.\n+${words.toLocaleString()} added to tracker.`
                 : `${words.toLocaleString()} words written.\n+${words.toLocaleString()} added to tracker.\nAll buddies in this tier already rescued!`;
         document.getElementById('wrWinOverlay').style.display = 'flex';
+        if (window.SFX) SFX.sprintWon();
 
         const app = document.querySelector('.app');
         app.classList.remove('app-shake');
@@ -240,6 +231,7 @@ function endSprint(won) {
         document.getElementById('wrFailWords').innerText = words.toLocaleString();
         document.getElementById('wrFailTarget').innerText = sprint.target.toLocaleString();
         document.getElementById('wrFailOverlay').style.display = 'flex';
+        if (window.SFX) SFX.sprintFailed();
         updateWRUI();
     }
 
@@ -296,10 +288,7 @@ window.closeWinOverlay = function() { document.getElementById('wrWinOverlay').st
 window.closeFailOverlay = function() { document.getElementById('wrFailOverlay').style.display = 'none'; };
 
 function updateWRUI() {
-    const level = getWRLevel();
-    document.getElementById('wrLevelNumber').innerText = level + 1;
-    document.getElementById('wrRankName').innerText = WR_RANKS[level] || 'MASTER RESCUER';
-    document.getElementById('wrSprintsWon').innerText = wrState.rescued.length;
+    if (window.updateSidebar) window.updateSidebar();
 
     if (!sprint.active) {
         document.getElementById('wrCaptivityBar').style.width = '100%';

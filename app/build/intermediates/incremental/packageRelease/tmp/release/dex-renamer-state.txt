@@ -1,4 +1,0 @@
-#Wed Apr 01 12:44:12 WEST 2026
-base.0=/Users/ross/sulkpest/draftpunk/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-renamed.0=classes.dex
-path.0=classes.dex
