@@ -1,5 +1,16 @@
 console.log("Draft Punk Script Loading...");
 
+// Returns the best available image for a boss (1-based index)
+// Uses game sprite manifest if loaded, falls back to bosses/ folder
+window.getBossImgSrc = function(oneBased) {
+    const key = 'Boss' + String(oneBased).padStart(2, '0');
+    if (window.gameManifest && window.gameManifest.bosses[key]) {
+        const idle = window.gameManifest.bosses[key].Idle;
+        if (idle && idle.length) return idle[0];
+    }
+    return 'bosses/' + oneBased + '.png';
+};
+
 let deferredPrompt = null;
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
@@ -224,7 +235,7 @@ window.addWords = function() {
         state.lastLevel = newIdx;
         state.xp += 500;
         document.getElementById('bossBeatTitle').innerText = BOSS_BEATS[newIdx].name;
-        document.getElementById('defeatedBossSprite').src = `bosses/${newIdx + 1}.png`;
+        document.getElementById('defeatedBossSprite').src = window.getBossImgSrc(newIdx + 1);
         document.getElementById('levelOverlay').style.display = 'flex';
         if (window.SFX) SFX.bossDefeated();
         const app = document.querySelector('.app');
@@ -433,7 +444,7 @@ function updateUI() {
     const sprite = document.getElementById('bossSprite');
     const scaleFactor = 0.3 + (hp / 100) * 0.7;
     sprite.style.transform = `scale(${scaleFactor})`;
-    sprite.src = `bosses/${curIdx + 1}.png`;
+    sprite.src = window.getBossImgSrc(curIdx + 1);
     sprite.onerror = () => sprite.style.visibility = 'hidden';
     sprite.onload  = () => sprite.style.visibility = 'visible';
 
@@ -460,7 +471,7 @@ window.showBossZoom = function() {
     const curBeatIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
     const nextBeat   = BOSS_BEATS[curBeatIdx + 1] || BOSS_BEATS[curBeatIdx];
     const wordsNeeded = Math.ceil((nextBeat.pct / 100) * state.goal) - state.total;
-    document.getElementById('bossZoomSprite').src = `bosses/${curBeatIdx + 1}.png`;
+    document.getElementById('bossZoomSprite').src = window.getBossImgSrc(curBeatIdx + 1);
     document.getElementById('bossZoomName').innerText = `STAGE ${curBeatIdx + 2} — ${nextBeat.name.toUpperCase()}`;
     document.getElementById('bossZoomBeat').innerText = wordsNeeded > 0
         ? `${wordsNeeded.toLocaleString()} WORDS TO DEFEAT`

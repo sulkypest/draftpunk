@@ -262,7 +262,7 @@ window.syncToTracker = function() {
     if (newLevelIdx > oldLastLevel) {
         proj.lastLevel = newLevelIdx;
         const beat = BOSS_BEATS[newLevelIdx];
-        setTimeout(() => showWriteToast(`bosses/${newLevelIdx}.png`, 'BEAT DEFEATED', beat.name.toUpperCase()), 400);
+        setTimeout(() => showWriteToast(window.getBossImgSrc ? window.getBossImgSrc(newLevelIdx) : `bosses/${newLevelIdx}.png`, 'BEAT DEFEATED', beat.name.toUpperCase()), 400);
     }
 
     // Buddy check

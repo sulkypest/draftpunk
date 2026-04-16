@@ -170,6 +170,7 @@ function loadManifest(cb) {
         if (xhr.status === 200) {
             try { manifest = JSON.parse(xhr.responseText); } catch(e) { manifest = null; }
         }
+        if (manifest) window.gameManifest = manifest;
         cb();
     };
     xhr.onerror = function() { cb(); };
@@ -438,7 +439,7 @@ function tickEnemy() {
                 if (enemyDeathFrame >= (enemyDeathFrames.length || 1)) {
                     enemyState = ESTATE.HIDDEN;
                     vignetteAlpha = 0;
-                    setPlayerAnim('Idle');
+                    setPlayerAnim('Walk');
                 }
             }
             break;
@@ -453,7 +454,7 @@ function drawSprites() {
     const pf = playerFrames[playerAnim];
     if (pf && pf.length) {
         const px = W * PLAYER_X_PCT;
-        drawSprite(pf, playerFrame, px, gy, PLAYER_HEIGHT, true); // flip: sprites face left by default
+        drawSprite(pf, playerFrame, px, gy, PLAYER_HEIGHT, false); // sprites face right naturally
     }
 
     // Enemy
@@ -532,7 +533,7 @@ window.gameLevelUp = function () {
     container.appendChild(flash);
     setTimeout(function(){ flash.style.opacity='0'; setTimeout(function(){ flash.remove(); },420); }, 80);
     setPlayerAnim('Celebrate');
-    setTimeout(function(){ setPlayerAnim('Idle'); }, 1800);
+    setTimeout(function(){ setPlayerAnim('Walk'); }, 1800);
 };
 
 window.gameBuddyFound = function () {
@@ -746,7 +747,7 @@ window.updateGame = function () {
         defeatEnemy();
         inBattle = false;
         setPlayerAnim('Celebrate');
-        setTimeout(function(){ setPlayerAnim('Idle'); }, 2000);
+        setTimeout(function(){ setPlayerAnim('Walk'); }, 2000);
     }
 
     // ── Minion approach logic ───────────────────────────────────────────────
@@ -783,6 +784,11 @@ window.updateGame = function () {
         defeatEnemy();
     } else if (minionIdx > trackedMinion) {
         trackedMinion = minionIdx; // already gone / skipped
+    }
+
+    // Player walks when no enemy is active and not already in a special anim
+    if (enemyState === ESTATE.HIDDEN && playerAnim === 'Idle') {
+        setPlayerAnim('Walk');
     }
 };
 
