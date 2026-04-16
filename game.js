@@ -10,10 +10,10 @@ const BOSS_ANIM_SPEED = 4;
 const GROUND_PCT = 0.68; // ground line as fraction of bar height
 const PLAYER_X_PCT  = 0.18;
 const ENEMY_ENTER_X = 1.15; // starts off right edge (fraction of W)
-const ENEMY_MID_X   = 0.68; // walks to here first
-const ENEMY_CLOSE_X = 0.55; // then walks here
-const BOSS_MID_X    = 0.65;
-const BOSS_CLOSE_X  = 0.52;
+const ENEMY_MID_X   = 0.62; // walks to here first
+const ENEMY_CLOSE_X = 0.32; // then walks close to player
+const BOSS_MID_X    = 0.60;
+const BOSS_CLOSE_X  = 0.36;
 const PLAYER_HEIGHT = 58;   // px rendered height for player
 const MONSTER_HEIGHT= 52;   // px rendered height for monsters
 const BOSS_HEIGHT   = 78;   // px rendered height for bosses
@@ -354,11 +354,19 @@ function tickEnemyAnim() {
 function tickPlayerAnim() {
     const frames = playerFrames[playerAnim];
     if (!frames || !frames.length) return;
+    // One-shot anims return to Idle when complete
+    const oneShot = playerAnim === 'GetHit' || playerAnim === 'Celebrate' || playerAnim === 'Die';
     playerFrameTimer++;
     if (playerFrameTimer >= ANIM_SPEED) {
         playerFrameTimer = 0;
         playerFrame++;
-        if (playerFrame >= frames.length) playerFrame = 0;
+        if (playerFrame >= frames.length) {
+            if (oneShot) {
+                setPlayerAnim('Idle');
+            } else {
+                playerFrame = 0;
+            }
+        }
     }
 }
 
@@ -371,8 +379,6 @@ function setPlayerAnim(anim) {
 
 // ── Enemy state machine tick ──────────────────────────────────────────────────
 function tickEnemy() {
-    const speed = enemyType === 'boss' ? 2.2 : 2.8;
-    const gy    = groundY();
 
     switch (enemyState) {
 
@@ -417,7 +423,6 @@ function tickEnemy() {
 
         case ESTATE.ATTACK:
             tickEnemyAnim();
-            setPlayerAnim('GetHit');
             break;
 
         case ESTATE.DEATH:
@@ -448,7 +453,7 @@ function drawSprites() {
     const pf = playerFrames[playerAnim];
     if (pf && pf.length) {
         const px = W * PLAYER_X_PCT;
-        drawSprite(pf, playerFrame, px, gy, PLAYER_HEIGHT, false);
+        drawSprite(pf, playerFrame, px, gy, PLAYER_HEIGHT, true); // flip: sprites face left by default
     }
 
     // Enemy
@@ -460,7 +465,7 @@ function drawSprites() {
     if (enemyState !== ESTATE.HIDDEN && enemyData) {
         const ex = Math.round(enemyX);
         const targetH = enemyType === 'boss' ? BOSS_HEIGHT : MONSTER_HEIGHT;
-        drawSprite(enemyFrames, enemyFrame, ex, gy, targetH, true); // flip so enemy faces left
+        drawSprite(enemyFrames, enemyFrame, ex, gy, targetH, false); // sprites already face left
 
         // Overlay death fx during DEATH state
         if (enemyState === ESTATE.DEATH && enemyDeathTimer > enemyFrames.length * enemyAnimSpeed && enemyDeathFrames.length) {
@@ -728,6 +733,7 @@ window.updateGame = function () {
             if (gapToBoss <= 1.5 && (enemyState === ESTATE.IDLE_2 || enemyState === ESTATE.WALK_CLOSE)) {
                 enemyState = ESTATE.ATTACK;
                 setEnemyAnim('Attack');
+                setPlayerAnim('GetHit');
             }
         } else {
             inBattle = false;
@@ -760,6 +766,7 @@ window.updateGame = function () {
                     enemyState   = ESTATE.WALK_CLOSE;
                     enemyTargetX = W * ENEMY_CLOSE_X;
                     setEnemyAnim('Walk');
+                    setPlayerAnim('Attack');
                 }
                 // Idle 2 close up
                 if (gapToMinion <= 2 && enemyState === ESTATE.WALK_CLOSE) {

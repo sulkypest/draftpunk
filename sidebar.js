@@ -81,18 +81,9 @@
             document.body.insertBefore(gameBar, document.body.firstChild);
         }
 
-        // Toggle button — sibling of gameBar so it's never clipped by overflow:hidden
-        const toggleBtn = document.createElement('button');
-        toggleBtn.id          = 'gameBarToggle';
-        toggleBtn.textContent = '▼ GAME';
-        toggleBtn.title       = 'Toggle game bar';
-        toggleBtn.onclick     = function () { if (window.toggleGameBar) window.toggleGameBar(); };
-        gameBar.parentNode.insertBefore(toggleBtn, gameBar.nextSibling);
-
         // Apply saved hidden state before content renders
         if (localStorage.getItem('gameBarHidden') === '1') {
             gameBar.classList.add('game-bar-hidden');
-            toggleBtn.textContent = '▲ GAME';
             document.body.classList.add('game-bar-off');
         }
 
@@ -209,7 +200,7 @@
         };
         document.body.appendChild(overlay);
 
-        // ── Nav logo circle ──────────────────────────────────────────────────
+        // ── Nav logo circle + game toggle ────────────────────────────────────
         const nav = document.querySelector('.app-nav');
         if (nav) {
             if (!nav.querySelector('.nav-logo-circle')) {
@@ -218,6 +209,15 @@
                 logoLink.className = 'nav-logo-circle';
                 logoLink.innerHTML = `<img src="DRAFTPUNK.png" alt="Draft Punk">`;
                 nav.appendChild(logoLink);
+            }
+            if (!nav.querySelector('#gameBarToggle')) {
+                const toggleBtn = document.createElement('button');
+                toggleBtn.id          = 'gameBarToggle';
+                toggleBtn.className   = 'nav-game-toggle';
+                toggleBtn.title       = 'Toggle game bar';
+                toggleBtn.textContent = document.body.classList.contains('game-bar-off') ? '▲' : '▼';
+                toggleBtn.onclick     = function () { if (window.toggleGameBar) window.toggleGameBar(); };
+                nav.appendChild(toggleBtn);
             }
             const writeBtn = nav.querySelector('.nav-center-btn');
             if (writeBtn) writeBtn.style.display = 'none';

@@ -7,49 +7,49 @@ const RANKS = [
 ];
 
 const BOSS_BEATS = [
-    { pct: 0, name: "Opening Image", lore: "A snapshot of the 'before' world." },
-    { pct: 1, name: "Theme Stated", lore: "Someone hints at the life lesson needed." },
-    { pct: 10, name: "Setup", lore: "Exploring the hero's world and flaws." },
-    { pct: 12, name: "Catalyst", lore: "The life-changing telegram or explosion." },
-    { pct: 20, name: "Debate", lore: "The last chance to turn back." },
-    { pct: 25, name: "Break into Two", lore: "Leaving the old world behind." },
-    { pct: 30, name: "B Story", lore: "The love interest or helper appears." },
-    { pct: 35, name: "Fun and Games", lore: "The 'promise of the premise' in action." },
-    { pct: 50, name: "Midpoint", lore: "The stakes are raised or the clock starts." },
-    { pct: 60, name: "Bad Guys Close In", lore: "The opposition gets serious." },
-    { pct: 75, name: "All Is Lost", lore: "The 'whiff of death' moment." },
-    { pct: 80, name: "Dark Night", lore: "The hero hits rock bottom." },
-    { pct: 85, name: "Break into Three", lore: "The 'Aha!' moment and the new plan." },
-    { pct: 90, name: "Finale", lore: "The final battle and transformation." },
-    { pct: 100, name: "Final Image", lore: "The 'after' world—completely changed." }
+    { pct: 0.5, name: "Opening Image",    lore: "A snapshot of the 'before' world." },
+    { pct: 5,   name: "Theme Stated",     lore: "Someone hints at the life lesson needed." },
+    { pct: 10,  name: "Setup",            lore: "Exploring the hero's world and flaws." },
+    { pct: 14,  name: "Catalyst",         lore: "The life-changing telegram or explosion." },
+    { pct: 20,  name: "Debate",           lore: "The last chance to turn back." },
+    { pct: 26,  name: "Break into Two",   lore: "Leaving the old world behind." },
+    { pct: 32,  name: "B Story",          lore: "The love interest or helper appears." },
+    { pct: 40,  name: "Fun and Games",    lore: "The 'promise of the premise' in action." },
+    { pct: 50,  name: "Midpoint",         lore: "The stakes are raised or the clock starts." },
+    { pct: 60,  name: "Bad Guys Close In",lore: "The opposition gets serious." },
+    { pct: 73,  name: "All Is Lost",      lore: "The 'whiff of death' moment." },
+    { pct: 79,  name: "Dark Night",       lore: "The hero hits rock bottom." },
+    { pct: 85,  name: "Break into Three", lore: "The 'Aha!' moment and the new plan." },
+    { pct: 91,  name: "Finale",           lore: "The final battle and transformation." },
+    { pct: 100, name: "Final Image",      lore: "The 'after' world—completely changed." }
 ];
 
 // Minions placed between boss beats — each has a pct threshold, name, taunt, and emoji
 const MINIONS = [
-    // Tier 1 — Nuisances (0–25%)
-    { pct: 4,  emoji: "💤", name: "The Inner Critic",    taunt: "I have emerged to stop you. It is not going well for me." },
-    { pct: 7,  emoji: "🐀", name: "Blank Page Specter",  taunt: "I haunt only the unprepared. You seem... prepared. Curses." },
-    { pct: 15, emoji: "👁️", name: "The Distraction",     taunt: "Look over there! ...It didn't work. Impressive." },
-    { pct: 18, emoji: "🕷️", name: "Procrastination Imp", taunt: "I had a whole plan. You were supposed to make tea first." },
-    { pct: 22, emoji: "💤", name: "The Doubter",         taunt: "I whispered my doubts and you just... kept writing. Rude." },
-    // Tier 2 — Henchmen (25–50%)
-    { pct: 27, emoji: "🧟", name: "Cliché Goblin",       taunt: "Every story has been told before! Except yours. I hate that." },
-    { pct: 32, emoji: "👤", name: "The Perfectionist",   taunt: "A first draft is supposed to be terrible. Yours isn't. Unacceptable." },
-    { pct: 40, emoji: "🦇", name: "Subplot Wraith",      taunt: "I tried to tangle your subplots. You untangled them. Monster." },
-    { pct: 44, emoji: "🗡️", name: "Pacing Phantom",      taunt: "This scene should be dragging by now. Why isn't it dragging?!" },
-    { pct: 47, emoji: "🧟", name: "The Impostor",        taunt: "I told you that you didn't belong here. You ignored me completely." },
-    // Tier 3 — Serious threats (50–75%)
-    { pct: 54, emoji: "🔥", name: "Momentum Thief",      taunt: "I tried to steal your momentum. You had too much of it. Unfair." },
-    { pct: 57, emoji: "💀", name: "The Rewriter",        taunt: "You were supposed to scrap everything and start over. The nerve." },
-    { pct: 65, emoji: "🩸", name: "Tension Leech",       taunt: "I feed on sagging middles. Yours refused to sag. I am starving." },
-    { pct: 68, emoji: "⚔️", name: "The Quitter",         taunt: "Nobody told me you'd make it this far. I want a refund." },
-    { pct: 72, emoji: "🔥", name: "Deus Ex Machina",     taunt: "I planted a plot hole right there. You just... wrote around it." },
-    // Tier 4 — Final guardians (75–100%)
-    { pct: 77, emoji: "☠️", name: "The Burnout",         taunt: "You should be exhausted. Are you not exhausted?! This is outrageous." },
-    { pct: 82, emoji: "💣", name: "Continuity Gremlin",  taunt: "I hid three continuity errors in chapter seven. You caught them all." },
-    { pct: 87, emoji: "🌑", name: "The Final Fear",      taunt: "The ending is right there. I can't stop you. I never could." },
-    { pct: 93, emoji: "👁️‍🗨️", name: "The Almost",        taunt: "So close. I have nothing left. You win. I'm telling the boss." },
-    { pct: 97, emoji: "☠️", name: "Last Page Phantom",   taunt: "I am the last thing standing between you and your finished draft. Goodbye." },
+    // Tier 1 — Nuisances (0–26%)
+    { pct: 3,  emoji: "💤", name: "The Inner Critic",    taunt: "I have emerged to stop you. It is not going well for me." },
+    { pct: 8,  emoji: "🐀", name: "Blank Page Specter",  taunt: "I haunt only the unprepared. You seem... prepared. Curses." },
+    { pct: 12, emoji: "👁️", name: "The Distraction",     taunt: "Look over there! ...It didn't work. Impressive." },
+    { pct: 17, emoji: "🕷️", name: "Procrastination Imp", taunt: "I had a whole plan. You were supposed to make tea first." },
+    { pct: 23, emoji: "💤", name: "The Doubter",         taunt: "I whispered my doubts and you just... kept writing. Rude." },
+    // Tier 2 — Henchmen (26–50%)
+    { pct: 29, emoji: "🧟", name: "Cliché Goblin",       taunt: "Every story has been told before! Except yours. I hate that." },
+    { pct: 36, emoji: "👤", name: "The Perfectionist",   taunt: "A first draft is supposed to be terrible. Yours isn't. Unacceptable." },
+    { pct: 43, emoji: "🦇", name: "Subplot Wraith",      taunt: "I tried to tangle your subplots. You untangled them. Monster." },
+    { pct: 47, emoji: "🗡️", name: "Pacing Phantom",      taunt: "This scene should be dragging by now. Why isn't it dragging?!" },
+    { pct: 54, emoji: "🧟", name: "The Impostor",        taunt: "I told you that you didn't belong here. You ignored me completely." },
+    // Tier 3 — Serious threats (50–73%)
+    { pct: 58, emoji: "🔥", name: "Momentum Thief",      taunt: "I tried to steal your momentum. You had too much of it. Unfair." },
+    { pct: 64, emoji: "💀", name: "The Rewriter",        taunt: "You were supposed to scrap everything and start over. The nerve." },
+    { pct: 68, emoji: "🩸", name: "Tension Leech",       taunt: "I feed on sagging middles. Yours refused to sag. I am starving." },
+    { pct: 71, emoji: "⚔️", name: "The Quitter",         taunt: "Nobody told me you'd make it this far. I want a refund." },
+    { pct: 76, emoji: "🔥", name: "Deus Ex Machina",     taunt: "I planted a plot hole right there. You just... wrote around it." },
+    // Tier 4 — Final guardians (73–100%)
+    { pct: 82, emoji: "☠️", name: "The Burnout",         taunt: "You should be exhausted. Are you not exhausted?! This is outrageous." },
+    { pct: 88, emoji: "💣", name: "Continuity Gremlin",  taunt: "I hid three continuity errors in chapter seven. You caught them all." },
+    { pct: 93, emoji: "🌑", name: "The Final Fear",      taunt: "The ending is right there. I can't stop you. I never could." },
+    { pct: 96, emoji: "👁️‍🗨️", name: "The Almost",        taunt: "So close. I have nothing left. You win. I'm telling the boss." },
+    { pct: 98, emoji: "☠️", name: "Last Page Phantom",   taunt: "I am the last thing standing between you and your finished draft. Goodbye." },
 ];
 
 const GRENADES = [
