@@ -210,15 +210,19 @@ function getPlayerFrames(key) {
 }
 
 // ── Sprite drawing ────────────────────────────────────────────────────────────
-function drawSprite(frames, frameIdx, x, groundY, targetH, flipX) {
+// refH: height of the reference frame (e.g. Idle/Walk first frame).
+// All frames of an entity scale by the same factor so characters stay consistent size.
+// Larger attack canvases extend upward naturally rather than shrinking the character.
+function drawSprite(frames, frameIdx, x, groundY, targetH, flipX, refH) {
     if (!frames || !frames.length) return;
     const idx = Math.min(Math.max(0, frameIdx), frames.length - 1);
     const img = loadImg(frames[idx]);
     if (!img.complete || !img.naturalWidth) return;
 
-    const scale = targetH / img.naturalHeight;
-    const dw    = img.naturalWidth * scale;
-    const dh    = targetH;
+    const baseH = refH || img.naturalHeight;
+    const scale = targetH / baseH;
+    const dw    = img.naturalWidth  * scale;
+    const dh    = img.naturalHeight * scale; // may exceed targetH for bigger canvases
     const dy    = groundY - dh;
 
     ctx.save();
@@ -251,6 +255,7 @@ let playerFrames     = {};
 let playerAnim       = 'Idle';
 let playerFrame      = 0;
 let playerFrameTimer = 0;
+let playerX          = 0; // actual x position (lerps toward enemy)
 
 // Enemy (monster or boss on screen)
 const ESTATE = { HIDDEN:0, WALK_IN:1, IDLE_1:2, WALK_CLOSE:3, IDLE_2:4, ATTACK:5, DEATH:6, BOSS_INCOMING:7 };
@@ -265,8 +270,9 @@ let enemyData        = null;  // manifest entry
 let enemyDeathFrames = [];
 let enemyDeathFrame  = 0;
 let enemyDeathTimer  = 0;
-let enemyHeight      = MONSTER_HEIGHT;
+let enemyRefH        = 0; // natural height of the Idle/Walk frame — kept constant across all anims
 let enemyAnimSpeed   = ANIM_SPEED;
+let playerRefH       = 0; // same for player
 
 // State tracking
 let initialized   = false;
@@ -299,21 +305,27 @@ function setEnemyAnim(animName) {
     }
 }
 
+function getRefH(frames) {
+    // Get natural height of first loaded frame, or 0 if not yet loaded
+    if (!frames || !frames.length) return 0;
+    const img = loadImg(frames[0]);
+    return (img.complete && img.naturalHeight) ? img.naturalHeight : 0;
+}
+
 function startMonster(minionIdx) {
     const key  = 'MonsterV' + (minionIdx + 1);
     enemyData  = manifest && manifest.monsters[key];
     if (!enemyData) return;
     enemyType        = 'monster';
-    enemyHeight      = MONSTER_HEIGHT;
     enemyAnimSpeed   = ANIM_SPEED;
     enemyX           = W * ENEMY_ENTER_X;
     enemyTargetX     = W * ENEMY_MID_X;
     enemyDeathFrames = manifest.deaths[enemyData.deathPool] || [];
     enemyDeathFrame  = 0;
     enemyDeathTimer  = 0;
+    enemyRefH        = 0; // will be set once first frame loads
     enemyState       = ESTATE.WALK_IN;
     setEnemyAnim('Walk');
-    // Preload all anims for this monster
     ['Walk','Idle','Attack'].forEach(function(a) { preloadFrames(enemyData[a]); });
     preloadFrames(enemyDeathFrames);
 }
@@ -323,13 +335,13 @@ function startBoss(bossIdx) {
     enemyData  = manifest && manifest.bosses[key];
     if (!enemyData) return;
     enemyType        = 'boss';
-    enemyHeight      = BOSS_HEIGHT;
     enemyAnimSpeed   = BOSS_ANIM_SPEED;
     enemyX           = W * ENEMY_ENTER_X;
     enemyTargetX     = W * BOSS_MID_X;
     enemyDeathFrames = manifest.bossDeaths[enemyData.deathPool] || [];
     enemyDeathFrame  = 0;
     enemyDeathTimer  = 0;
+    enemyRefH        = 0;
     enemyState       = ESTATE.BOSS_INCOMING;
     bossIncomingTimer = 0;
     setEnemyAnim('Idle');
@@ -480,26 +492,46 @@ function tickEnemy() {
 function drawSprites() {
     const gy = groundY();
 
-    // Player
+    // Player — capture reference height from Idle on first draw
     const pf = playerFrames[playerAnim];
     if (pf && pf.length) {
-        const px = W * PLAYER_X_PCT;
-        drawSprite(pf, playerFrame, px, gy, PLAYER_HEIGHT, false); // sprites face right naturally
+        if (!playerRefH) {
+            const idleFrames = playerFrames['Idle'] || playerFrames['Walk'] || pf;
+            playerRefH = getRefH(idleFrames);
+        }
+        // Player x: walks toward enemy when enemy is on screen
+        let px = W * PLAYER_X_PCT;
+        if (enemyState !== ESTATE.HIDDEN && enemyState !== ESTATE.BOSS_INCOMING) {
+            // Lerp player slightly right toward enemy during WALK_CLOSE / IDLE_2 / ATTACK
+            const targetPX = (enemyState === ESTATE.WALK_CLOSE || enemyState === ESTATE.IDLE_2 || enemyState === ESTATE.ATTACK)
+                ? W * (PLAYER_X_PCT + 0.06)
+                : W * PLAYER_X_PCT;
+            playerX += (targetPX - playerX) * 0.04;
+            px = playerX;
+        } else {
+            playerX = W * PLAYER_X_PCT;
+            px = playerX;
+        }
+        drawSprite(pf, playerFrame, px, gy, PLAYER_HEIGHT, false, playerRefH || undefined);
     }
 
     // Enemy
     if (enemyState === ESTATE.BOSS_INCOMING) {
-        // Flash "BOSS INCOMING" text — enemy not yet on screen
-        return;
+        return; // BOSS INCOMING text drawn separately
     }
 
     if (enemyState !== ESTATE.HIDDEN && enemyData) {
+        // Capture reference height from Idle/Walk on first draw
+        if (!enemyRefH) {
+            const refFrames = enemyData['Idle'] || enemyData['Walk'] || enemyFrames;
+            enemyRefH = getRefH(refFrames);
+        }
         const ex = Math.round(enemyX);
         const targetH = enemyType === 'boss' ? BOSS_HEIGHT : MONSTER_HEIGHT;
-        drawSprite(enemyFrames, enemyFrame, ex, gy, targetH, false); // sprites already face left
+        drawSprite(enemyFrames, enemyFrame, ex, gy, targetH, false, enemyRefH || undefined);
 
         // Overlay death fx during DEATH state
-        if (enemyState === ESTATE.DEATH && enemyDeathTimer > enemyFrames.length * enemyAnimSpeed && enemyDeathFrames.length) {
+        if (enemyState === ESTATE.DEATH && enemyDeathFrames.length) {
             const df = enemyDeathFrames;
             const fi = Math.min(enemyDeathFrame, df.length - 1);
             drawDeathSprite(df, fi, ex + targetH * 0.3, gy);

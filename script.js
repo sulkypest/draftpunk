@@ -171,15 +171,18 @@ function showDamageNumber(val) {
 }
 
 // ── Combat toast (non-interrupting corner notification) ───────────────────────
-function showCombatToast(label, name, emoji, taunt) {
+function showCombatToast(label, name, emoji, taunt, spriteUrl) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
     const toast = document.createElement('div');
     toast.className = 'combat-toast';
+    const iconHtml = spriteUrl
+        ? `<img src="${spriteUrl}" style="height:40px;width:auto;image-rendering:pixelated;display:block;flex-shrink:0;">`
+        : (emoji ? `<span class="toast-emoji">${emoji}</span>` : '');
     toast.innerHTML = `
         <div class="toast-label">${label}</div>
-        <div class="toast-name">
-            ${emoji ? `<span class="toast-emoji">${emoji}</span>` : ''}${name.toUpperCase()}
+        <div class="toast-name" style="display:flex;align-items:center;gap:6px;">
+            ${iconHtml}${name.toUpperCase()}
         </div>
         ${taunt ? `<div class="toast-taunt">"${taunt}"</div>` : ''}`;
     container.appendChild(toast);
@@ -293,7 +296,10 @@ window.addWords = function() {
         const minion = MINIONS[newMinionIdx];
         const labels = ['HENCHMAN DEFEATED', 'MINION SUBDUED', 'FOE VANQUISHED', 'OBSTACLE CRUSHED'];
         const label  = labels[newMinionIdx % labels.length];
-        showCombatToast(label, minion.name, minion.emoji, minion.taunt);
+        const mKey   = 'MonsterV' + (newMinionIdx + 1);
+        const mData  = window.gameManifest && window.gameManifest.monsters[mKey];
+        const mSprite = mData && mData.Idle && mData.Idle[0] ? mData.Idle[0] : null;
+        showCombatToast(label, minion.name, minion.emoji, minion.taunt, mSprite);
         if (window.SFX) SFX.minionDefeated();
     }
 
