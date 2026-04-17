@@ -14,10 +14,10 @@ const ENEMY_MID_X   = 0.62; // walks to here first
 const ENEMY_CLOSE_X = 0.28; // then walks close to player (near touching)
 const BOSS_MID_X    = 0.60;
 const BOSS_CLOSE_X  = 0.30;
-const PLAYER_HEIGHT = 58;   // px rendered height for player
-const MONSTER_HEIGHT= 52;   // px rendered height for monsters
-const BOSS_HEIGHT   = 78;   // px rendered height for bosses
-const DEATH_HEIGHT  = 60;
+const PLAYER_HEIGHT = 29;   // px rendered height for player
+const MONSTER_HEIGHT= 26;   // px rendered height for monsters
+const BOSS_HEIGHT   = 39;   // px rendered height for bosses
+const DEATH_HEIGHT  = 30;
 const BOSS_WINDOW   = 3;    // % before boss threshold to start approach
 const MINION_WINDOW = 3;    // % before minion threshold
 
@@ -258,7 +258,8 @@ let playerFrames     = {};
 let playerAnim       = 'Idle';
 let playerFrame      = 0;
 let playerFrameTimer = 0;
-let playerX          = 0; // actual x position (lerps toward enemy)
+let playerX          = 0; // actual x position
+let playerWalkTarget = -1; // -1 = stay at default x; ≥0 = walk toward this x
 
 // Enemy (monster or boss on screen)
 const ESTATE = { HIDDEN:0, WALK_IN:1, IDLE_1:2, WALK_CLOSE:3, IDLE_2:4, ATTACK:5, DEATH:6, BOSS_INCOMING:7 };
@@ -327,6 +328,7 @@ function startMonster(minionIdx) {
     enemyDeathFrame  = 0;
     enemyDeathTimer  = 0;
     enemyRefH        = 0; // will be set once first frame loads
+    playerWalkTarget = -1;
     enemyState       = ESTATE.WALK_IN;
     setEnemyAnim('Walk');
     ['Walk','Idle','Attack'].forEach(function(a) { preloadFrames(enemyData[a]); });
@@ -345,7 +347,8 @@ function startBoss(bossIdx) {
     enemyDeathFrame  = 0;
     enemyDeathTimer  = 0;
     enemyRefH        = 0;
-    enemyState       = ESTATE.BOSS_INCOMING;
+    playerWalkTarget  = -1;
+    enemyState        = ESTATE.BOSS_INCOMING;
     bossIncomingTimer = 0;
     setEnemyAnim('Idle');
     ['Walk','Fly','Idle','Attack'].forEach(function(a) { preloadFrames(enemyData[a]); });
@@ -424,38 +427,22 @@ function tickEnemy() {
                 enemyState = ESTATE.IDLE_1;
                 idleTimer  = 0;
                 setEnemyAnim('Idle');
-                setPlayerAnim('Idle');
+                setPlayerAnim('Walk');
             }
             break;
 
         case ESTATE.IDLE_1:
+            // Enemy idles in place; player walks toward enemy
             tickEnemyAnim();
-            idleTimer++;
-            if (idleTimer >= IDLE_1_TICKS) {
-                idleTimer    = 0;
-                enemyState   = ESTATE.WALK_CLOSE;
-                enemyTargetX = enemyType === 'boss' ? W * BOSS_CLOSE_X : W * ENEMY_CLOSE_X;
-                setEnemyAnim('Walk');
-                setPlayerAnim('Attack');
+            if (playerWalkTarget < 0) {
+                // Set player walking toward enemy on first tick of IDLE_1
+                const gap = enemyType === 'boss' ? W * 0.12 : W * 0.10;
+                playerWalkTarget = enemyX - gap;
+                setPlayerAnim('Walk');
             }
-            break;
-
-        case ESTATE.WALK_CLOSE:
-            enemyX += (enemyTargetX - enemyX) * 0.025;
-            tickEnemyAnim();
-            if (Math.abs(enemyX - enemyTargetX) < 2) {
-                enemyX     = enemyTargetX;
-                enemyState = ESTATE.IDLE_2;
-                idleTimer  = 0;
-                setEnemyAnim('Idle');
-                setPlayerAnim('Idle');
-            }
-            break;
-
-        case ESTATE.IDLE_2:
-            tickEnemyAnim();
-            idleTimer++;
-            if (idleTimer >= IDLE_2_TICKS) {
+            // When player arrives, start the attack
+            if (playerX >= playerWalkTarget - 4) {
+                playerWalkTarget = -1;
                 enemyState = ESTATE.ATTACK;
                 idleTimer  = 0;
                 setEnemyAnim('Attack');
@@ -481,9 +468,10 @@ function tickEnemy() {
                 enemyDeathFrame = Math.min(enemyDeathFrame + 1, enemyDeathFrames.length - 1);
             }
             if (enemyDeathTimer >= DEATH_TICKS) {
-                enemyState    = ESTATE.HIDDEN;
-                vignetteAlpha = 0;
-                inBattle      = false;
+                enemyState       = ESTATE.HIDDEN;
+                vignetteAlpha    = 0;
+                inBattle         = false;
+                playerWalkTarget = -1;
                 setPlayerAnim('Walk');
             }
             break;
@@ -502,14 +490,13 @@ function drawSprites() {
             const idleFrames = playerFrames['Idle'] || playerFrames['Walk'] || pf;
             playerRefH = getRefH(idleFrames);
         }
-        // Player x: walks toward enemy when enemy is on screen
-        let px = W * PLAYER_X_PCT;
-        if (enemyState !== ESTATE.HIDDEN && enemyState !== ESTATE.BOSS_INCOMING) {
-            // Lerp player slightly right toward enemy during WALK_CLOSE / IDLE_2 / ATTACK
-            const targetPX = (enemyState === ESTATE.WALK_CLOSE || enemyState === ESTATE.IDLE_2 || enemyState === ESTATE.ATTACK)
-                ? W * (PLAYER_X_PCT + 0.06)
-                : W * PLAYER_X_PCT;
-            playerX += (targetPX - playerX) * 0.04;
+        // Player x: walks toward enemy when playerWalkTarget is set
+        let px;
+        if (playerWalkTarget >= 0) {
+            playerX += (playerWalkTarget - playerX) * 0.03;
+            px = playerX;
+        } else if (enemyState !== ESTATE.HIDDEN && enemyState !== ESTATE.BOSS_INCOMING) {
+            // Hold at walked position during ATTACK/DEATH
             px = playerX;
         } else {
             playerX = W * PLAYER_X_PCT;
