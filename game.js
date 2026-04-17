@@ -619,19 +619,14 @@ function init() {
     for (let i = 0; i < 30; i++) spawnPtcl();
 
     loadManifest(function() {
+        // Default to PlayerA if nothing stored yet
         if (!localStorage.getItem('selectedPlayer')) {
-            showPlayerPicker(function() {
-                playerKey    = getSelectedPlayer();
-                playerFrames = getPlayerFrames(playerKey);
-                preloadAll();
-                requestAnimationFrame(loop);
-            });
-        } else {
-            playerKey    = getSelectedPlayer();
-            playerFrames = getPlayerFrames(playerKey);
-            preloadAll();
-            requestAnimationFrame(loop);
+            localStorage.setItem('selectedPlayer', 'PlayerA');
         }
+        playerKey    = getSelectedPlayer();
+        playerFrames = getPlayerFrames(playerKey);
+        preloadAll();
+        requestAnimationFrame(loop);
     });
 }
 

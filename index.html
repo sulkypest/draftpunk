@@ -116,17 +116,14 @@
             <h1 id="wipDisplay">PROJECT</h1>
             <h2 id="lvlName">LEVEL</h2>
 
-            <div class="boss-zone" style="flex-direction:column;padding:0;gap:0;height:auto;overflow:hidden;">
-                <!-- Boss info row: name + HP bar + info button -->
-                <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;width:100%;box-sizing:border-box;">
-                    <div id="bossName" style="font-size:0.75rem;letter-spacing:1px;min-width:60px;">BOSS</div>
-                    <div class="bar-container" style="flex:1;height:8px;margin:0;border-color:#333;">
-                        <div id="bossHPBar" class="bar-fill" style="background:red;width:100%;"></div>
+            <div class="boss-zone">
+                <img id="bossSprite" class="boss-sprite" src="bosses/1.png" onclick="showBossZoom()" title="Click for info">
+                <div style="flex:1;">
+                    <div id="bossName">BOSS</div>
+                    <div class="bar-container" style="height:10px; margin-bottom:0; border-color: #333;">
+                        <div id="bossHPBar" class="bar-fill" style="background:red; width:100%;"></div>
                     </div>
-                    <button onclick="showBossZoom()" style="padding:2px 8px;font-size:0.55rem;background:transparent;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;letter-spacing:1px;">INFO</button>
                 </div>
-                <!-- Hidden sprite kept for JS compat (hit-shake, src updates) -->
-                <img id="bossSprite" src="bosses/1.png" style="display:none;">
             </div>
 
             <button class="intel-btn" onclick="toggleIntel()">MICROBEAT TIPS ▾</button>
