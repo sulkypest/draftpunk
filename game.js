@@ -170,7 +170,10 @@ function loadManifest(cb) {
         if (xhr.status === 200) {
             try { manifest = JSON.parse(xhr.responseText); } catch(e) { manifest = null; }
         }
-        if (manifest) window.gameManifest = manifest;
+        if (manifest) {
+            window.gameManifest = manifest;
+            if (window.onGameManifestReady) window.onGameManifestReady();
+        }
         cb();
     };
     xhr.onerror = function() { cb(); };
