@@ -11,15 +11,15 @@ const GROUND_PCT = 0.68; // ground line as fraction of bar height
 const PLAYER_X_PCT  = 0.18;
 const ENEMY_ENTER_X = 1.15; // starts off right edge (fraction of W)
 const ENEMY_MID_X   = 0.62; // walks to here first
-const ENEMY_CLOSE_X = 0.32; // then walks close to player
+const ENEMY_CLOSE_X = 0.28; // then walks close to player (near touching)
 const BOSS_MID_X    = 0.60;
-const BOSS_CLOSE_X  = 0.36;
+const BOSS_CLOSE_X  = 0.30;
 const PLAYER_HEIGHT = 58;   // px rendered height for player
 const MONSTER_HEIGHT= 52;   // px rendered height for monsters
 const BOSS_HEIGHT   = 78;   // px rendered height for bosses
 const DEATH_HEIGHT  = 60;
-const BOSS_WINDOW   = 10;   // % before boss threshold to start approach
-const MINION_WINDOW = 8;    // % before minion threshold
+const BOSS_WINDOW   = 3;    // % before boss threshold to start approach
+const MINION_WINDOW = 3;    // % before minion threshold
 
 // ── Level palettes ────────────────────────────────────────────────────────────
 const LEVELS = [
@@ -277,9 +277,10 @@ let idleTimer     = 0; // ticks spent in IDLE_1 or IDLE_2
 let inBattle      = false;
 
 // Timing constants (at ~60fps)
-const IDLE_1_TICKS = 150; // ~2.5s before walking close
-const IDLE_2_TICKS =  90; // ~1.5s before attacking
-const ATTACK_HIT_TICKS = 70; // ticks between each GetHit during ATTACK
+const IDLE_1_TICKS     = 120; // ~2s before walking close
+const IDLE_2_TICKS     =  60; // ~1s before attacking
+const ATTACK_HIT_TICKS =  60; // ticks between each GetHit during ATTACK
+const DEATH_TICKS      = 100; // total ticks for death sequence before HIDDEN
 
 // Boss incoming flash
 let bossIncomingTimer = 0;
@@ -458,16 +459,17 @@ function tickEnemy() {
             break;
 
         case ESTATE.DEATH: {
-            const done = tickEnemyAnim();
+            tickEnemyAnim();
             enemyDeathTimer++;
-            if (done) {
-                if (enemyDeathFrames.length && enemyDeathFrame < enemyDeathFrames.length) {
-                    enemyDeathFrame++;
-                } else {
-                    enemyState    = ESTATE.HIDDEN;
-                    vignetteAlpha = 0;
-                    setPlayerAnim('Walk');
-                }
+            // Advance death fx frame every 5 ticks
+            if (enemyDeathTimer % 5 === 0 && enemyDeathFrames.length) {
+                enemyDeathFrame = Math.min(enemyDeathFrame + 1, enemyDeathFrames.length - 1);
+            }
+            if (enemyDeathTimer >= DEATH_TICKS) {
+                enemyState    = ESTATE.HIDDEN;
+                vignetteAlpha = 0;
+                inBattle      = false;
+                setPlayerAnim('Walk');
             }
             break;
         }
@@ -761,14 +763,23 @@ window.updateGame = function () {
         setTimeout(function(){ setPlayerAnim('Walk'); }, 2000);
     }
 
-    // ── Minion spawn — blocked during boss window ───────────────────────────
-    if (!bossWindowActive) {
-        const nextMinionIdx = trackedMinion + 1;
-        if (nextMinionIdx < MINIONS.length) {
-            const gapToMinion = MINIONS[nextMinionIdx].pct - progress;
-            if (gapToMinion <= MINION_WINDOW && gapToMinion > 0 && enemyState === ESTATE.HIDDEN) {
-                startMonster(nextMinionIdx);
-            }
+    // ── Minion spawn ────────────────────────────────────────────────────────
+    // If boss window opens while a minion is on screen, clear it so boss can spawn
+    if (bossWindowActive && enemyType === 'monster' &&
+        enemyState !== ESTATE.HIDDEN && enemyState !== ESTATE.DEATH) {
+        defeatEnemy();
+    }
+
+    const nextMinionIdx = trackedMinion + 1;
+    if (nextMinionIdx < MINIONS.length) {
+        const gapToMinion = MINIONS[nextMinionIdx].pct - progress;
+        // Spawn minion if slot free and not about to hand off to boss
+        if (gapToMinion <= MINION_WINDOW && gapToMinion > 0 && enemyState === ESTATE.HIDDEN && !bossWindowActive) {
+            startMonster(nextMinionIdx);
+        }
+        // Skip past minions whose threshold passed while a boss was on screen
+        if (gapToMinion <= 0 && nextMinionIdx > trackedMinion) {
+            trackedMinion = nextMinionIdx;
         }
     }
 
