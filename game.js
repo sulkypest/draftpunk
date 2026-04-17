@@ -274,6 +274,7 @@ let trackedMinion = -1;
 let trackedBoss   = -1;
 let vignetteAlpha = 0;
 let idleTimer     = 0; // ticks spent in IDLE_1 or IDLE_2
+let inBattle      = false;
 
 // Timing constants (at ~60fps)
 const IDLE_1_TICKS = 150; // ~2.5s before walking close
@@ -740,12 +741,14 @@ window.updateGame = function () {
         const gapToBoss = BOSS_BEATS[nextBossIdx].pct - progress;
         if (gapToBoss <= BOSS_WINDOW && gapToBoss > 0) {
             bossWindowActive = true;
+            inBattle = true;
             vignetteAlpha = Math.min(0.55, vignetteAlpha + 0.02);
             if (trackedBoss < nextBossIdx && enemyState === ESTATE.HIDDEN) {
                 trackedBoss = nextBossIdx;
                 startBoss(nextBossIdx - 1);
             }
         } else {
+            inBattle = false;
             vignetteAlpha = Math.max(0, vignetteAlpha - 0.02);
         }
     }
