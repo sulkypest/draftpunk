@@ -271,9 +271,14 @@ let enemyAnimSpeed   = ANIM_SPEED;
 // State tracking
 let initialized   = false;
 let trackedMinion = -1;
-let trackedBoss   = -1; // index of boss currently being approached
-let inBattle      = false;
+let trackedBoss   = -1;
 let vignetteAlpha = 0;
+let idleTimer     = 0; // ticks spent in IDLE_1 or IDLE_2
+
+// Timing constants (at ~60fps)
+const IDLE_1_TICKS = 150; // ~2.5s before walking close
+const IDLE_2_TICKS =  90; // ~1.5s before attacking
+const ATTACK_HIT_TICKS = 70; // ticks between each GetHit during ATTACK
 
 // Boss incoming flash
 let bossIncomingTimer = 0;
@@ -387,10 +392,12 @@ function tickEnemy() {
             bossIncomingTimer++;
             if (bossIncomingTimer >= BOSS_INCOMING_FRAMES) {
                 enemyState   = ESTATE.WALK_IN;
-                enemyTargetX = W * BOSS_MID_X;
+                enemyTargetX = enemyType === 'boss' ? W * BOSS_MID_X : W * ENEMY_MID_X;
                 setEnemyAnim('Walk');
+                setPlayerAnim('Walk');
+                idleTimer = 0;
             }
-            return; // don't move yet
+            return;
 
         case ESTATE.WALK_IN:
             enemyX += (enemyTargetX - enemyX) * 0.03;
@@ -398,13 +405,22 @@ function tickEnemy() {
             if (Math.abs(enemyX - enemyTargetX) < 2) {
                 enemyX     = enemyTargetX;
                 enemyState = ESTATE.IDLE_1;
+                idleTimer  = 0;
                 setEnemyAnim('Idle');
+                setPlayerAnim('Idle');
             }
             break;
 
         case ESTATE.IDLE_1:
             tickEnemyAnim();
-            // Transition to WALK_CLOSE is triggered by updateGame() via progress
+            idleTimer++;
+            if (idleTimer >= IDLE_1_TICKS) {
+                idleTimer    = 0;
+                enemyState   = ESTATE.WALK_CLOSE;
+                enemyTargetX = enemyType === 'boss' ? W * BOSS_CLOSE_X : W * ENEMY_CLOSE_X;
+                setEnemyAnim('Walk');
+                setPlayerAnim('Attack');
+            }
             break;
 
         case ESTATE.WALK_CLOSE:
@@ -413,36 +429,47 @@ function tickEnemy() {
             if (Math.abs(enemyX - enemyTargetX) < 2) {
                 enemyX     = enemyTargetX;
                 enemyState = ESTATE.IDLE_2;
+                idleTimer  = 0;
                 setEnemyAnim('Idle');
+                setPlayerAnim('Idle');
             }
             break;
 
         case ESTATE.IDLE_2:
             tickEnemyAnim();
-            // Transition to ATTACK triggered by updateGame()
+            idleTimer++;
+            if (idleTimer >= IDLE_2_TICKS) {
+                enemyState = ESTATE.ATTACK;
+                idleTimer  = 0;
+                setEnemyAnim('Attack');
+                setPlayerAnim('GetHit');
+            }
             break;
 
         case ESTATE.ATTACK:
             tickEnemyAnim();
+            // Re-trigger GetHit periodically so the player keeps reacting
+            idleTimer++;
+            if (idleTimer >= ATTACK_HIT_TICKS) {
+                idleTimer = 0;
+                setPlayerAnim('GetHit');
+            }
             break;
 
-        case ESTATE.DEATH:
-            // First play attack once, then switch to death fx
-            if (enemyDeathFrame === 0 && enemyDeathTimer === 0) {
-                setEnemyAnim('Attack');
-            }
+        case ESTATE.DEATH: {
             const done = tickEnemyAnim();
             enemyDeathTimer++;
-            if (done && enemyDeathTimer > enemyFrames.length * enemyAnimSpeed) {
-                // Switch to death fx overlay
-                enemyDeathFrame++;
-                if (enemyDeathFrame >= (enemyDeathFrames.length || 1)) {
-                    enemyState = ESTATE.HIDDEN;
+            if (done) {
+                if (enemyDeathFrames.length && enemyDeathFrame < enemyDeathFrames.length) {
+                    enemyDeathFrame++;
+                } else {
+                    enemyState    = ESTATE.HIDDEN;
                     vignetteAlpha = 0;
                     setPlayerAnim('Walk');
                 }
             }
             break;
+        }
     }
 }
 
@@ -706,88 +733,54 @@ window.updateGame = function () {
         for (let i = 0; i < 20; i++) spawnPtcl();
     }
 
-    // ── Boss approach logic ─────────────────────────────────────────────────
-    // nextBossIdx = bossIdx + 1 (the boss we're heading toward)
+    // ── Boss spawn ──────────────────────────────────────────────────────────
     const nextBossIdx = bossIdx + 1;
+    let bossWindowActive = false;
     if (nextBossIdx < BOSS_BEATS.length) {
-        const nextBoss    = BOSS_BEATS[nextBossIdx];
-        const gapToBoss   = nextBoss.pct - progress;
-
+        const gapToBoss = BOSS_BEATS[nextBossIdx].pct - progress;
         if (gapToBoss <= BOSS_WINDOW && gapToBoss > 0) {
-            inBattle = true;
-            vignetteAlpha = Math.min(0.55, vignetteAlpha + 0.01);
-
+            bossWindowActive = true;
+            vignetteAlpha = Math.min(0.55, vignetteAlpha + 0.02);
             if (trackedBoss < nextBossIdx && enemyState === ESTATE.HIDDEN) {
                 trackedBoss = nextBossIdx;
-                startBoss(nextBossIdx - 1); // Boss01 = index 0
-            }
-
-            // Walk closer at half the window
-            if (gapToBoss <= BOSS_WINDOW * 0.5 && enemyState === ESTATE.IDLE_1) {
-                enemyState   = ESTATE.WALK_CLOSE;
-                enemyTargetX = W * BOSS_CLOSE_X;
-                setEnemyAnim('Walk');
-                setPlayerAnim('Attack');
-            }
-
-            // Attack when very close
-            if (gapToBoss <= 1.5 && (enemyState === ESTATE.IDLE_2 || enemyState === ESTATE.WALK_CLOSE)) {
-                enemyState = ESTATE.ATTACK;
-                setEnemyAnim('Attack');
-                setPlayerAnim('GetHit');
+                startBoss(nextBossIdx - 1);
             }
         } else {
-            inBattle = false;
             vignetteAlpha = Math.max(0, vignetteAlpha - 0.02);
         }
     }
 
-    // Boss defeated
-    if (bossIdx > trackedBoss - 1 && enemyState !== ESTATE.DEATH && enemyState !== ESTATE.HIDDEN && enemyType === 'boss') {
+    // ── Boss defeated ───────────────────────────────────────────────────────
+    if (bossIdx >= trackedBoss && trackedBoss > 0 && enemyType === 'boss' &&
+        enemyState !== ESTATE.DEATH && enemyState !== ESTATE.HIDDEN) {
         defeatEnemy();
-        inBattle = false;
         setPlayerAnim('Celebrate');
         setTimeout(function(){ setPlayerAnim('Walk'); }, 2000);
     }
 
-    // ── Minion approach logic ───────────────────────────────────────────────
-    if (minionIdx >= 0 && minionIdx < MINIONS.length) {
+    // ── Minion spawn — blocked during boss window ───────────────────────────
+    if (!bossWindowActive) {
         const nextMinionIdx = trackedMinion + 1;
         if (nextMinionIdx < MINIONS.length) {
-            const nextMinion  = MINIONS[nextMinionIdx];
-            const gapToMinion = nextMinion.pct - progress;
-
-            // Only show minion if no boss battle happening
-            if (!inBattle && gapToMinion <= MINION_WINDOW && gapToMinion > 0) {
-                if (enemyState === ESTATE.HIDDEN) {
-                    startMonster(nextMinionIdx);
-                }
-                // Walk closer at halfway
-                if (gapToMinion <= MINION_WINDOW * 0.5 && enemyState === ESTATE.IDLE_1) {
-                    enemyState   = ESTATE.WALK_CLOSE;
-                    enemyTargetX = W * ENEMY_CLOSE_X;
-                    setEnemyAnim('Walk');
-                    setPlayerAnim('Attack');
-                }
-                // Idle 2 close up
-                if (gapToMinion <= 2 && enemyState === ESTATE.WALK_CLOSE) {
-                    enemyState = ESTATE.IDLE_2;
-                    setEnemyAnim('Idle');
-                }
+            const gapToMinion = MINIONS[nextMinionIdx].pct - progress;
+            if (gapToMinion <= MINION_WINDOW && gapToMinion > 0 && enemyState === ESTATE.HIDDEN) {
+                startMonster(nextMinionIdx);
             }
         }
     }
 
-    // Minion defeated
-    if (minionIdx > trackedMinion && enemyState !== ESTATE.HIDDEN && enemyType === 'monster') {
+    // ── Minion defeated ─────────────────────────────────────────────────────
+    if (minionIdx > trackedMinion) {
+        if (enemyType === 'monster' && enemyState !== ESTATE.DEATH && enemyState !== ESTATE.HIDDEN) {
+            defeatEnemy();
+        }
         trackedMinion = minionIdx;
-        defeatEnemy();
-    } else if (minionIdx > trackedMinion) {
-        trackedMinion = minionIdx; // already gone / skipped
     }
 
-    // Player walks when no enemy is active and not already in a special anim
-    if (enemyState === ESTATE.HIDDEN && playerAnim === 'Idle') {
+    // Player walks when nothing on screen
+    if (enemyState === ESTATE.HIDDEN &&
+        playerAnim !== 'Walk' && playerAnim !== 'Celebrate' &&
+        playerAnim !== 'GetHit' && playerAnim !== 'Die') {
         setPlayerAnim('Walk');
     }
 };
