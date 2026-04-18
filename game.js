@@ -330,6 +330,7 @@ function startMonster(minionIdx) {
     enemyRefH        = 0; // will be set once first frame loads
     playerWalkTarget = -1;
     enemyState       = ESTATE.WALK_IN;
+    spawnFlashTimer  = 30; spawnFlashR = 30; spawnFlashG = 80; spawnFlashB = 255;
     setEnemyAnim('Walk');
     ['Walk','Idle','Attack'].forEach(function(a) { preloadFrames(enemyData[a]); });
     preloadFrames(enemyDeathFrames);
@@ -350,6 +351,7 @@ function startBoss(bossIdx) {
     playerWalkTarget  = -1;
     enemyState        = ESTATE.BOSS_INCOMING;
     bossIncomingTimer = 0;
+    spawnFlashTimer   = 30; spawnFlashR = 220; spawnFlashG = 0; spawnFlashB = 0;
     setEnemyAnim('Idle');
     ['Walk','Fly','Idle','Attack'].forEach(function(a) { preloadFrames(enemyData[a]); });
     preloadFrames(enemyDeathFrames);
@@ -435,8 +437,8 @@ function tickEnemy() {
             // Enemy idles in place; player walks toward enemy
             tickEnemyAnim();
             if (playerWalkTarget < 0) {
-                // Set player walking toward enemy on first tick of IDLE_1
-                const gap = enemyType === 'boss' ? W * 0.12 : W * 0.10;
+                // Set player walking right up to enemy — small fixed gap so sprites visually touch
+                const gap = enemyType === 'boss' ? BOSS_HEIGHT * 0.6 : MONSTER_HEIGHT * 0.8;
                 playerWalkTarget = enemyX - gap;
                 setPlayerAnim('Walk');
             }
@@ -472,6 +474,7 @@ function tickEnemy() {
                 vignetteAlpha    = 0;
                 inBattle         = false;
                 playerWalkTarget = -1;
+                scrollBoost      = 6.0; // pan world right so player drifts to home position
                 setPlayerAnim('Walk');
             }
             break;
@@ -499,7 +502,13 @@ function drawSprites() {
             // Hold at walked position during ATTACK/DEATH
             px = playerX;
         } else {
-            playerX = W * PLAYER_X_PCT;
+            // Smoothly drift back to home position (no snap/teleport)
+            const home = W * PLAYER_X_PCT;
+            if (Math.abs(playerX - home) > 1) {
+                playerX += (home - playerX) * 0.04;
+            } else {
+                playerX = home;
+            }
             px = playerX;
         }
         drawSprite(pf, playerFrame, px, gy, PLAYER_HEIGHT, false, playerRefH || undefined);
@@ -559,7 +568,19 @@ function drawBossIncoming() {
 // ── Battle flash ──────────────────────────────────────────────────────────────
 let battleFlashTimer = 0;
 
+// Spawn flash: brief coloured pulse when enemy first appears
+let spawnFlashTimer = 0;
+let spawnFlashR = 255; let spawnFlashG = 0; let spawnFlashB = 0;
+
 function drawBattleFlash() {
+    // Spawn flash (boss = red, minion = blue)
+    if (spawnFlashTimer > 0) {
+        const a = (spawnFlashTimer / 30) * 0.55;
+        ctx.fillStyle = `rgba(${spawnFlashR},${spawnFlashG},${spawnFlashB},${a.toFixed(2)})`;
+        ctx.fillRect(0, 0, W, H);
+        spawnFlashTimer--;
+    }
+    // Ongoing boss-battle pulse
     if (!inBattle || enemyType !== 'boss') return;
     battleFlashTimer++;
     const a = 0.08 + 0.06 * Math.sin(battleFlashTimer * 0.08);
@@ -601,6 +622,7 @@ window.gameBuddyFound = function () {
 // ── Canvas + DOM setup ────────────────────────────────────────────────────────
 let canvas, ctx, W, H, container;
 let scrollX      = 0;
+let scrollBoost  = 1.0; // temporarily >1 after enemy defeated to pan world right
 let currentLevel = 0;
 let tick         = 0;
 
@@ -696,7 +718,8 @@ function resize() {
 
 function loop() {
     tick++;
-    scrollX += 1.1 + currentLevel * 0.07;
+    scrollX += (1.1 + currentLevel * 0.07) * scrollBoost;
+    if (scrollBoost > 1.0) { scrollBoost *= 0.96; if (scrollBoost < 1.0) scrollBoost = 1.0; }
 
     if (W > 0 && H > 0) {
         ctx.clearRect(0, 0, W, H);
