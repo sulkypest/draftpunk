@@ -23,8 +23,8 @@ const MINION_WINDOW = 3;    // % before minion threshold
 
 // ── Level palettes ────────────────────────────────────────────────────────────
 const LEVELS = [
-    { sky0:'#02020e',sky1:'#07071e',gnd:'#08081a',ln:'#0ff',ptcl:'stars',pc:'#6af',
-      L:[{sp:.10,st:98,mH:45,xH:90,ty:'rect',c:'#0a0a1e',ww:1},{sp:.26,st:58,mH:18,xH:48,ty:'rect',c:'#0d0d28',ww:1},{sp:.56,st:36,mH:7,xH:20,ty:'rect',c:'#111132'}]},
+    { sky0:'#0a0a2e',sky1:'#14143e',gnd:'#0e0e24',ln:'#0ff',ptcl:'stars',pc:'#6af',
+      L:[{sp:.10,st:98,mH:45,xH:90,ty:'rect',c:'#12123a',ww:1},{sp:.26,st:58,mH:18,xH:48,ty:'rect',c:'#16163e',ww:1},{sp:.56,st:36,mH:7,xH:20,ty:'rect',c:'#1a1a48'}]},
     { sky0:'#000d00',sky1:'#011601',gnd:'#020e02',ln:'#0e8',ptcl:'firefly',pc:'#afa',
       L:[{sp:.08,st:78,mH:55,xH:95,ty:'tri',c:'#030f03'},{sp:.22,st:46,mH:28,xH:58,ty:'tri',c:'#051305'},{sp:.54,st:26,mH:12,xH:32,ty:'tri',c:'#081808'}]},
     { sky0:'#090415',sky1:'#140622',gnd:'#110620',ln:'#c0f',ptcl:'stars',pc:'#d8f',
@@ -742,6 +742,7 @@ window.updateGame = function () {
         const lv = LEVELS[Math.min(currentLevel, LEVELS.length - 1)];
         ptclType = lv.ptcl; ptclCol = lv.pc; ptcl = [];
         for (let i = 0; i < 30; i++) spawnPtcl();
+        setPlayerAnim('Walk');
         return;
     }
 

@@ -3,7 +3,7 @@ console.log("Draft Punk Script Loading...");
 // Returns the best available image for a boss (1-based index)
 // Uses game sprite manifest if loaded, falls back to bosses/ folder
 window.getBossImgSrc = function(oneBased) {
-    const n = Math.max(1, Math.min(15, oneBased || 1));
+    const n = Math.max(1, Math.min(15, oneBased));
     const key = 'Boss' + String(n).padStart(2, '0');
     if (window.gameManifest && window.gameManifest.bosses[key]) {
         const idle = window.gameManifest.bosses[key].Idle;
@@ -244,7 +244,7 @@ window.addWords = function() {
         state.lastLevel = newIdx;
         state.xp += 500;
         document.getElementById('bossBeatTitle').innerText = BOSS_BEATS[newIdx].name;
-        document.getElementById('defeatedBossSprite').src = `bosses/${newIdx + 1}.png`;
+        document.getElementById('defeatedBossSprite').src = window.getBossImgSrc(newIdx + 1);
         document.getElementById('levelOverlay').style.display = 'flex';
         if (window.SFX) SFX.bossDefeated();
         const app = document.querySelector('.app');
@@ -456,7 +456,7 @@ function updateUI() {
     const sprite = document.getElementById('bossSprite');
     const scaleFactor = 0.3 + (hp / 100) * 0.7;
     sprite.style.transform = `scale(${scaleFactor})`;
-    sprite.src = `bosses/${curIdx + 1}.png`;
+    sprite.src = window.getBossImgSrc(curIdx + 2);
     sprite.onerror = () => sprite.style.visibility = 'hidden';
     sprite.onload  = () => sprite.style.visibility = 'visible';
 
@@ -483,7 +483,7 @@ window.showBossZoom = function() {
     const curBeatIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
     const nextBeat   = BOSS_BEATS[curBeatIdx + 1] || BOSS_BEATS[curBeatIdx];
     const wordsNeeded = Math.ceil((nextBeat.pct / 100) * state.goal) - state.total;
-    document.getElementById('bossZoomSprite').src = `bosses/${curBeatIdx + 1}.png`;
+    document.getElementById('bossZoomSprite').src = window.getBossImgSrc(curBeatIdx + 2);
     document.getElementById('bossZoomName').innerText = `STAGE ${curBeatIdx + 2} — ${nextBeat.name.toUpperCase()}`;
     document.getElementById('bossZoomBeat').innerText = wordsNeeded > 0
         ? `${wordsNeeded.toLocaleString()} WORDS TO DEFEAT`
