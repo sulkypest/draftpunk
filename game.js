@@ -259,6 +259,7 @@ let playerAnim       = 'Idle';
 let playerFrame      = 0;
 let playerFrameTimer = 0;
 let playerX          = 0; // actual x position
+let playerWalkTarget = -1; // -1 = idle in place; ≥0 = walk to this x then idle
 
 // Enemy (monster or boss on screen)
 const ESTATE = { HIDDEN:0, WALK_IN:1, IDLE_1:2, WALK_CLOSE:3, IDLE_2:4, ATTACK:5, DEATH:6, BOSS_INCOMING:7 };
@@ -330,6 +331,7 @@ function startMonster(minionIdx) {
     enemyDeathFrame  = 0;
     enemyDeathTimer  = 0;
     enemyRefH          = 0; // will be set once first frame loads
+    playerWalkTarget   = -1;
     enemyThresholdPct  = (typeof MINIONS !== 'undefined') ? MINIONS[minionIdx].pct : 0;
     enemyWindowSize    = MINION_WINDOW;
     enemyState         = ESTATE.WALK_IN;
@@ -351,6 +353,7 @@ function startBoss(bossIdx) {
     enemyDeathFrame  = 0;
     enemyDeathTimer  = 0;
     enemyRefH          = 0;
+    playerWalkTarget   = -1;
     enemyThresholdPct  = (typeof BOSS_BEATS !== 'undefined' && BOSS_BEATS[bossIdx + 1]) ? BOSS_BEATS[bossIdx + 1].pct : 0;
     enemyWindowSize    = BOSS_WINDOW;
     enemyState         = ESTATE.BOSS_INCOMING;
@@ -374,6 +377,7 @@ function triggerBattle() {
     if (enemyState === ESTATE.DEATH || enemyState === ESTATE.HIDDEN ||
         enemyState === ESTATE.BOSS_INCOMING) return;
     if (enemyState === ESTATE.WALK_IN) enemyX = enemyTargetX; // snap if still walking in
+    playerWalkTarget = -1;
     enemyState = ESTATE.ATTACK;
     idleTimer  = 0;
     setEnemyAnim('Attack');
@@ -450,9 +454,8 @@ function tickEnemy() {
             break;
 
         case ESTATE.IDLE_1:
-            // Enemy idles; player position is progress-driven (see drawSprites)
+            // Enemy idles; player walks on word entry then idles (see drawSprites + updateGame)
             tickEnemyAnim();
-            if (playerAnim !== 'Walk') setPlayerAnim('Walk');
             break;
 
         case ESTATE.ATTACK:
@@ -472,10 +475,11 @@ function tickEnemy() {
                 enemyDeathFrame = Math.min(enemyDeathFrame + 1, enemyDeathFrames.length - 1);
             }
             if (enemyDeathTimer >= DEATH_TICKS) {
-                enemyState    = ESTATE.HIDDEN;
-                vignetteAlpha = 0;
-                inBattle      = false;
-                scrollBoost   = 6.0; // pan world right while player drifts home
+                enemyState       = ESTATE.HIDDEN;
+                vignetteAlpha    = 0;
+                inBattle         = false;
+                playerWalkTarget = -1;
+                scrollBoost      = 6.0; // pan world right while player drifts home
             }
             break;
         }
@@ -496,13 +500,16 @@ function drawSprites() {
         // Player x: position driven by word-count progress during approach
         let px;
         if (enemyState === ESTATE.IDLE_1) {
-            // Fraction 0 = enemy just appeared, 1 = threshold reached
-            const gap      = enemyThresholdPct - currentProgress;
-            const fraction = Math.min(1, Math.max(0, 1 - gap / (enemyWindowSize || 1)));
-            const homeX    = W * PLAYER_X_PCT;
-            const closeGap = enemyType === 'boss' ? BOSS_HEIGHT * 0.6 : MONSTER_HEIGHT * 0.8;
-            const closeX   = enemyX - closeGap;
-            playerX = homeX + fraction * (closeX - homeX);
+            if (playerWalkTarget >= 0 && Math.abs(playerX - playerWalkTarget) > 1) {
+                // Walk toward the target set by updateGame
+                playerX += (playerWalkTarget - playerX) * 0.12;
+                if (playerAnim !== 'Walk') setPlayerAnim('Walk');
+            } else if (playerWalkTarget >= 0) {
+                // Arrived — snap to target and go idle
+                playerX = playerWalkTarget;
+                playerWalkTarget = -1;
+                setPlayerAnim('Idle');
+            }
             px = playerX;
         } else if (enemyState === ESTATE.ATTACK || enemyState === ESTATE.DEATH) {
             // Hold at whatever combat position was reached
@@ -841,6 +848,16 @@ window.updateGame = function () {
             triggerBattle();
         }
         trackedMinion = minionIdx;
+    }
+
+    // ── Progress-driven walk target during approach ─────────────────────────
+    if (enemyState === ESTATE.IDLE_1 && enemyWindowSize > 0 && W > 0) {
+        const gap      = enemyThresholdPct - progress;
+        const fraction = Math.min(1, Math.max(0, 1 - gap / enemyWindowSize));
+        const homeX    = W * PLAYER_X_PCT;
+        const closeGap = enemyType === 'boss' ? BOSS_HEIGHT * 0.6 : MONSTER_HEIGHT * 0.8;
+        const closeX   = enemyX - closeGap;
+        playerWalkTarget = homeX + fraction * (closeX - homeX);
     }
 
     // Ensure player is walking when nothing is on screen
