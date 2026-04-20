@@ -340,7 +340,7 @@ function startMonster(minionIdx) {
 }
 
 function startBoss(bossIdx) {
-    const key  = 'Boss' + String(bossIdx + 1).padStart(2, '0');
+    const key  = 'Boss' + String(bossIdx + 2).padStart(2, '0');
     enemyData  = manifest && manifest.bosses[key];
     if (!enemyData) return;
     enemyType        = 'boss';
@@ -510,8 +510,9 @@ function drawSprites() {
         } else {
             // HIDDEN / WALK_IN / BOSS_INCOMING — smoothly drift back to home
             const home = W * PLAYER_X_PCT;
-            if (Math.abs(playerX - home) > 1) {
-                playerX += (home - playerX) * 0.04;
+            if (Math.abs(playerX - home) > 2) {
+                playerX += (home - playerX) * 0.05;
+                if (playerAnim === 'Idle') setPlayerAnim('Walk');
             } else {
                 playerX = home;
             }
@@ -719,7 +720,12 @@ function resize() {
     if (!canvas) return;
     W = container.clientWidth;
     H = container.clientHeight;
-    if (W > 0 && H > 0) { canvas.width = W; canvas.height = H; }
+    if (W > 0 && H > 0) {
+        canvas.width  = W;
+        canvas.height = H;
+        // Keep player at home position when canvas resizes
+        if (playerX === 0 || enemyState === ESTATE.HIDDEN) playerX = W * PLAYER_X_PCT;
+    }
 }
 
 function loop() {
