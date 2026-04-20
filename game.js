@@ -259,7 +259,8 @@ let playerAnim       = 'Idle';
 let playerFrame      = 0;
 let playerFrameTimer = 0;
 let playerX          = 0; // actual x position
-let playerWalkTarget = -1; // -1 = idle in place; ≥0 = walk to this x then idle
+let playerWalkTarget = -1; // -1 = no target; ≥0 = destination set by updateGame
+let playerWalkFrames = 0;  // frames remaining to play Walk anim, then switch to Idle
 
 // Enemy (monster or boss on screen)
 const ESTATE = { HIDDEN:0, WALK_IN:1, IDLE_1:2, WALK_CLOSE:3, IDLE_2:4, ATTACK:5, DEATH:6, BOSS_INCOMING:7 };
@@ -378,6 +379,7 @@ function triggerBattle() {
         enemyState === ESTATE.BOSS_INCOMING) return;
     if (enemyState === ESTATE.WALK_IN) enemyX = enemyTargetX; // snap if still walking in
     playerWalkTarget = -1;
+    playerWalkFrames = 0;
     enemyState = ESTATE.ATTACK;
     idleTimer  = 0;
     setEnemyAnim('Attack');
@@ -497,31 +499,37 @@ function drawSprites() {
             const idleFrames = playerFrames['Idle'] || playerFrames['Walk'] || pf;
             playerRefH = getRefH(idleFrames);
         }
-        // Player x: position driven by word-count progress during approach
         let px;
         if (enemyState === ESTATE.IDLE_1) {
-            if (playerWalkTarget >= 0 && Math.abs(playerX - playerWalkTarget) > 1) {
-                // Walk toward the target set by updateGame
-                playerX += (playerWalkTarget - playerX) * 0.12;
-                if (playerAnim !== 'Walk') setPlayerAnim('Walk');
-            } else if (playerWalkTarget >= 0) {
-                // Arrived — snap to target and go idle
+            // Snap position to the progress-driven target (updateGame sets it each word)
+            if (playerWalkTarget >= 0) {
                 playerX = playerWalkTarget;
                 playerWalkTarget = -1;
+            }
+            // Walk animation plays for playerWalkFrames duration, then idle
+            if (playerWalkFrames > 0) {
+                playerWalkFrames--;
+                if (playerAnim !== 'Walk') setPlayerAnim('Walk');
+            } else if (playerAnim === 'Walk') {
                 setPlayerAnim('Idle');
             }
             px = playerX;
         } else if (enemyState === ESTATE.ATTACK || enemyState === ESTATE.DEATH) {
-            // Hold at whatever combat position was reached
-            px = playerX;
+            px = playerX; // hold at combat position
         } else {
-            // HIDDEN / WALK_IN / BOSS_INCOMING — smoothly drift back to home
+            // HIDDEN / WALK_IN / BOSS_INCOMING — drift back to home, then idle
             const home = W * PLAYER_X_PCT;
             if (Math.abs(playerX - home) > 2) {
                 playerX += (home - playerX) * 0.05;
-                if (playerAnim === 'Idle') setPlayerAnim('Walk');
+                if (playerAnim !== 'Walk' && playerAnim !== 'Celebrate') setPlayerAnim('Walk');
             } else {
                 playerX = home;
+                if (playerWalkFrames > 0) {
+                    playerWalkFrames--;
+                    if (playerAnim !== 'Walk') setPlayerAnim('Walk');
+                } else if (playerAnim === 'Walk') {
+                    setPlayerAnim('Idle');
+                }
             }
             px = playerX;
         }
@@ -851,6 +859,7 @@ window.updateGame = function () {
     }
 
     // ── Progress-driven walk target during approach ─────────────────────────
+    // Update walk target and trigger brief walk animation on each word entry
     if (enemyState === ESTATE.IDLE_1 && enemyWindowSize > 0 && W > 0) {
         const gap      = enemyThresholdPct - progress;
         const fraction = Math.min(1, Math.max(0, 1 - gap / enemyWindowSize));
@@ -858,10 +867,8 @@ window.updateGame = function () {
         const closeGap = enemyType === 'boss' ? BOSS_HEIGHT * 0.6 : MONSTER_HEIGHT * 0.8;
         const closeX   = enemyX - closeGap;
         playerWalkTarget = homeX + fraction * (closeX - homeX);
+        playerWalkFrames = 20; // play walk anim for ~0.33s then idle
     }
-
-    // Ensure player is walking when nothing is on screen
-    if (enemyState === ESTATE.HIDDEN && playerAnim === 'Idle') setPlayerAnim('Walk');
 };
 
 // ── Player selector UI ────────────────────────────────────────────────────────
