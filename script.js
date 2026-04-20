@@ -265,7 +265,6 @@ window.addWords = function() {
             if (overlayImg) overlayImg.src = `buddies/${buddyFile}`;
             document.getElementById('buddyOverlay').style.display = 'flex';
             if (window.SFX) SFX.buddyRescued();
-            if (window.gameBuddyFound) window.gameBuddyFound();
         }
     }
 
@@ -292,7 +291,6 @@ window.addWords = function() {
         document.getElementById('levelUpRank').innerText   = rankName;
         document.getElementById('levelUpOverlay').style.display = 'flex';
         if (window.SFX) SFX.levelUp();
-        if (window.gameLevelUp) window.gameLevelUp();
     }
 
     // ── Minion encounters ─────────────────────────────────────────────────────
@@ -447,7 +445,6 @@ function updateUI() {
     document.getElementById('loreBox').innerText = curB.lore;
     document.getElementById('tipsBox').innerText = MICRO_TIPS[Math.min(100, Math.floor(progress))];
     if (window.updateSidebar) window.updateSidebar();
-    if (window.updateGame) window.updateGame();
     document.getElementById('buddyCountDisplay').innerText = state.inventory.length;
     document.getElementById('buddyGallery').innerHTML = state.inventory.map(i =>
         `<img src="buddies/${i}" class="buddy-relic" onclick="showBuddyZoom('buddies/${i}')">`

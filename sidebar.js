@@ -64,36 +64,6 @@
     function buildHTML() {
         if (document.getElementById('globalSideLeft')) return;
 
-        // ── Game bar (injected on every page) ────────────────────────────────
-        const gameBar = document.createElement('div');
-        gameBar.id = 'gameBar';
-        gameBar.className = 'game-bar';
-
-        const strip = document.createElement('div');
-        strip.id        = 'gameStrip';
-        strip.className = 'game-strip';
-        gameBar.appendChild(strip);
-
-        const appNav = document.querySelector('.app-nav');
-        if (appNav && appNav.parentNode) {
-            appNav.parentNode.insertBefore(gameBar, appNav.nextSibling);
-        } else {
-            document.body.insertBefore(gameBar, document.body.firstChild);
-        }
-
-        // Apply saved hidden state before content renders
-        if (localStorage.getItem('gameBarHidden') === '1') {
-            gameBar.classList.add('game-bar-hidden');
-            document.body.classList.add('game-bar-off');
-        }
-
-        // Load game.js dynamically if not already loaded
-        if (!document.querySelector('script[src="game.js"]')) {
-            const gs = document.createElement('script');
-            gs.src = 'game.js';
-            document.head.appendChild(gs);
-        }
-
         // ── Left sidebar (fixed, desktop only) ──────────────────────────────
         const left = document.createElement('div');
         left.id        = 'globalSideLeft';
@@ -210,16 +180,7 @@
                 logoLink.innerHTML = `<img src="DRAFTPUNK.png" alt="Draft Punk">`;
                 nav.appendChild(logoLink);
             }
-            if (!nav.querySelector('#gameBarToggle')) {
-                const toggleBtn = document.createElement('button');
-                toggleBtn.id          = 'gameBarToggle';
-                toggleBtn.className   = 'nav-game-toggle';
-                toggleBtn.title       = 'Toggle game bar';
-                toggleBtn.textContent = document.body.classList.contains('game-bar-off') ? '▲' : '▼';
-                toggleBtn.onclick     = function () { if (window.toggleGameBar) window.toggleGameBar(); };
-                nav.appendChild(toggleBtn);
-            }
-            const writeBtn = nav.querySelector('.nav-center-btn');
+const writeBtn = nav.querySelector('.nav-center-btn');
             if (writeBtn) writeBtn.style.display = 'none';
 
             const notesMenu = document.getElementById('notesMenu');
