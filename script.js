@@ -619,6 +619,9 @@ function runSplash(then) {
 
 // ── On load ───────────────────────────────────────────────────────────────────
 window.onload = function() {
+    const wordInEl = document.getElementById('wordIn');
+    if (wordInEl) wordInEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') addWords(); });
+
     if (!isStandalone) {
         document.querySelectorAll('.install-btn').forEach(b => b.classList.remove('hidden'));
     }

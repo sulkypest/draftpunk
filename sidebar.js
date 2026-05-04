@@ -12,6 +12,9 @@
         const id = dp.activeProjectId;
         return (id && dp.projects && dp.projects[id]) || null;
     }
+    function isIndexPage() {
+        return /\/(index\.html)?$/.test(location.pathname.split('?')[0]);
+    }
     function getWriterLevel(xp) {
         return Math.floor((1 + Math.sqrt(1 + 8 * xp / 1000)) / 2);
     }
@@ -51,6 +54,11 @@
         setText('sbWords', total.toLocaleString());
         setText('sbDays',  daysLeft);
 
+        // Global progress bar
+        const goal = (dp && dp.goal) || 0;
+        const pct  = goal > 0 ? Math.min(100, (total / goal) * 100) : 0;
+        setW('globalProgressFill', pct + '%');
+
         // Mobile overlay
         setSrc('mobShield', `shields/${shieldTier}.png`);
         setText('mobLevel', writerLevel);
@@ -63,6 +71,13 @@
 
     function buildHTML() {
         if (document.getElementById('globalSideLeft')) return;
+
+        // ── Persistent progress bar under nav ───────────────────────────────
+        const progBar = document.createElement('div');
+        progBar.id = 'globalProgressBar';
+        progBar.className = isIndexPage() ? 'global-progress-bar global-progress-bar--main' : 'global-progress-bar';
+        progBar.innerHTML = `<div id="globalProgressFill" class="global-progress-fill"></div>`;
+        document.body.appendChild(progBar);
 
         // ── Left sidebar (fixed, desktop only) ──────────────────────────────
         const left = document.createElement('div');

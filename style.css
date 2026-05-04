@@ -571,7 +571,24 @@ button {
     margin-top: 10px;
 }
 
-/* ── Game bar (fixed, sits within content column on desktop) ─────────────── */
+/* ── Global progress bar (fixed under nav) ───────────────────────────────── */
+#globalProgressBar {
+    position: fixed;
+    top: 50px;
+    left: 0; right: 0;
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    z-index: 900;
+}
+#globalProgressBar.global-progress-bar--main {
+    height: 6px;
+}
+#globalProgressFill {
+    height: 100%;
+    background: var(--neon);
+    transition: width 0.4s ease;
+}
+
 body {
     padding-top: 75px;
 }
