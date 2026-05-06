@@ -73,9 +73,10 @@
             <button onclick="addChapter()" style="width:100%;margin-top:10px;">+ ADD CHAPTER</button>
 
             <div class="write-footer">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span id="writeTotalWords" style="font-size:0.75rem;opacity:0.6;letter-spacing:1px;">TOTAL: 0 WORDS</span>
-                    <span id="writeSaveStatus" style="font-size:0.65rem;opacity:0.4;letter-spacing:1px;"></span>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                    <span id="writeTotalWords" style="font-size:0.75rem;opacity:0.6;letter-spacing:1px;flex:1;">TOTAL: 0 WORDS</span>
+                    <span id="writeSaveStatus" style="font-size:0.65rem;letter-spacing:1px;color:var(--neon);min-width:60px;text-align:right;"></span>
+                    <button onclick="saveAllNow()" style="background:#222;font-size:0.65rem;padding:4px 10px;min-height:unset;width:auto;letter-spacing:1px;">⬆ SAVE</button>
                 </div>
                 <button id="syncWordsBtn" onclick="syncToTracker()" style="width:100%;margin-top:10px;" disabled>ALL WORDS SYNCED</button>
                 <button onclick="exportStory()" style="width:100%;margin-top:8px;background:#333;">⬇ EXPORT STORY</button>

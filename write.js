@@ -441,7 +441,22 @@ window.exitFocus = function() {
 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && document.body.classList.contains('write-focus')) exitFocus();
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        saveAllNow();
+    }
 });
+
+function saveAllNow() {
+    saveMeta();
+    setSaveStatus('saving');
+    const promises = writingData.chapters.map(ch => {
+        if (window.pushWritingChapterToCloud) return window.pushWritingChapterToCloud(ch);
+        return Promise.resolve();
+    });
+    Promise.all(promises).then(() => setSaveStatus('saved')).catch(() => setSaveStatus('saved'));
+}
+window.saveAllNow = saveAllNow;
 
 // ── Export story as RTF ───────────────────────────────────────────────────────
 window.exportStory = function() {
@@ -552,16 +567,34 @@ function scheduleCloudSave(ch) {
     }, 2000);
 }
 
-// Pull from cloud on sign-in if no local chapters yet
+// On sign-in: compare local vs cloud timestamps and use the newer version
 document.addEventListener('dpAuthChanged', async function(e) {
-    if (!e.detail.user || writingData.chapters.length > 0) return;
-    if (!window.pullWritingFromCloud) return;
+    if (!e.detail.user || !window.pullWritingFromCloud) return;
     const cloudChapters = await window.pullWritingFromCloud(activeProjectId);
-    if (cloudChapters && cloudChapters.length > 0) {
+    if (!cloudChapters || cloudChapters.length === 0) {
+        // Nothing in cloud — push whatever we have locally
+        if (writingData.chapters.length > 0) {
+            writingData.chapters.forEach(ch => {
+                if (window.pushWritingChapterToCloud) window.pushWritingChapterToCloud(ch);
+            });
+        }
+        return;
+    }
+    const cloudMax = Math.max(...cloudChapters.map(c => c.updatedAt || 0));
+    const localMax = writingData.chapters.length
+        ? Math.max(...writingData.chapters.map(c => c.updatedAt || 0))
+        : 0;
+    if (cloudMax > localMax) {
         writingData.chapters = cloudChapters;
         saveMeta();
         renderAll();
         updateFooter();
+        setSaveStatus('saved');
+    } else {
+        // Local is newer — push all chapters to cloud to ensure it's current
+        writingData.chapters.forEach(ch => {
+            if (window.pushWritingChapterToCloud) window.pushWritingChapterToCloud(ch);
+        });
     }
 });
 
