@@ -143,12 +143,15 @@
     </div>
 
     <!-- Rescued overlay -->
-    <div id="wrWinOverlay" class="overlay" onclick="closeWinOverlay()">
+    <div id="wrWinOverlay" class="overlay">
         <div class="congrats-circle">
             <h2 id="wrWinTitle" style="color:var(--neon);margin:0 0 6px;letter-spacing:2px;">BUDDY RESCUED!</h2>
             <img id="wrRescuedSprite" src="" style="width:110px;height:110px;image-rendering:pixelated;object-fit:contain;display:block;margin:8px auto;filter:drop-shadow(0 0 10px var(--neon));">
             <div id="wrWinMessage" style="font-size:0.85rem;margin:8px 0;white-space:pre-line;line-height:1.5;"></div>
-            <div style="font-size:0.65rem;opacity:0.5;letter-spacing:1px;">CLICK TO CONTINUE</div>
+            <div style="display:flex;gap:10px;margin-top:12px;">
+                <button id="wrAddToWriteBtn" onclick="addSprintToWrite()" style="flex:1;">+ ADD TO WRITE</button>
+                <button onclick="closeWinOverlay()" style="flex:1;background:#333;">CLOSE</button>
+            </div>
         </div>
     </div>
 

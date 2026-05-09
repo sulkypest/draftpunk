@@ -20,7 +20,7 @@ function init() {
     if (raw.projectId === activeProjectId && Array.isArray(raw.chapters)) {
         writingData = raw;
     } else {
-        writingData = { projectId: activeProjectId, chapters: [], lastSyncedWordCount: 0 };
+        writingData = { projectId: activeProjectId, chapters: [] };
         saveMeta();
     }
 
@@ -211,9 +211,11 @@ function countWords(html) {
 
 // ── Footer ────────────────────────────────────────────────────────────────────
 function updateFooter() {
-    const total      = writingData.chapters.reduce((s, c) => s + (c.wordCount || 0), 0);
-    const lastSynced = writingData.lastSyncedWordCount || 0;
-    const delta      = total - lastSynced;
+    const total   = writingData.chapters.reduce((s, c) => s + (c.wordCount || 0), 0);
+    const dpData  = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+    const proj    = dpData.projects && dpData.projects[activeProjectId];
+    const tracked = (proj && proj.writeWords !== undefined) ? proj.writeWords : (proj && proj.total || 0);
+    const delta   = total - tracked;
 
     const totalEl = document.getElementById('writeTotalWords');
     if (totalEl) totalEl.textContent = 'TOTAL: ' + total.toLocaleString() + ' WORDS';
@@ -221,8 +223,8 @@ function updateFooter() {
     const btn = document.getElementById('syncWordsBtn');
     if (btn) {
         if (delta > 0) {
-            btn.textContent = 'SYNC ' + delta.toLocaleString() + ' NEW WORDS TO TRACKER';
-            btn.disabled    = false;
+            btn.textContent   = 'SYNC ' + delta.toLocaleString() + ' NEW WORDS TO TRACKER';
+            btn.disabled      = false;
             btn.style.opacity = '';
         } else {
             btn.textContent   = 'ALL WORDS SYNCED';
@@ -234,15 +236,18 @@ function updateFooter() {
 
 // ── Sync to tracker ───────────────────────────────────────────────────────────
 window.syncToTracker = function() {
-    const total = writingData.chapters.reduce((s, c) => s + (c.wordCount || 0), 0);
-    const delta = total - (writingData.lastSyncedWordCount || 0);
-    if (delta <= 0) return;
-    if (!confirm('Add ' + delta.toLocaleString() + ' words to your Draft Punk tracker?')) return;
-
+    const total  = writingData.chapters.reduce((s, c) => s + (c.wordCount || 0), 0);
     const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
     if (!dpData.activeProjectId || !dpData.projects) { alert('No active project found.'); return; }
     const proj = dpData.projects[dpData.activeProjectId];
     if (!proj) { alert('No active project found.'); return; }
+
+    // Use proj.writeWords as the baseline (survives device switches).
+    // On first use, fall back to proj.total so we don't re-count already-tracked words.
+    const tracked = (proj.writeWords !== undefined) ? proj.writeWords : (proj.total || 0);
+    const delta   = total - tracked;
+    if (delta <= 0) return;
+    if (!confirm('Add ' + delta.toLocaleString() + ' words to your Draft Punk tracker?')) return;
 
     const oldTotal     = proj.total || 0;
     const oldLastLevel = proj.lastLevel || 0;
@@ -254,6 +259,7 @@ window.syncToTracker = function() {
     proj.wordsThisYear  = (proj.wordsThisYear  || 0) + delta;
     proj.logs           = proj.logs || [];
     proj.logs.push({ date: new Date().toLocaleDateString(), total: proj.total });
+    proj.writeWords     = total;
 
     // Boss beat check
     const goal        = proj.goal || 80000;
@@ -275,11 +281,10 @@ window.syncToTracker = function() {
         }
     }
 
+    proj.updatedAt = Date.now();
     dpData.projects[dpData.activeProjectId] = proj;
     localStorage.setItem('draftPunkData', JSON.stringify(dpData));
 
-    writingData.lastSyncedWordCount = total;
-    saveMeta();
     updateFooter();
     showWriteToast(null, '✓ SYNCED', delta.toLocaleString() + ' WORDS ADDED');
 };

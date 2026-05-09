@@ -195,20 +195,6 @@ function endSprint(won) {
             }
         }
 
-        // Add sprint words to active project tracker
-        const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
-        const projId = dpData.activeProjectId;
-        if (projId && dpData.projects && dpData.projects[projId] && words > 0) {
-            const proj = dpData.projects[projId];
-            proj.total          = (proj.total          || 0) + words;
-            proj.wordsThisWeek  = (proj.wordsThisWeek  || 0) + words;
-            proj.wordsThisMonth = (proj.wordsThisMonth || 0) + words;
-            proj.wordsThisYear  = (proj.wordsThisYear  || 0) + words;
-            proj.logs           = proj.logs || [];
-            proj.logs.push({ date: new Date().toLocaleDateString(), total: proj.total });
-            localStorage.setItem('draftPunkData', JSON.stringify(dpData));
-        }
-
         wrSave();
         updateWRUI();
 
@@ -216,10 +202,11 @@ function endSprint(won) {
         document.getElementById('wrRescuedSprite').src = rescuedBuddy ? `buddies/${rescuedBuddy}` : '';
         document.getElementById('wrRescuedSprite').style.display = rescuedBuddy ? 'block' : 'none';
         document.getElementById('wrWinMessage').innerText = sprint.isCustom
-            ? `${words.toLocaleString()} words written!\n+${words.toLocaleString()} added to tracker.`
+            ? `${words.toLocaleString()} words written!`
             : rescuedBuddy
-                ? `${words.toLocaleString()} words written.\n+${words.toLocaleString()} added to tracker.`
-                : `${words.toLocaleString()} words written.\n+${words.toLocaleString()} added to tracker.\nAll buddies in this tier already rescued!`;
+                ? `${words.toLocaleString()} words written.`
+                : `${words.toLocaleString()} words written.\nAll buddies in this tier already rescued!`;
+        document.getElementById('wrAddToWriteBtn').style.display = words > 0 ? '' : 'none';
         document.getElementById('wrWinOverlay').style.display = 'flex';
         if (window.SFX) SFX.sprintWon();
 
@@ -284,8 +271,46 @@ window.toggleCustom = function() {
     }
 };
 
-window.closeWinOverlay = function() { document.getElementById('wrWinOverlay').style.display = 'none'; };
+window.closeWinOverlay  = function() { document.getElementById('wrWinOverlay').style.display  = 'none'; };
 window.closeFailOverlay = function() { document.getElementById('wrFailOverlay').style.display = 'none'; };
+
+window.addSprintToWrite = function() {
+    const text = document.getElementById('sprintText').value.trim();
+    if (!text) { closeWinOverlay(); return; }
+
+    const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+    const projId = dpData.activeProjectId;
+    if (!projId) { closeWinOverlay(); return; }
+
+    const raw         = JSON.parse(localStorage.getItem('writingData') || '{}');
+    const writingData = (raw.projectId === projId && Array.isArray(raw.chapters))
+        ? raw
+        : { projectId: projId, chapters: [] };
+
+    const now     = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
+    const htmlContent = text.split('\n').map(line => {
+        const safe = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return safe ? `<p>${safe}</p>` : '<p><br></p>';
+    }).join('');
+
+    const wc = countWords(text);
+    const ch = {
+        id:        'ch_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        title:     'Sprint — ' + dateStr,
+        order:     writingData.chapters.length,
+        wordCount: wc,
+        content:   htmlContent,
+        updatedAt: Date.now()
+    };
+
+    writingData.chapters.push(ch);
+    localStorage.setItem('writingData', JSON.stringify(writingData));
+
+    document.getElementById('wrWinMessage').innerText =
+        `${wc.toLocaleString()} words added to WRITE as "${ch.title}".`;
+    document.getElementById('wrAddToWriteBtn').style.display = 'none';
+};
 
 function updateWRUI() {
     if (window.updateSidebar) window.updateSidebar();
