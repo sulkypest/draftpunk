@@ -603,5 +603,26 @@ document.addEventListener('dpAuthChanged', async function(e) {
     }
 });
 
+// ── Font size ─────────────────────────────────────────────────────────────────
+function initFontSize() {
+    const size = localStorage.getItem('writeFontSize') || 'md';
+    applyFontSize(size);
+}
+
+function applyFontSize(size) {
+    document.body.classList.remove('write-font-sm', 'write-font-lg');
+    if (size === 'sm') document.body.classList.add('write-font-sm');
+    if (size === 'lg') document.body.classList.add('write-font-lg');
+    ['sm', 'md', 'lg'].forEach(s => {
+        const btn = document.getElementById('fsBtn_' + s);
+        if (btn) btn.classList.toggle('active', s === size);
+    });
+}
+
+window.setFontSize = function(size) {
+    localStorage.setItem('writeFontSize', size);
+    applyFontSize(size);
+};
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => { init(); initFontSize(); });

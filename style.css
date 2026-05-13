@@ -56,22 +56,27 @@ body {
     left: 50%;
     transform: translateX(-50%);
     background: none;
-    border: none;
-    color: var(--text);
+    border: 1px solid var(--neon);
+    color: var(--neon);
     font-family: 'Courier New', monospace;
-    font-size: 0.75rem;
-    letter-spacing: 2px;
-    padding: 0 16px;
-    height: 100%;
+    font-weight: 900;
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    padding: 0 18px;
+    height: calc(100% - 10px);
     cursor: pointer;
     text-decoration: none;
     display: flex;
     align-items: center;
     white-space: nowrap;
+    border-radius: 2px;
+    top: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .nav-center-btn:hover, .nav-center-btn.active {
-    color: var(--neon);
+    background: var(--neon);
+    color: var(--bg);
 }
 
 .nav-dropdown {
@@ -1197,6 +1202,28 @@ body {
     background: var(--panel);
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+body.write-font-sm .write-area { font-size: 0.82rem; line-height: 1.65; }
+body.write-font-lg .write-area { font-size: 1.25rem; line-height: 1.75; }
+
+.write-fs-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Courier New', monospace;
+    padding: 3px 8px;
+    min-height: unset;
+    width: auto;
+    cursor: pointer;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    line-height: 1;
+}
+
+.write-fs-btn.active {
+    border-color: var(--neon);
+    color: var(--neon);
 }
 
 .write-area p,
