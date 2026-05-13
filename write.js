@@ -610,9 +610,10 @@ function initFontSize() {
 }
 
 function applyFontSize(size) {
-    document.body.classList.remove('write-font-sm', 'write-font-lg');
-    if (size === 'sm') document.body.classList.add('write-font-sm');
-    if (size === 'lg') document.body.classList.add('write-font-lg');
+    const sizes = { sm: ['0.82rem', '1.65'], md: ['1rem', '1.7'], lg: ['1.25rem', '1.75'] };
+    const [fs, lh] = sizes[size] || sizes.md;
+    document.body.style.setProperty('--write-font-size', fs);
+    document.body.style.setProperty('--write-line-height', lh);
     ['sm', 'md', 'lg'].forEach(s => {
         const btn = document.getElementById('fsBtn_' + s);
         if (btn) btn.classList.toggle('active', s === size);

@@ -1196,16 +1196,13 @@ body {
     padding: 14px;
     outline: none;
     font-family: Georgia, 'Times New Roman', serif;
-    font-size: 1rem;
-    line-height: 1.7;
+    font-size: var(--write-font-size, 1rem);
+    line-height: var(--write-line-height, 1.7);
     color: var(--text);
     background: var(--panel);
     white-space: pre-wrap;
     word-break: break-word;
 }
-
-body.write-font-sm .write-area { font-size: 0.82rem; line-height: 1.65; }
-body.write-font-lg .write-area { font-size: 1.25rem; line-height: 1.75; }
 
 .write-fs-btn {
     background: transparent;
