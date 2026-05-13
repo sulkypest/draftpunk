@@ -5,6 +5,7 @@
 })();
 
 // ── State ─────────────────────────────────────────────────────────────────────
+let currentFontSize  = localStorage.getItem('writeFontSize') || 'md';
 let writingData      = null;
 let activeProjectId  = null;
 
@@ -153,6 +154,8 @@ function renderAll() {
         const editor = document.getElementById('cheditor_' + ch.id);
         if (editor) editor.innerHTML = ch.content || '';
     });
+
+    applyWriteAreaFontSize();
 }
 
 // ── Editor events ─────────────────────────────────────────────────────────────
@@ -604,26 +607,25 @@ document.addEventListener('dpAuthChanged', async function(e) {
 });
 
 // ── Font size ─────────────────────────────────────────────────────────────────
-function initFontSize() {
-    const size = localStorage.getItem('writeFontSize') || 'md';
-    applyFontSize(size);
-}
+const FONT_SIZES = { sm: ['0.82rem', '1.65'], md: ['1rem', '1.7'], lg: ['1.25rem', '1.75'] };
 
-function applyFontSize(size) {
-    const sizes = { sm: ['0.82rem', '1.65'], md: ['1rem', '1.7'], lg: ['1.25rem', '1.75'] };
-    const [fs, lh] = sizes[size] || sizes.md;
-    document.body.style.setProperty('--write-font-size', fs);
-    document.body.style.setProperty('--write-line-height', lh);
+function applyWriteAreaFontSize() {
+    const [fs, lh] = FONT_SIZES[currentFontSize] || FONT_SIZES.md;
+    document.querySelectorAll('.write-area').forEach(el => {
+        el.style.fontSize   = fs;
+        el.style.lineHeight = lh;
+    });
     ['sm', 'md', 'lg'].forEach(s => {
         const btn = document.getElementById('fsBtn_' + s);
-        if (btn) btn.classList.toggle('active', s === size);
+        if (btn) btn.classList.toggle('active', s === currentFontSize);
     });
 }
 
 window.setFontSize = function(size) {
+    currentFontSize = size;
     localStorage.setItem('writeFontSize', size);
-    applyFontSize(size);
+    applyWriteAreaFontSize();
 };
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => { init(); initFontSize(); });
+document.addEventListener('DOMContentLoaded', init);
