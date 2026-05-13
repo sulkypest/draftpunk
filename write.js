@@ -154,8 +154,6 @@ function renderAll() {
         const editor = document.getElementById('cheditor_' + ch.id);
         if (editor) editor.innerHTML = ch.content || '';
     });
-
-    applyWriteAreaFontSize();
 }
 
 // ── Editor events ─────────────────────────────────────────────────────────────
@@ -611,10 +609,13 @@ const FONT_SIZES = { sm: ['0.82rem', '1.65'], md: ['1rem', '1.7'], lg: ['1.25rem
 
 function applyWriteAreaFontSize() {
     const [fs, lh] = FONT_SIZES[currentFontSize] || FONT_SIZES.md;
-    document.querySelectorAll('.write-area').forEach(el => {
-        el.style.fontSize   = fs;
-        el.style.lineHeight = lh;
-    });
+    let styleEl = document.getElementById('writeFontSizeStyle');
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'writeFontSizeStyle';
+        document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = `.write-area { font-size: ${fs} !important; line-height: ${lh} !important; }`;
     ['sm', 'md', 'lg'].forEach(s => {
         const btn = document.getElementById('fsBtn_' + s);
         if (btn) btn.classList.toggle('active', s === currentFontSize);
@@ -628,4 +629,4 @@ window.setFontSize = function(size) {
 };
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => { init(); applyWriteAreaFontSize(); });
