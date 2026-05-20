@@ -279,7 +279,7 @@ async function handleSignedIn(user) {
 
 async function continueAfterAuth(user) {
     const needsReload = await pullFromCloud(user);
-    if (needsReload) {
+    if (needsReload && !window.location.pathname.includes('write.html')) {
         location.reload();
     } else {
         const dpData    = JSON.parse(localStorage.getItem('draftPunkData') || '{}');

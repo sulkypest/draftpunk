@@ -21,8 +21,10 @@ function init() {
     if (raw.projectId === activeProjectId && Array.isArray(raw.chapters)) {
         writingData = raw;
     } else {
+        // Do NOT call saveMeta() here — writing the empty state would destroy any
+        // existing chapter data stored under a different projectId in localStorage.
+        // Let dpAuthChanged pull the correct chapters from Firestore instead.
         writingData = { projectId: activeProjectId, chapters: [] };
-        saveMeta();
     }
 
     renderAll();
@@ -622,8 +624,11 @@ function setSaveStatus(state) {
 
 // ── Cloud sync ────────────────────────────────────────────────────────────────
 const cloudTimers = {};
+const pendingCloudSaves = new Set();
+
 function scheduleCloudSave(ch) {
     if (!ch) return;
+    pendingCloudSaves.add(ch.id);
     clearTimeout(cloudTimers[ch.id]);
     cloudTimers[ch.id] = setTimeout(async () => {
         if (window.pushWritingChapterToCloud) {
@@ -634,12 +639,27 @@ function scheduleCloudSave(ch) {
                     projectId: activeProjectId, updatedAt: ch.updatedAt
                 });
                 setSaveStatus('saved');
-            } catch (e) { setSaveStatus('saved'); } // saved locally at least
+            } catch (e) { setSaveStatus('saved'); }
         } else {
             setSaveStatus('saved');
         }
-    }, 2000);
+        pendingCloudSaves.delete(ch.id);
+    }, 800);
 }
+
+// Flush any unsaved chapters immediately when the page closes
+window.addEventListener('beforeunload', () => {
+    if (!window.pushWritingChapterToCloud || pendingCloudSaves.size === 0) return;
+    pendingCloudSaves.forEach(id => {
+        clearTimeout(cloudTimers[id]);
+        const ch = writingData && writingData.chapters.find(c => c.id === id);
+        if (ch) window.pushWritingChapterToCloud({
+            id: ch.id, title: ch.title, content: ch.content,
+            order: ch.order, wordCount: ch.wordCount,
+            projectId: activeProjectId, updatedAt: ch.updatedAt
+        });
+    });
+});
 
 // On sign-in: compare local vs cloud timestamps and use the newer version
 document.addEventListener('dpAuthChanged', async function(e) {
