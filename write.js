@@ -87,9 +87,78 @@ window.moveChapter = function(id, delta) {
     renderAll();
 };
 
-window.renameChapter = function(id, newTitle) {
+window.promptMoveChapter = function(id) {
+    const total = writingData.chapters.length;
+    const ch    = writingData.chapters.find(c => c.id === id);
+    if (!ch) return;
+    const input = prompt(`Move "${ch.title}" to position (1–${total}):`, ch.order + 1);
+    if (input === null) return;
+    const newPos = parseInt(input);
+    if (isNaN(newPos) || newPos < 1 || newPos > total) return;
+    const fromIdx = writingData.chapters.findIndex(c => c.id === id);
+    const toIdx   = newPos - 1;
+    if (fromIdx === toIdx) return;
+    const [removed] = writingData.chapters.splice(fromIdx, 1);
+    writingData.chapters.splice(toIdx, 0, removed);
+    writingData.chapters.forEach((c, i) => c.order = i);
+    saveMeta();
+    renderAll();
+};
+
+window.syncChapter = function(id) {
     const ch = writingData.chapters.find(c => c.id === id);
     if (!ch) return;
+    const delta = (ch.wordCount || 0) - (ch.syncedWords || 0);
+    if (delta <= 0) { showWriteToast(null, 'ALREADY SYNCED', ch.title.toUpperCase()); return; }
+    if (!confirm(`Add ${delta.toLocaleString()} words from "${ch.title}" to your tracker?`)) return;
+
+    const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+    if (!dpData.activeProjectId || !dpData.projects) return;
+    const proj = dpData.projects[dpData.activeProjectId];
+    if (!proj) return;
+
+    const oldTotal     = proj.total || 0;
+    const oldLastLevel = proj.lastLevel || 0;
+    proj.inventory     = proj.inventory || [];
+    proj.total          = oldTotal + delta;
+    proj.wordsThisWeek  = (proj.wordsThisWeek  || 0) + delta;
+    proj.wordsThisMonth = (proj.wordsThisMonth || 0) + delta;
+    proj.wordsThisYear  = (proj.wordsThisYear  || 0) + delta;
+    proj.logs           = proj.logs || [];
+    proj.logs.push({ date: new Date().toLocaleDateString(), total: proj.total });
+    proj.writeWords     = (proj.writeWords || 0) + delta;
+
+    const goal        = proj.goal || 80000;
+    const newProgress = (proj.total / goal) * 100;
+    const newLevelIdx = BOSS_BEATS.findLastIndex(b => newProgress >= b.pct);
+    if (newLevelIdx > oldLastLevel) {
+        proj.lastLevel = newLevelIdx;
+        const beat = BOSS_BEATS[newLevelIdx];
+        setTimeout(() => showWriteToast(window.getBossImgSrc ? window.getBossImgSrc(newLevelIdx) : `bosses/${newLevelIdx}.png`, 'BEAT DEFEATED', beat.name.toUpperCase()), 400);
+    }
+    if (Math.floor(proj.total / 5000) > Math.floor(oldTotal / 5000)) {
+        const buddyID   = Math.floor(Math.random() * 100) + 1;
+        const buddyFile = `buddy${buddyID}.png`;
+        if (!proj.inventory.includes(buddyFile)) {
+            proj.inventory.push(buddyFile);
+            setTimeout(() => showWriteToast(`buddies/${buddyFile}`, 'NEW BUDDY!', 'CHECK YOUR COLLECTION'), 800);
+        }
+    }
+
+    proj.updatedAt = Date.now();
+    dpData.projects[dpData.activeProjectId] = proj;
+    localStorage.setItem('draftPunkData', JSON.stringify(dpData));
+
+    ch.syncedWords = ch.wordCount || 0;
+    saveMeta();
+    updateFooter();
+    renderAll();
+    showWriteToast(null, '✓ SYNCED', `${delta.toLocaleString()} WORDS ADDED`);
+};
+
+window.renameChapter = function(id, newTitle) {
+    const ch = writingData.chapters.find(c => c.id === id);
+    if (!ch || ch.title === newTitle) return;
     ch.title     = newTitle;
     ch.updatedAt = Date.now();
     saveMeta();
@@ -107,23 +176,20 @@ function renderAll() {
     if (!container) return;
 
     container.innerHTML = writingData.chapters.map(ch => {
-        const isFirst = ch.order === 0;
-        const isLast  = ch.order === writingData.chapters.length - 1;
+        const synced = (ch.syncedWords || 0) >= (ch.wordCount || 0);
         return `
             <div class="write-chapter" id="chap_${ch.id}">
                 <div class="write-chapter-header" onclick="toggleChapter('${ch.id}')">
                     <span class="write-ch-arrow">▶</span>
+                    <span class="write-ch-pos" onmousedown="event.preventDefault()"
+                        onclick="promptMoveChapter('${ch.id}'); event.stopPropagation()"
+                        title="Tap to reorder">${ch.order + 1}</span>
                     <input type="text" class="write-ch-title-input" value="${escapeAttr(ch.title)}"
                         onclick="event.stopPropagation()"
                         onchange="renameChapter('${ch.id}', this.value)"
+                        onblur="renameChapter('${ch.id}', this.value)"
                         onkeydown="event.stopPropagation()">
                     <span class="write-ch-wc" id="chwc_${ch.id}">${(ch.wordCount || 0).toLocaleString()} WDS</span>
-                    <button class="write-ch-btn" onmousedown="event.preventDefault()"
-                        onclick="moveChapter('${ch.id}', -1); event.stopPropagation()"
-                        ${isFirst ? 'disabled' : ''}>↑</button>
-                    <button class="write-ch-btn" onmousedown="event.preventDefault()"
-                        onclick="moveChapter('${ch.id}', 1); event.stopPropagation()"
-                        ${isLast ? 'disabled' : ''}>↓</button>
                     <button class="write-ch-btn write-ch-del" onmousedown="event.preventDefault()"
                         onclick="deleteChapter('${ch.id}'); event.stopPropagation()">✕</button>
                     <button class="write-ch-btn write-ch-focus" onmousedown="event.preventDefault()"
@@ -138,6 +204,8 @@ function renderAll() {
                         <button class="write-tb-btn" onmousedown="event.preventDefault(); document.execCommand('underline')" title="Underline"><u>U</u></button>
                         <button class="write-tb-btn" onmousedown="event.preventDefault(); applyHeading('${ch.id}')"          title="Scene heading">H2</button>
                         <button class="write-tb-btn write-tb-clear" onmousedown="event.preventDefault(); document.execCommand('removeFormat')" title="Clear formatting">✕</button>
+                        <button class="write-tb-btn write-tb-sync${synced ? ' synced' : ''}" onmousedown="event.preventDefault()"
+                            onclick="syncChapter('${ch.id}')" title="Sync this chapter to tracker">⊕ SYNC</button>
                     </div>
                     <div class="write-area"
                          contenteditable="true"
@@ -505,7 +573,7 @@ function buildRtf(storyTitle, chapters) {
 function rtfEscape(text) {
     return text.split('').map(c => {
         const code = c.charCodeAt(0);
-        if (code > 127) return "\\'" + code.toString(16).padStart(2, '0');
+        if (code > 127) return `\\u${code}?`;
         if (c === '\\') return '\\\\';
         if (c === '{')  return '\\{';
         if (c === '}')  return '\\}';

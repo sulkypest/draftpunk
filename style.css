@@ -52,31 +52,27 @@ body {
 }
 
 .nav-center-btn {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    background: none;
-    border: 1px solid var(--neon);
-    color: var(--neon);
+    flex: 1;
+    background: var(--neon);
+    color: var(--bg);
     font-family: 'Courier New', monospace;
     font-weight: 900;
     font-size: 0.8rem;
     letter-spacing: 3px;
-    padding: 0 18px;
-    height: calc(100% - 10px);
+    padding: 0 16px;
+    height: 100%;
     cursor: pointer;
     text-decoration: none;
     display: flex;
     align-items: center;
+    justify-content: center;
     white-space: nowrap;
-    border-radius: 2px;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    border: none;
+    opacity: 0.75;
 }
 
 .nav-center-btn:hover, .nav-center-btn.active {
-    background: var(--neon);
-    color: var(--bg);
+    opacity: 1;
 }
 
 .nav-dropdown {
@@ -1145,6 +1141,32 @@ body {
     color: #ff4444;
     border-color: transparent;
 }
+
+.write-ch-pos {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    padding: 2px 5px;
+    border-radius: 2px;
+    cursor: pointer;
+    flex-shrink: 0;
+    letter-spacing: 0;
+    font-family: inherit;
+    user-select: none;
+}
+.write-ch-pos:hover { border-color: var(--neon); color: var(--neon); }
+
+.write-tb-sync {
+    margin-left: auto;
+    color: var(--neon);
+    border-color: var(--neon);
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    opacity: 0.7;
+}
+.write-tb-sync:hover { opacity: 1; }
+.write-tb-sync.synced { color: var(--text-dim); border-color: var(--border); opacity: 0.4; }
 
 .write-ch-del:hover {
     border-color: #ff4444 !important;
