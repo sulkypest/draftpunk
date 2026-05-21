@@ -1210,8 +1210,35 @@ body {
 
 .write-tb-clear {
     color: #ff4444;
-    margin-left: auto;
 }
+
+.write-tb-sep {
+    width: 1px;
+    background: var(--border);
+    align-self: stretch;
+    margin: 3px 2px;
+    flex-shrink: 0;
+}
+
+.write-fs-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-dim);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.72rem;
+    padding: 2px 5px;
+    min-height: unset;
+    width: auto;
+    cursor: pointer;
+    border-radius: 3px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.write-fs-btn.active {
+    border-color: var(--neon);
+    color: var(--neon);
+}
+.write-fs-btn:hover { color: var(--text); }
 
 .write-area {
     min-height: 200px;

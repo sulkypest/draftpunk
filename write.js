@@ -206,6 +206,10 @@ function renderAll() {
                         <button class="write-tb-btn" onmousedown="event.preventDefault(); document.execCommand('underline')" title="Underline"><u>U</u></button>
                         <button class="write-tb-btn" onmousedown="event.preventDefault(); applyHeading('${ch.id}')"          title="Scene heading">H2</button>
                         <button class="write-tb-btn write-tb-clear" onmousedown="event.preventDefault(); document.execCommand('removeFormat')" title="Clear formatting">✕</button>
+                        <span class="write-tb-sep"></span>
+                        <button class="write-fs-btn${currentFontSize==='sm'?' active':''}" onmousedown="event.preventDefault()" onclick="setFontSize('sm')" title="Small text">A</button>
+                        <button class="write-fs-btn${currentFontSize==='md'?' active':''}" onmousedown="event.preventDefault()" onclick="setFontSize('md')" title="Medium text" style="font-size:0.9rem;">A</button>
+                        <button class="write-fs-btn${currentFontSize==='lg'?' active':''}" onmousedown="event.preventDefault()" onclick="setFontSize('lg')" title="Large text" style="font-size:1.1rem;">A</button>
                         <button class="write-tb-btn write-tb-sync${synced ? ' synced' : ''}" onmousedown="event.preventDefault()"
                             onclick="syncChapter('${ch.id}')" title="Sync this chapter to tracker">⊕ SYNC</button>
                     </div>
@@ -693,7 +697,7 @@ document.addEventListener('dpAuthChanged', async function(e) {
 });
 
 // ── Font size ─────────────────────────────────────────────────────────────────
-const FONT_SIZES = { sm: ['0.82rem', '1.65'], md: ['1rem', '1.7'], lg: ['1.25rem', '1.75'] };
+const FONT_SIZES = { sm: ['0.82rem', '1.6'], md: ['1.05rem', '1.7'], lg: ['1.5rem', '1.8'] };
 
 function applyWriteAreaFontSize() {
     const [fs, lh] = FONT_SIZES[currentFontSize] || FONT_SIZES.md;

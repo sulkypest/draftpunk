@@ -19,6 +19,7 @@
         <div class="nav-dropdown">
             <button class="nav-dropdown-btn active" onclick="toggleDraftMenu()">DRAFT PUNK</button>
             <div class="nav-dropdown-menu" id="draftMenu">
+                <a href="write.html" class="nav-dropdown-item" style="color:var(--neon);font-weight:900;">✍ WRITE</a>
                 <a href="index.html" class="nav-dropdown-item">DRAFT PUNK</a>
                 <a href="wordrunner.html" class="nav-dropdown-item">WORDRUNNER</a>
                 <a href="groups.html" class="nav-dropdown-item">WRITING GROUPS</a>
@@ -78,13 +79,7 @@
                     <span id="writeSaveStatus" style="font-size:0.65rem;letter-spacing:1px;color:var(--neon);min-width:60px;text-align:right;"></span>
                     <button onclick="saveAllNow()" style="background:#222;font-size:0.65rem;padding:4px 10px;min-height:unset;width:auto;letter-spacing:1px;">⬆ SAVE</button>
                 </div>
-                <div style="display:flex;align-items:center;gap:6px;margin-top:10px;">
-                    <span style="font-size:0.6rem;opacity:0.4;letter-spacing:1px;flex:1;">TEXT SIZE</span>
-                    <button id="fsBtn_sm" class="write-fs-btn" onclick="setFontSize('sm')" style="font-size:0.72rem;">A−</button>
-                    <button id="fsBtn_md" class="write-fs-btn" onclick="setFontSize('md')" style="font-size:0.82rem;">A</button>
-                    <button id="fsBtn_lg" class="write-fs-btn" onclick="setFontSize('lg')" style="font-size:0.95rem;">A+</button>
-                </div>
-                <button id="syncWordsBtn" onclick="syncToTracker()" style="width:100%;margin-top:10px;" disabled>ALL WORDS SYNCED</button>
+<button id="syncWordsBtn" onclick="syncToTracker()" style="width:100%;margin-top:10px;" disabled>ALL WORDS SYNCED</button>
                 <button onclick="exportStory()" style="width:100%;margin-top:8px;background:#333;">⬇ EXPORT STORY</button>
             </div>
         </div>
