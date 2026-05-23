@@ -201,16 +201,16 @@ function renderAll() {
                 </div>
                 <div class="write-chapter-body">
                     <div class="write-toolbar">
-                        <button class="write-tb-btn" onmousedown="event.preventDefault(); document.execCommand('bold')"      title="Bold"><b>B</b></button>
-                        <button class="write-tb-btn" onmousedown="event.preventDefault(); document.execCommand('italic')"    title="Italic"><em>I</em></button>
-                        <button class="write-tb-btn" onmousedown="event.preventDefault(); document.execCommand('underline')" title="Underline"><u>U</u></button>
-                        <button class="write-tb-btn" onmousedown="event.preventDefault(); applyHeading('${ch.id}')"          title="Scene heading">H2</button>
-                        <button class="write-tb-btn write-tb-clear" onmousedown="event.preventDefault(); document.execCommand('removeFormat')" title="Clear formatting">✕</button>
+                        <button class="write-tb-btn" onpointerdown="event.preventDefault(); document.execCommand('bold')"      title="Bold"><b>B</b></button>
+                        <button class="write-tb-btn" onpointerdown="event.preventDefault(); document.execCommand('italic')"    title="Italic"><em>I</em></button>
+                        <button class="write-tb-btn" onpointerdown="event.preventDefault(); document.execCommand('underline')" title="Underline"><u>U</u></button>
+                        <button class="write-tb-btn" onpointerdown="event.preventDefault(); applyHeading('${ch.id}')"          title="Scene heading">H2</button>
+                        <button class="write-tb-btn write-tb-clear" onpointerdown="event.preventDefault(); document.execCommand('removeFormat')" title="Clear formatting">✕</button>
                         <span class="write-tb-sep"></span>
-                        <button class="write-fs-btn${currentFontSize==='sm'?' active':''}" onmousedown="event.preventDefault()" onclick="setFontSize('sm')" title="Small text">A</button>
-                        <button class="write-fs-btn${currentFontSize==='md'?' active':''}" onmousedown="event.preventDefault()" onclick="setFontSize('md')" title="Medium text" style="font-size:0.9rem;">A</button>
-                        <button class="write-fs-btn${currentFontSize==='lg'?' active':''}" onmousedown="event.preventDefault()" onclick="setFontSize('lg')" title="Large text" style="font-size:1.1rem;">A</button>
-                        <button class="write-tb-btn write-tb-sync${synced ? ' synced' : ''}" onmousedown="event.preventDefault()"
+                        <button class="write-fs-btn${currentFontSize==='sm'?' active':''}" onpointerdown="event.preventDefault()" onclick="setFontSize('sm')" title="Small text">A</button>
+                        <button class="write-fs-btn${currentFontSize==='md'?' active':''}" onpointerdown="event.preventDefault()" onclick="setFontSize('md')" title="Medium text" style="font-size:0.9rem;">A</button>
+                        <button class="write-fs-btn${currentFontSize==='lg'?' active':''}" onpointerdown="event.preventDefault()" onclick="setFontSize('lg')" title="Large text" style="font-size:1.1rem;">A</button>
+                        <button class="write-tb-btn write-tb-sync${synced ? ' synced' : ''}" onpointerdown="event.preventDefault()"
                             onclick="syncChapter('${ch.id}')" title="Sync this chapter to tracker">⊕ SYNC</button>
                     </div>
                     <div class="write-area"
@@ -263,10 +263,8 @@ window.onEditorFocus = function(id) {
 window.applyHeading = function(id) {
     const editor = document.getElementById('cheditor_' + id);
     if (!editor) return;
-    editor.focus();
-    const sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    const node  = sel.anchorNode;
+    const sel  = window.getSelection();
+    const node = sel && sel.rangeCount ? sel.anchorNode : null;
     const block = node ? (node.nodeType === 3 ? node.parentElement : node) : null;
     const inH   = block && block.closest('h2, h3');
     document.execCommand('formatBlock', false, inH ? 'p' : 'h2');
