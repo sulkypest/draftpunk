@@ -192,6 +192,12 @@ function renderAll() {
                         onblur="renameChapter('${ch.id}', this.value)"
                         onkeydown="event.stopPropagation()">
                     <span class="write-ch-wc" id="chwc_${ch.id}">${(ch.wordCount || 0).toLocaleString()} WDS</span>
+                    <button class="write-ch-btn" onmousedown="event.preventDefault()"
+                        onclick="moveChapter('${ch.id}', -1); event.stopPropagation()"
+                        ${ch.order === 0 ? 'disabled' : ''}>↑</button>
+                    <button class="write-ch-btn" onmousedown="event.preventDefault()"
+                        onclick="moveChapter('${ch.id}', 1); event.stopPropagation()"
+                        ${ch.order === writingData.chapters.length - 1 ? 'disabled' : ''}>↓</button>
                     <button class="write-ch-btn write-ch-del" onmousedown="event.preventDefault()"
                         onclick="deleteChapter('${ch.id}'); event.stopPropagation()">✕</button>
                     <button class="write-ch-btn write-ch-focus" onmousedown="event.preventDefault()"
