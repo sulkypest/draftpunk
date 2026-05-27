@@ -29,6 +29,17 @@ function init() {
 
     renderAll();
     updateFooter();
+
+    // Intercept paste on any write-area — strip all formatting, insert plain text
+    const list = document.getElementById('writeChapterList');
+    if (list) {
+        list.addEventListener('paste', function(e) {
+            if (!e.target.classList.contains('write-area')) return;
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            document.execCommand('insertText', false, text);
+        }, true);
+    }
 }
 
 function saveMeta() {
@@ -236,10 +247,13 @@ function renderAll() {
             </div>`;
     }).join('');
 
-    // Set content separately to avoid template-literal HTML injection issues
+    // Set content separately; sanitise to strip any imported inline styles
     writingData.chapters.forEach(ch => {
         const editor = document.getElementById('cheditor_' + ch.id);
-        if (editor) editor.innerHTML = ch.content || '';
+        if (!editor) return;
+        const clean = sanitizeHtml(ch.content || '');
+        editor.innerHTML = clean;
+        if (clean !== ch.content) { ch.content = clean; }
     });
 }
 
@@ -282,6 +296,29 @@ window.applyHeading = function(id) {
     const inH   = block && block.closest('h2, h3');
     document.execCommand('formatBlock', false, inH ? 'p' : 'h2');
 };
+
+// ── HTML sanitiser — strips inline styles, non-standard tags, keeps structure ─
+const ALLOWED_TAGS = new Set(['b','strong','i','em','u','h2','h3','p','br','div']);
+
+function sanitizeHtml(html) {
+    if (!html) return '';
+    const root = document.createElement('div');
+    root.innerHTML = html;
+    let dirty = true;
+    while (dirty) {
+        dirty = false;
+        root.querySelectorAll('*').forEach(el => {
+            // Strip all attributes from every element
+            Array.from(el.attributes).forEach(a => el.removeAttribute(a.name));
+            // Unwrap tags that aren't in the allowed set
+            if (!ALLOWED_TAGS.has(el.tagName.toLowerCase())) {
+                el.replaceWith(...Array.from(el.childNodes));
+                dirty = true;
+            }
+        });
+    }
+    return root.innerHTML;
+}
 
 // ── Word counting ─────────────────────────────────────────────────────────────
 function countWords(html) {
