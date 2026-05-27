@@ -237,12 +237,13 @@ window.addWords = function() {
         showCombatToast('LONG SESSION', '+250 BONUS XP', '⚡');
     }
 
-    // ── Boss beat defeated ────────────────────────────────────────────────────
+    // ── Boss beat defeated (award XP for every beat crossed) ─────────────────
     const progress = (state.total / state.goal) * 100;
     const newIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
     if (newIdx > state.lastLevel) {
+        const beatsSkipped = newIdx - state.lastLevel;
+        state.xp += 500 * beatsSkipped;
         state.lastLevel = newIdx;
-        state.xp += 500;
         document.getElementById('bossBeatTitle').innerText = BOSS_BEATS[newIdx].name;
         document.getElementById('defeatedBossSprite').src = window.getBossImgSrc(newIdx + 1);
         document.getElementById('levelOverlay').style.display = 'flex';
@@ -253,8 +254,10 @@ window.addWords = function() {
         app.classList.add('app-shake');
     }
 
-    // ── Buddy found ───────────────────────────────────────────────────────────
-    if (Math.floor(state.total / 5000) > Math.floor((state.total - val) / 5000)) {
+    // ── Buddy found (one per 5000-word threshold crossed) ────────────────────
+    const oldBuddyThreshold = Math.floor((state.total - val) / 5000);
+    const newBuddyThreshold = Math.floor(state.total / 5000);
+    for (let t = oldBuddyThreshold + 1; t <= newBuddyThreshold; t++) {
         const totalBuddiesAvailable = 100;
         const buddyID   = Math.floor(Math.random() * totalBuddiesAvailable) + 1;
         const buddyFile = `buddy${buddyID}.png`;
