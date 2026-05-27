@@ -115,6 +115,24 @@ function save() {
     localStorage.setItem('draftPunkData', JSON.stringify(dpData));
 }
 
+// ── One-time buddy backfill ───────────────────────────────────────────────────
+function backfillBuddies() {
+    const expected = Math.floor((state.total || 0) / 5000);
+    if ((state.inventory || []).length >= expected) return;
+    state.inventory = state.inventory || [];
+    while (state.inventory.length < expected) {
+        let buddyID, buddyFile, attempts = 0;
+        do {
+            buddyID   = Math.floor(Math.random() * 100) + 1;
+            buddyFile = `buddy${buddyID}.png`;
+            attempts++;
+        } while (state.inventory.includes(buddyFile) && attempts < 200);
+        if (!state.inventory.includes(buddyFile)) state.inventory.push(buddyFile);
+        else break;
+    }
+    save();
+}
+
 // ── Period reset (weekly / monthly / yearly counters) ─────────────────────────
 function checkPeriodResets() {
     let changed = false;
@@ -578,6 +596,7 @@ window.showDashboard = function() {
     document.getElementById('mainDashboard').classList.remove('hidden');
     if (nav) nav.style.display = '';
     checkPeriodResets();
+    backfillBuddies();
     updateUI();
     initGraph();
 };
