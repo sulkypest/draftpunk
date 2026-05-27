@@ -95,8 +95,8 @@ let activeId = dpData.activeProjectId || null;
 let state   = (activeId && dpData.projects && dpData.projects[activeId])
               || emptyProject({ active: false });
 
-// Migrate existing projects: seed XP from word count if not yet tracked
-if (state.active !== false && state.total > 0 && state.xp == null) {
+// Migrate existing projects: seed XP from word count if XP is missing or behind total
+if (state.active !== false && state.total > 0 && (state.xp == null || state.xp < state.total)) {
     state.xp = state.total;
     save();
 }
