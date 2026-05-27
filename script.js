@@ -52,12 +52,12 @@ function makeProjectId() { return 'proj_' + Date.now(); }
 
 function getWeekKey() {
     const d = new Date();
-    const day = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - day);
-    const yr = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return d.getUTCFullYear() + '-W' + Math.ceil(((d - yr) / 86400000 + 1) / 7);
+    const day = d.getDay() || 7;
+    d.setDate(d.getDate() + 4 - day);
+    const yr = new Date(d.getFullYear(), 0, 1);
+    return d.getFullYear() + '-W' + Math.ceil(((d - yr) / 86400000 + 1) / 7);
 }
-function getMonthKey()  { const d = new Date(); return d.getFullYear() + '-' + d.getMonth(); }
+function getMonthKey()  { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
 function getYearKey()   { return '' + new Date().getFullYear(); }
 function getTodayKey()  { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function getYesterdayKey() { const d = new Date(); d.setDate(d.getDate()-1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
@@ -99,6 +99,15 @@ let state   = (activeId && dpData.projects && dpData.projects[activeId])
 if (state.active !== false && state.total > 0 && (state.xp == null || state.xp < state.total)) {
     state.xp = state.total;
     save();
+}
+// Migrate old 0-indexed month key (e.g. '2026-4') to 1-indexed padded ('2026-05')
+if (state.lastMonthReset && /^\d{4}-\d{1,2}$/.test(state.lastMonthReset)) {
+    const parts = state.lastMonthReset.split('-');
+    const oldMonth = parseInt(parts[1]);
+    if (oldMonth <= 11) {
+        state.lastMonthReset = parts[0] + '-' + String(oldMonth + 1).padStart(2, '0');
+        save();
+    }
 }
 
 

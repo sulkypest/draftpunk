@@ -511,16 +511,21 @@ window.getCurrentUser = function() { return currentUser; };
 window.getLeaderboard = async function(field = 'totalWords') {
     if (!currentUser) return { error: 'not-signed-in' };
     try {
-        // Query by totalWords (guaranteed present on all users) to avoid
-        // Firestore excluding docs where the period field is missing.
-        // Sort client-side by the requested period field.
-        const q    = query(collection(db, 'users'), orderBy('totalWords', 'desc'), limit(100));
+        // Query directly by the requested field so period leaderboards
+        // aren't limited to users who happen to have high total words.
+        const q    = query(collection(db, 'users'), orderBy(field, 'desc'), limit(50));
         const snap = await getDocs(q);
-        const users = snap.docs
+        const now  = Date.now();
+        // Max age for period fields — data older than this is stale (counter not yet reset)
+        const maxAge = {
+            wordsThisWeek:  8  * 86400000,
+            wordsThisMonth: 32 * 86400000,
+            wordsThisYear:  370 * 86400000,
+        }[field] || Infinity;
+        return snap.docs
             .map(d => ({ uid: d.id, ...d.data() }))
-            .filter(u => u.username);
-        users.sort((a, b) => (b[field] || 0) - (a[field] || 0));
-        return users.slice(0, 25);
+            .filter(u => u.username && (u[field] || 0) > 0 && (now - (u.updatedAt || 0)) < maxAge)
+            .slice(0, 25);
     } catch (err) {
         console.error('Leaderboard error:', err);
         return { error: err.message };
