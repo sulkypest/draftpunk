@@ -120,9 +120,10 @@ window.syncChapter = function(id) {
     if (!proj) return;
 
     const oldTotal     = proj.total || 0;
-    const oldLastLevel = proj.lastLevel || 0;
+    const oldLastLevel = proj.lastLevel ?? -1;
     proj.inventory     = proj.inventory || [];
     proj.total          = oldTotal + delta;
+    proj.xp             = (proj.xp || 0) + delta;
     proj.wordsThisWeek  = (proj.wordsThisWeek  || 0) + delta;
     proj.wordsThisMonth = (proj.wordsThisMonth || 0) + delta;
     proj.wordsThisYear  = (proj.wordsThisYear  || 0) + delta;
@@ -134,15 +135,21 @@ window.syncChapter = function(id) {
     const newProgress = (proj.total / goal) * 100;
     const newLevelIdx = BOSS_BEATS.findLastIndex(b => newProgress >= b.pct);
     if (newLevelIdx > oldLastLevel) {
+        const beatsSkipped = newLevelIdx - oldLastLevel;
+        proj.xp += 500 * beatsSkipped;
         proj.lastLevel = newLevelIdx;
         const beat = BOSS_BEATS[newLevelIdx];
         setTimeout(() => showWriteToast(window.getBossImgSrc ? window.getBossImgSrc(newLevelIdx) : `bosses/${newLevelIdx}.png`, 'BEAT DEFEATED', beat.name.toUpperCase()), 400);
     }
-    if (Math.floor(proj.total / 5000) > Math.floor(oldTotal / 5000)) {
+
+    const oldBuddyThreshold = Math.floor(oldTotal / 5000);
+    const newBuddyThreshold = Math.floor(proj.total / 5000);
+    for (let t = oldBuddyThreshold + 1; t <= newBuddyThreshold; t++) {
         const buddyID   = Math.floor(Math.random() * 100) + 1;
         const buddyFile = `buddy${buddyID}.png`;
         if (!proj.inventory.includes(buddyFile)) {
             proj.inventory.push(buddyFile);
+            proj.xp += 200;
             setTimeout(() => showWriteToast(`buddies/${buddyFile}`, 'NEW BUDDY!', 'CHECK YOUR COLLECTION'), 800);
         }
     }
@@ -329,10 +336,11 @@ window.syncToTracker = function() {
     if (!confirm('Add ' + delta.toLocaleString() + ' words to your Draft Punk tracker?')) return;
 
     const oldTotal     = proj.total || 0;
-    const oldLastLevel = proj.lastLevel || 0;
+    const oldLastLevel = proj.lastLevel ?? -1;
     proj.inventory     = proj.inventory || [];
 
     proj.total          = oldTotal + delta;
+    proj.xp             = (proj.xp || 0) + delta;
     proj.wordsThisWeek  = (proj.wordsThisWeek  || 0) + delta;
     proj.wordsThisMonth = (proj.wordsThisMonth || 0) + delta;
     proj.wordsThisYear  = (proj.wordsThisYear  || 0) + delta;
@@ -345,17 +353,22 @@ window.syncToTracker = function() {
     const newProgress = (proj.total / goal) * 100;
     const newLevelIdx = BOSS_BEATS.findLastIndex(b => newProgress >= b.pct);
     if (newLevelIdx > oldLastLevel) {
+        const beatsSkipped = newLevelIdx - oldLastLevel;
+        proj.xp += 500 * beatsSkipped;
         proj.lastLevel = newLevelIdx;
         const beat = BOSS_BEATS[newLevelIdx];
         setTimeout(() => showWriteToast(window.getBossImgSrc ? window.getBossImgSrc(newLevelIdx) : `bosses/${newLevelIdx}.png`, 'BEAT DEFEATED', beat.name.toUpperCase()), 400);
     }
 
-    // Buddy check
-    if (Math.floor(proj.total / 5000) > Math.floor(oldTotal / 5000)) {
+    // Buddy check — loop through every 5000-word threshold crossed
+    const oldBuddyThreshold = Math.floor(oldTotal / 5000);
+    const newBuddyThreshold = Math.floor(proj.total / 5000);
+    for (let t = oldBuddyThreshold + 1; t <= newBuddyThreshold; t++) {
         const buddyID   = Math.floor(Math.random() * 100) + 1;
         const buddyFile = `buddy${buddyID}.png`;
         if (!proj.inventory.includes(buddyFile)) {
             proj.inventory.push(buddyFile);
+            proj.xp += 200;
             setTimeout(() => showWriteToast(`buddies/${buddyFile}`, 'NEW BUDDY!', 'CHECK YOUR COLLECTION'), 800);
         }
     }
