@@ -774,5 +774,108 @@ window.setFontSize = function(size) {
     applyWriteAreaFontSize();
 };
 
+// ── Story import ──────────────────────────────────────────────────────────────
+window.triggerImportStory = function() {
+    document.getElementById('importStoryFile').value = '';
+    document.getElementById('importStoryFile').click();
+};
+
+window.importStory = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const raw = ev.target.result;
+        const ext = file.name.split('.').pop().toLowerCase();
+        let text;
+        if (ext === 'rtf') {
+            text = rtfToPlainText(raw);
+        } else if (ext === 'html' || ext === 'htm') {
+            const div = document.createElement('div');
+            div.innerHTML = raw;
+            text = div.innerText;
+        } else {
+            text = raw;
+        }
+        const chapters = splitIntoChapters(text);
+        const count = chapters.length;
+        if (!confirm(`Import "${file.name}"?\n\n${count} chapter${count !== 1 ? 's' : ''} detected.\nChapters will be added to this project.`)) return;
+        chapters.forEach((ch, i) => {
+            const id = makeId();
+            const order = writingData.chapters.length;
+            const lines = ch.body.split('\n').filter(l => l.trim());
+            const html = lines.map(l => `<p>${escapeHtml(l)}</p>`).join('');
+            const wc = countWords(html);
+            writingData.chapters.push({
+                id, title: ch.title || ('Chapter ' + (order + 1)),
+                order, wordCount: wc, content: html, updatedAt: Date.now() + i
+            });
+        });
+        writingData.chapters.forEach((c, i) => c.order = i);
+        saveMeta();
+        renderAll();
+        updateFooter();
+        if (window.pushWritingChapterToCloud) {
+            writingData.chapters.slice(-chapters.length).forEach(ch => window.pushWritingChapterToCloud(ch));
+        }
+        showWriteToast(null, '✓ IMPORTED', count + ' CHAPTER' + (count !== 1 ? 'S' : '') + ' ADDED');
+    };
+    reader.readAsText(file, 'utf-8');
+};
+
+function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function rtfToPlainText(rtf) {
+    let s = rtf;
+    // Drop destination groups (font/colour tables, stylesheets, pictures, etc.)
+    s = s.replace(/\{\\(?:fonttbl|colortbl|stylesheet|info|pict|header|footer|object)[^{}]*(?:\{[^{}]*\}[^{}]*)*/g, '');
+    // Paragraph / line breaks → newline
+    s = s.replace(/\\(?:par|pard|sect|page)\b\s?/g, '\n');
+    s = s.replace(/\\line\b\s?/g, '\n');
+    // Tab
+    s = s.replace(/\\tab\b\s?/g, '\t');
+    // Hex escapes  \'XX
+    s = s.replace(/\\'([0-9a-fA-F]{2})/g, (_, h) => {
+        try { return decodeURIComponent('%' + h); } catch { return ''; }
+    });
+    // Unicode  \uN
+    s = s.replace(/\\u(-?\d+)\??/g, (_, n) => String.fromCharCode(parseInt(n)));
+    // Drop all remaining control words and groups
+    s = s.replace(/\\[a-zA-Z*]+[-]?\d*\s?/g, '');
+    s = s.replace(/[{}]/g, '');
+    // Tidy whitespace
+    s = s.replace(/[ \t]+/g, ' ');
+    s = s.replace(/\n{3,}/g, '\n\n');
+    return s.trim();
+}
+
+// Split plain text into chapters based on common heading patterns
+function splitIntoChapters(text) {
+    const CHAPTER_RE = /^(?:chapter|part|scene|act|prologue|epilogue|interlude)\b[^\n]*/i;
+    const lines = text.split(/\r?\n/);
+    const chapters = [];
+    let current = null;
+
+    for (const raw of lines) {
+        const line = raw.trim();
+        if (CHAPTER_RE.test(line)) {
+            if (current) chapters.push(current);
+            current = { title: line, body: '' };
+        } else {
+            if (!current) current = { title: '', body: '' };
+            current.body += (current.body ? '\n' : '') + raw;
+        }
+    }
+    if (current) chapters.push(current);
+
+    // If nothing matched, return the whole text as one chapter
+    if (chapters.length === 1 && !chapters[0].title) {
+        chapters[0].title = '';
+    }
+    return chapters.filter(c => c.body.trim() || c.title);
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => { init(); applyWriteAreaFontSize(); });

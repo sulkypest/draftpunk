@@ -80,6 +80,8 @@
                 </div>
 <button id="syncWordsBtn" onclick="syncToTracker()" style="width:100%;margin-top:10px;" disabled>ALL WORDS SYNCED</button>
                 <button onclick="exportStory()" style="width:100%;margin-top:8px;background:#333;">⬇ EXPORT STORY</button>
+                <button onclick="triggerImportStory()" style="width:100%;margin-top:8px;background:#333;">⬆ IMPORT STORY</button>
+                <input type="file" id="importStoryFile" accept=".rtf,.txt,.html,.htm" style="display:none" onchange="importStory(event)">
             </div>
         </div>
     </div>
