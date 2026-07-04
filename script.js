@@ -622,9 +622,10 @@ window.showProjectForm = function() {
 };
 
 // ── Splash screen ─────────────────────────────────────────────────────────────
+// Plays the intro animation then calls then(). Does NOT make routing decisions —
+// routing is owned entirely by sync.js once Firebase auth resolves.
 function runSplash(then) {
     const splash = document.getElementById('splashScreen');
-    // Only show once per browser session
     if (!splash || sessionStorage.getItem('splashSeen')) {
         if (splash) splash.style.display = 'none';
         then();
@@ -633,11 +634,7 @@ function runSplash(then) {
     sessionStorage.setItem('splashSeen', '1');
 
     splash.classList.add('splash-visible');
-
-    // Attempt sound immediately; browser may block until user gesture
-    if (window.SFX) {
-        try { SFX.intro(); } catch(e) {}
-    }
+    if (window.SFX) { try { SFX.intro(); } catch(e) {} }
 
     setTimeout(function () {
         splash.classList.add('splash-out');
@@ -658,7 +655,9 @@ window.onload = function() {
     }
 
     const nav = document.querySelector('.app-nav');
+
     runSplash(function () {
+        // Handle just-signed-out redirect first
         if (localStorage.getItem('justSignedOut')) {
             localStorage.removeItem('justSignedOut');
             history.replaceState({}, '', 'index.html');
@@ -669,11 +668,21 @@ window.onload = function() {
             return;
         }
 
+        // If there is already an active project in localStorage, show the dashboard
+        // immediately — no need to wait for Firebase auth to resolve.
         const hasActive = activeId && dpData.projects && dpData.projects[activeId] && dpData.projects[activeId].active;
-
         if (hasActive) {
             window.showDashboard();
-        } else if (localStorage.getItem('authDecisionMade')) {
+            return;
+        }
+
+        // No local data yet.
+        // If the user previously chose "continue without signing in", skip straight
+        // to the project form. Otherwise show the auth/sign-in screen and let
+        // sync.js take over once Firebase auth resolves — do NOT gate on authDecisionMade
+        // here for signed-in users, as that races with onAuthStateChanged.
+        if (localStorage.getItem('authDecisionMade') && !localStorage.getItem('dpUserId')) {
+            // Guest user (no Firebase uid stored) — show project form directly
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('setup').style.display = 'block';
             document.getElementById('mainDashboard').classList.add('hidden');
