@@ -102,12 +102,11 @@ function schedulePush() {
 }
 window.schedulePush = schedulePush;
 
-// Flush any pending sync immediately when the page is closing
+// On page close, cancel the debounce so it doesn't fire after the page is gone.
+// localStorage is always current (every change is written synchronously via the
+// setItem override), so the next session will push it to cloud on sign-in.
 window.addEventListener('beforeunload', () => {
-    if (currentUser && syncTimeout) {
-        clearTimeout(syncTimeout);
-        pushToCloud(currentUser);
-    }
+    if (syncTimeout) clearTimeout(syncTimeout);
 });
 
 const _setItem = localStorage.setItem.bind(localStorage);
@@ -329,7 +328,12 @@ window.signInWithGoogle = async function() {
 
 window.signOutUser = async function() {
     if (!confirm('Sign out?')) return;
-    clearTimeout(syncTimeout);
+    // Flush any pending debounced changes BEFORE wiping local data.
+    if (currentUser && syncTimeout) {
+        clearTimeout(syncTimeout);
+        syncTimeout = null;
+        try { await pushToCloud(currentUser); } catch (e) { console.warn('Pre-signout push failed', e); }
+    }
     await signOut(auth);
     // Clear all local data so the next user (or same user on next sign-in)
     // starts clean — prevents stale data flashing before auth resolves.

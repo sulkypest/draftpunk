@@ -306,6 +306,12 @@ window.addSprintToWrite = function() {
 
     writingData.chapters.push(ch);
     localStorage.setItem('writingData', JSON.stringify(writingData));
+    // Push to cloud immediately — writingData is not in DATA_KEYS so the normal
+    // schedulePush path won't do it, and sign-out before visiting Write would lose it.
+    if (window.pushWritingChapterToCloud) {
+        window.pushWritingChapterToCloud({ ...ch, projectId: projId })
+            .catch(e => console.warn('Sprint chapter cloud push failed:', e));
+    }
 
     document.getElementById('wrWinMessage').innerText =
         `${wc.toLocaleString()} words added to WRITE as "${ch.title}".`;

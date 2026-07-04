@@ -39,6 +39,7 @@ window.exportData = function() {
         charactersData: JSON.parse(localStorage.getItem('charactersData') || 'null'),
         wordRunnerData: JSON.parse(localStorage.getItem('wordRunnerData') || 'null'),
         writingData:    JSON.parse(localStorage.getItem('writingData')    || 'null'),
+        notesData:      JSON.parse(localStorage.getItem('notesData')      || 'null'),
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -78,6 +79,7 @@ window.importData = function(event) {
             if (data.charactersData) localStorage.setItem('charactersData', JSON.stringify(data.charactersData));
             if (data.wordRunnerData) localStorage.setItem('wordRunnerData', JSON.stringify(data.wordRunnerData));
             if (data.writingData)    localStorage.setItem('writingData',    JSON.stringify(data.writingData));
+            if (data.notesData)      localStorage.setItem('notesData',      JSON.stringify(data.notesData));
 
             location.reload();
         } catch (err) {

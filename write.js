@@ -674,9 +674,16 @@ function setSaveStatus(state) {
     const el = document.getElementById('writeSaveStatus');
     if (!el) return;
     clearTimeout(saveStatusTimer);
-    el.textContent = state === 'saving' ? 'SAVING...' : 'SAVED';
-    if (state === 'saved') {
+    if (state === 'saving') {
+        el.textContent = 'SAVING...';
+        el.style.color = '';
+    } else if (state === 'saved') {
+        el.textContent = 'SAVED';
+        el.style.color = '';
         saveStatusTimer = setTimeout(() => { el.textContent = ''; }, 2000);
+    } else if (state === 'local-only') {
+        el.textContent = 'SAVED LOCALLY — cloud sync failed';
+        el.style.color = 'var(--color-warning, #c0392b)';
     }
 }
 
@@ -697,7 +704,10 @@ function scheduleCloudSave(ch) {
                     projectId: activeProjectId, updatedAt: ch.updatedAt
                 });
                 setSaveStatus('saved');
-            } catch (e) { setSaveStatus('saved'); }
+            } catch (e) {
+                console.warn('Chapter cloud save failed:', e);
+                setSaveStatus('local-only');
+            }
         } else {
             setSaveStatus('saved');
         }
