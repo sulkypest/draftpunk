@@ -266,8 +266,15 @@ async function handleSignedIn(user) {
     }
     localStorage.setItem('dpUserId', user.uid);
 
-    const userSnap    = await getDoc(doc(db, 'users', user.uid));
-    const hasUsername = userSnap.exists() && userSnap.data().username;
+    let hasUsername = false;
+    try {
+        const userSnap = await getDoc(doc(db, 'users', user.uid));
+        hasUsername = userSnap.exists() && userSnap.data().username;
+    } catch (e) {
+        console.warn('Could not check username (Firestore unavailable):', e);
+        // Fall through — treat as if username exists so we don't block the user
+        hasUsername = true;
+    }
 
     if (!hasUsername) {
         showUsernamePrompt(() => continueAfterAuth(user));
@@ -277,7 +284,14 @@ async function handleSignedIn(user) {
 }
 
 async function continueAfterAuth(user) {
-    const needsReload = await pullFromCloud(user);
+    let needsReload = false;
+    try {
+        needsReload = await pullFromCloud(user);
+    } catch (e) {
+        console.warn('pullFromCloud failed, using local data:', e);
+        setSyncStatus('error');
+    }
+
     if (needsReload && !window.location.pathname.includes('write.html')) {
         location.reload();
     } else {
@@ -288,9 +302,13 @@ async function continueAfterAuth(user) {
                           dpData.projects[dpData.activeProjectId].active;
         if (hasActive && window.showDashboard) window.showDashboard();
         else if (!hasActive && window.showProjectForm) window.showProjectForm();
-        checkPendingRequests(user);
-        processFriendAcceptances(user);
-        checkUnreadMessages(user);
+        try {
+            checkPendingRequests(user);
+            processFriendAcceptances(user);
+            checkUnreadMessages(user);
+        } catch (e) {
+            console.warn('Non-critical post-auth check failed:', e);
+        }
     }
 }
 
@@ -301,7 +319,17 @@ onAuthStateChanged(auth, async user => {
     // Let other scripts (e.g. groups.js) react to auth state
     document.dispatchEvent(new CustomEvent('dpAuthChanged', { detail: { user } }));
     if (user) {
-        await handleSignedIn(user);
+        try {
+            await handleSignedIn(user);
+        } catch (e) {
+            console.error('handleSignedIn failed:', e);
+            // Last-resort fallback: show whatever local data we have
+            const dpData    = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+            const hasActive = dpData.activeProjectId && dpData.projects &&
+                              dpData.projects[dpData.activeProjectId]?.active;
+            if (hasActive && window.showDashboard) window.showDashboard();
+            else if (window.showProjectForm) window.showProjectForm();
+        }
     } else if (localStorage.getItem('justSignedOut')) {
         localStorage.removeItem('justSignedOut');
         const authScreen = document.getElementById('authScreen');
