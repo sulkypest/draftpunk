@@ -676,13 +676,13 @@ window.onload = function() {
             return;
         }
 
-        // No local data yet.
-        // If the user previously chose "continue without signing in", skip straight
-        // to the project form. Otherwise show the auth/sign-in screen and let
-        // sync.js take over once Firebase auth resolves — do NOT gate on authDecisionMade
-        // here for signed-in users, as that races with onAuthStateChanged.
-        if (localStorage.getItem('authDecisionMade') && !localStorage.getItem('dpUserId')) {
-            // Guest user (no Firebase uid stored) — show project form directly
+        // If dpUserId is set, auth has already resolved and continueAfterAuth
+        // (in sync.js) already showed the correct screen — don't override it.
+        if (localStorage.getItem('dpUserId')) return;
+
+        // Not signed in: guest vs first-time / signed-out visitor.
+        if (localStorage.getItem('authDecisionMade')) {
+            // Guest user (authDecisionMade but no dpUserId) — show project form directly
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('setup').style.display = 'block';
             document.getElementById('mainDashboard').classList.add('hidden');
