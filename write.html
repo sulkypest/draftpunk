@@ -81,6 +81,7 @@
 <button id="syncWordsBtn" onclick="syncToTracker()" style="width:100%;margin-top:10px;" disabled>ALL WORDS SYNCED</button>
                 <button onclick="exportStory()" style="width:100%;margin-top:8px;background:#333;">⬇ EXPORT STORY</button>
                 <button onclick="triggerImportStory()" style="width:100%;margin-top:8px;background:#333;">⬆ IMPORT STORY</button>
+                <a href="evidence.html" class="write-evidence-link">⧉ WRITING EVIDENCE</a>
                 <input type="file" id="importStoryFile" accept=".rtf,.txt,.html,.htm" style="display:none" onchange="importStory(event)">
             </div>
         </div>
@@ -112,6 +113,8 @@
     <script src="sidebar.js"></script>
     <script src="data.js"></script>
     <script src="backup.js"></script>
+    <script src="provenance-core.js"></script>
+    <script src="provenance.js"></script>
     <script src="write.js"></script>
     <script type="module" src="sync.js"></script>
     <script>

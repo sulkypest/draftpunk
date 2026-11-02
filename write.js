@@ -37,6 +37,8 @@ function init() {
             if (!e.target.classList.contains('write-area')) return;
             e.preventDefault();
             const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            // Tell the evidence log this insert is a paste, not typing
+            if (window.dpProv) window.dpProv.notePaste(e.target.id.replace('cheditor_', ''));
             document.execCommand('insertText', false, text);
         }, true);
     }
@@ -81,6 +83,7 @@ window.deleteChapter = function(id) {
     const ch = writingData.chapters.find(c => c.id === id);
     if (!ch) return;
     if (!confirm('Delete "' + ch.title + '"? This cannot be undone.')) return;
+    if (window.dpProv) window.dpProv.noteDelete(id);
     writingData.chapters = writingData.chapters.filter(c => c.id !== id);
     writingData.chapters.forEach((c, i) => c.order = i);
     saveMeta();
@@ -747,9 +750,11 @@ document.addEventListener('dpAuthChanged', async function(e) {
         ? Math.max(...writingData.chapters.map(c => c.updatedAt || 0))
         : 0;
     if (cloudMax > localMax) {
+        if (window.dpProv) await window.dpProv.flush();
         writingData.chapters = cloudChapters;
         saveMeta();
         renderAll();
+        if (window.dpProv) window.dpProv.resetBaselines();
         updateFooter();
         setSaveStatus('saved');
     } else {
@@ -825,6 +830,10 @@ window.importStory = function(e) {
         saveMeta();
         renderAll();
         updateFooter();
+        if (window.dpProv) {
+            window.dpProv.resetBaselines();
+            writingData.chapters.slice(-chapters.length).forEach(ch => window.dpProv.noteImport(ch.id));
+        }
         if (window.pushWritingChapterToCloud) {
             writingData.chapters.slice(-chapters.length).forEach(ch => window.pushWritingChapterToCloud(ch));
         }

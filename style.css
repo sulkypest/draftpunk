@@ -1597,3 +1597,64 @@ body.write-focus .write-focus-bar {
     color: var(--neon);
 }
 
+
+/* ── WRITING EVIDENCE ─────────────────────────────────────────────────────── */
+.write-evidence-link {
+    display: block;
+    text-align: center;
+    margin-top: 8px;
+    padding: 10px 15px;
+    border: 1px solid var(--border-mid);
+    color: var(--text-dim);
+    font-weight: 900;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    text-decoration: none;
+}
+.write-evidence-link:hover { color: var(--neon); border-color: var(--neon); }
+.ev-page h3 { font-size: 0.85rem; letter-spacing: 2px; margin: 0 0 12px; color: var(--neon); }
+.ev-sub { font-size: 0.9rem; opacity: 0.5; margin-top: -10px; margin-bottom: 12px; }
+.ev-status { font-size: 0.68rem; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.5; }
+.ev-section { border-top: 1px solid var(--border); padding: 18px 0; }
+.ev-tag { font-size: 0.6rem; letter-spacing: 1px; color: var(--text-dim); border: 1px solid var(--border-mid); padding: 2px 6px; margin-left: 6px; vertical-align: middle; }
+.ev-note { font-size: 0.66rem; letter-spacing: 1px; line-height: 1.6; color: var(--text-dim); margin: 10px 0 0; }
+.ev-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.ev-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; letter-spacing: 1px; }
+.ev-table th { text-align: left; color: var(--text-dim); font-weight: normal; border-bottom: 1px solid var(--border-mid); padding: 6px 8px 6px 0; white-space: nowrap; }
+.ev-table td { border-bottom: 1px solid var(--border-light); padding: 7px 8px 7px 0; vertical-align: top; }
+.ev-ok { color: #4caf50; }
+.ev-bad { color: #ff4500; }
+.ev-warn { color: #e0a000; }
+.ev-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
+.ev-stat { display: flex; justify-content: space-between; gap: 10px; border: 1px solid var(--border); padding: 8px 10px; font-size: 0.66rem; letter-spacing: 1px; }
+.ev-stat span { color: var(--text-dim); }
+.ev-stat b { text-align: right; }
+.ev-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.62rem; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 10px; }
+.ev-legend i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: middle; }
+.ev-day { display: flex; align-items: center; gap: 8px; font-size: 0.62rem; letter-spacing: 1px; margin-bottom: 3px; }
+.ev-day-label { width: 78px; flex-shrink: 0; color: var(--text-dim); }
+.ev-day-bar { flex: 1; display: flex; height: 10px; background: var(--panel2); }
+.ev-day-bar i { display: block; height: 100%; }
+.ev-day-n { width: 60px; text-align: right; flex-shrink: 0; }
+.ev-typed { background: var(--neon); }
+.ev-ext { background: #ff4500; }
+.ev-other { background: var(--border-mid); }
+.ev-chapter { border: 1px solid var(--border); margin-bottom: 6px; padding: 8px 10px; font-size: 0.72rem; letter-spacing: 1px; }
+.ev-chapter summary { cursor: pointer; }
+.ev-snap { margin-top: 6px; }
+.ev-snap-btn { background: transparent; color: var(--text); border: 1px solid var(--border-mid); width: 100%; text-align: left; font-size: 0.66rem; font-weight: normal; padding: 6px 8px; letter-spacing: 1px; }
+.ev-diff p { overflow-wrap: anywhere; font-family: Georgia, serif; font-size: 0.85rem; line-height: 1.5; margin: 4px 0; padding: 4px 8px; text-transform: none; letter-spacing: 0; white-space: pre-wrap; }
+.ev-diff .ev-note { font-family: inherit; font-size: 0.62rem; letter-spacing: 1px; }
+.ev-add { border-left: 3px solid #4caf50; }
+.ev-del { border-left: 3px solid #ff4500; opacity: 0.6; text-decoration: line-through; }
+.ev-actions { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border); padding-top: 18px; }
+.ev-actions button { width: 100%; }
+.ev-btn-dim { background: #333; color: #fff; }
+
+@media print {
+    .app-nav, .ev-actions, #sidebar, .sidebar { display: none !important; }
+    body { padding: 0; background: #fff; color: #000; }
+    .app { border: none; background: #fff; }
+    .ev-chapter { break-inside: avoid; }
+    details.ev-chapter > *:not(summary) { display: block; }
+}

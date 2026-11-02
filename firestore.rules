@@ -37,6 +37,37 @@ service cloud.firestore {
       match /writing/{chapterId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
+      // Writing-evidence log. Batches are create-only, must carry the server's
+      // own timestamp, and must extend the chapter's chain by exactly one:
+      // seq = head.seq + 1 and prevHash = head.hash (or seq 0 / 'genesis').
+      // The head doc is written in the same batch and must match the new batch.
+      // Owners may delete (account deletion); deletions show as chain gaps.
+      match /provenance/{batchId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow update: if false;
+        allow create: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.serverTime == request.time
+          && request.resource.data.seq is int
+          && request.resource.data.hash is string
+          && batchId == request.resource.data.chapterId + '_' + string(request.resource.data.seq)
+          && extendsChain(userId, request.resource.data);
+      }
+
+      match /provenanceHeads/{chapterId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.serverTime == request.time
+          && getAfter(/databases/$(database)/documents/users/$(userId)/provenance/$(chapterId + '_' + string(request.resource.data.seq))).data.hash
+             == request.resource.data.hash;
+      }
+    }
+
+    function extendsChain(userId, d) {
+      let headPath = /databases/$(database)/documents/users/$(userId)/provenanceHeads/$(d.chapterId);
+      return exists(headPath)
+        ? (d.seq == get(headPath).data.seq + 1 && d.prevHash == get(headPath).data.hash)
+        : (d.seq == 0 && d.prevHash == 'genesis');
     }
 
     // username -> uid reservation. Readable by any signed-in user (availability

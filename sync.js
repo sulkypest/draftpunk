@@ -3,7 +3,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
     getFirestore, doc, setDoc, getDoc, deleteDoc, writeBatch,
-    collection, query, orderBy, limit, where, getDocs, arrayUnion, arrayRemove
+    collection, query, orderBy, limit, where, getDocs, arrayUnion, arrayRemove, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { initializeAppCheck, ReCaptchaV3Provider }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js';
@@ -444,6 +444,8 @@ async function showAccountOverlay() {
         const btn = document.getElementById('dpResetBtn');
         btn.disabled = true; btn.textContent = 'RESETTING...';
         try {
+            // Delete writing-evidence log first (can be thousands of docs)
+            await deleteProvenance(user.uid);
             // Delete writing subcollection
             const writingSnap = await getDocs(collection(db, 'users', user.uid, 'writing'));
             const batch = writeBatch(db);
@@ -470,6 +472,8 @@ async function showAccountOverlay() {
         const btn = document.getElementById('dpDeleteBtn');
         btn.disabled = true; btn.textContent = 'DELETING...';
         try {
+            // Delete writing-evidence log first (can be thousands of docs)
+            await deleteProvenance(user.uid);
             // Delete writing subcollection
             const writingSnap = await getDocs(collection(db, 'users', user.uid, 'writing'));
             const batch = writeBatch(db);
@@ -709,6 +713,45 @@ window.pullWritingFromCloud = async function(projectId) {
         return chapters.length ? chapters : null;
     } catch (err) { console.error('Writing pull error:', err); return null; }
 };
+
+// ── Writing evidence (provenance) log ─────────────────────────────────────────
+// users/{uid}/provenance/{chapterId}_{seq}: create-only batches of edit events,
+// stamped with server time. users/{uid}/provenanceHeads/{chapterId}: the latest
+// seq + hash, written in the same batch so the chain can't fork or skip.
+window.provGetHead = async function(chapterId) {
+    if (!currentUser) throw new Error('signed out');
+    const snap = await getDoc(doc(db, 'users', currentUser.uid, 'provenanceHeads', chapterId));
+    return snap.exists() ? { seq: snap.data().seq, hash: snap.data().hash } : null;
+};
+
+window.provCommit = async function(rec) {
+    if (!currentUser) throw new Error('signed out');
+    const uid   = currentUser.uid;
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'users', uid, 'provenance', rec.chapterId + '_' + rec.seq),
+        { ...rec, serverTime: serverTimestamp() });
+    batch.set(doc(db, 'users', uid, 'provenanceHeads', rec.chapterId),
+        { seq: rec.seq, hash: rec.hash, projectId: rec.projectId || null, serverTime: serverTimestamp() });
+    await batch.commit();
+};
+
+window.provList = async function(projectId) {
+    if (!currentUser) return null;
+    const ref  = collection(db, 'users', currentUser.uid, 'provenance');
+    const snap = await getDocs(projectId ? query(ref, where('projectId', '==', projectId)) : ref);
+    return snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+};
+
+async function deleteProvenance(uid) {
+    for (const sub of ['provenance', 'provenanceHeads']) {
+        const snap = await getDocs(collection(db, 'users', uid, sub));
+        for (let i = 0; i < snap.docs.length; i += 450) {
+            const b = writeBatch(db);
+            snap.docs.slice(i, i + 450).forEach(d => b.delete(d.ref));
+            await b.commit();
+        }
+    }
+}
 
 window.getCurrentUsername = async function() {
     if (!currentUser) return null;
