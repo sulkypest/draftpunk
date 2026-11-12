@@ -45,7 +45,17 @@ let syncTimeout = null;
 
 // ── Push local data up to Firestore ──────────────────────────────────────────
 async function pushToCloud(user) {
-    const payload = { updatedAt: Date.now() };
+    // Stamp the cloud copy with the SAME timestamp the local copy carries, so
+    // after a push the two compare as equal. (Previously this used Date.now(),
+    // which made the cloud look newer than local after every push — the next
+    // load would then pull a stale cloud copy over fresh local changes, e.g.
+    // wiping a project created just before the push could run.)
+    let stamp = parseInt(localStorage.getItem('dpLastUpdated') || '0');
+    if (!stamp) {
+        stamp = Date.now();
+        _setItem('dpLastUpdated', String(stamp));
+    }
+    const payload = { updatedAt: stamp };
     DATA_KEYS.forEach(k => {
         const raw = localStorage.getItem(k);
         payload[k] = raw ? JSON.parse(raw) : null;
@@ -84,7 +94,8 @@ async function pullFromCloud(user) {
         DATA_KEYS.forEach(k => {
             if (cloud[k] != null) _setItem(k, JSON.stringify(cloud[k]));
         });
-        _setItem('dpLastUpdated', Date.now().toString());
+        // Record the cloud's stamp (not "now") so local and cloud now match.
+        _setItem('dpLastUpdated', String(cloudTime));
         return true;
     } else {
         await pushToCloud(user);
@@ -112,7 +123,15 @@ window.addEventListener('beforeunload', () => {
 const _setItem = localStorage.setItem.bind(localStorage);
 localStorage.setItem = function(key, value) {
     _setItem(key, value);
-    if (DATA_KEYS.includes(key) && currentUser) schedulePush();
+    if (!DATA_KEYS.includes(key)) return;
+    if (currentUser) {
+        schedulePush();
+    } else if (currentUser === undefined && localStorage.getItem('dpUserId')) {
+        // Signed-in user, but Firebase auth hasn't resolved yet on this page
+        // load. Still stamp the change so pullFromCloud treats local as newer
+        // and pushes it, rather than overwriting it with the older cloud copy.
+        _setItem('dpLastUpdated', Date.now().toString());
+    }
 };
 
 // ── Username prompt ───────────────────────────────────────────────────────────
