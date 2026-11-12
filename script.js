@@ -164,7 +164,7 @@ window.start = function() {
     });
     dpData.activeProjectId = id;
     localStorage.setItem('draftPunkData', JSON.stringify(dpData));
-    window.location.href = 'index.html';
+    window.location.href = 'write.html';
 };
 
 // ── Switch to an existing project ─────────────────────────────────────────────
@@ -610,6 +610,19 @@ window.showDashboard = function() {
     initGraph();
 };
 
+// ── Home routing ─────────────────────────────────────────────────────────────
+// The Write page is the app's home. index.html handles sign-in and project
+// setup, and shows the dashboard only when asked for via index.html?dashboard
+// (the DRAFT PUNK nav item). Otherwise a user with an active project is sent
+// straight to write.html.
+window.wantsDashboard = function() {
+    return new URLSearchParams(window.location.search).has('dashboard');
+};
+window.goHome = function() {
+    if (window.wantsDashboard()) window.showDashboard();
+    else window.location.replace('write.html');
+};
+
 // ── Auth screen helpers ───────────────────────────────────────────────────────
 window.skipAuth = function() {
     localStorage.setItem('authDecisionMade', '1');
@@ -672,7 +685,7 @@ window.onload = function() {
         // immediately — no need to wait for Firebase auth to resolve.
         const hasActive = activeId && dpData.projects && dpData.projects[activeId] && dpData.projects[activeId].active;
         if (hasActive) {
-            window.showDashboard();
+            window.goHome();
             return;
         }
 

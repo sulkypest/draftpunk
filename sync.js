@@ -319,7 +319,7 @@ async function continueAfterAuth(user) {
                           dpData.projects &&
                           dpData.projects[dpData.activeProjectId] &&
                           dpData.projects[dpData.activeProjectId].active;
-        if (hasActive && window.showDashboard) window.showDashboard();
+        if (hasActive && (window.goHome || window.showDashboard)) (window.goHome || window.showDashboard)();
         else if (!hasActive && window.showProjectForm) window.showProjectForm();
         try {
             checkPendingRequests(user);
@@ -346,7 +346,7 @@ onAuthStateChanged(auth, async user => {
             const dpData    = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
             const hasActive = dpData.activeProjectId && dpData.projects &&
                               dpData.projects[dpData.activeProjectId]?.active;
-            if (hasActive && window.showDashboard) window.showDashboard();
+            if (hasActive && (window.goHome || window.showDashboard)) (window.goHome || window.showDashboard)();
             else if (window.showProjectForm) window.showProjectForm();
         }
     } else if (localStorage.getItem('justSignedOut')) {
