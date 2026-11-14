@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <script src="sentry.js"></script>
 </head>
-<body>
+<body class="sb-ready">
     <nav class="app-nav">
         <div class="nav-dropdown">
             <button class="nav-dropdown-btn" onclick="this.nextElementSibling.classList.toggle('open')">DRAFT PUNK</button>
@@ -23,7 +23,7 @@
     <div class="notes-page">
         <div class="app" style="max-width:680px;">
             <h1>PRIVACY POLICY</h1>
-            <p style="font-size:0.7rem;opacity:0.4;letter-spacing:1px;margin-bottom:32px;">Last updated: March 2026</p>
+            <p style="font-size:0.7rem;opacity:0.4;letter-spacing:1px;margin-bottom:32px;">Last updated: November 2026</p>
 
             <div style="font-size:0.85rem;line-height:1.8;opacity:0.85;">
 
@@ -38,6 +38,8 @@
                 <p><strong>Word counts and progress data</strong> — Your writing totals, daily/weekly/monthly/yearly stats, and project goals are stored to power the tracker and leaderboard features.</p>
                 <p><strong>Social data</strong> — Friend connections you create, friend requests you send or receive, and messages you send or receive are stored in our database.</p>
                 <p><strong>Shared content</strong> — If you share a chapter with a friend, that chapter's content is stored and made accessible to that specific friend until you revoke the share.</p>
+                <p><strong>Writing Record</strong> — For each chapter, a record of how text was entered: how much was typed, pasted, dropped in or imported from a file, how much was deleted, your active writing minutes each day, and the time and size of each paste. The text you paste is never recorded. A random identifier for each of your devices is stored so that records from different devices can be combined. This record is private to you unless you create a share link.</p>
+                <p><strong>Writing Record share links</strong> — If you create a share link, a snapshot of your report (project and chapter titles, your username or Google display name, and the figures above — never your writing) is stored and can be viewed by anyone who has the link, without signing in, until you stop sharing or delete your account.</p>
                 <p><strong>Technical data</strong> — Basic error data (stack traces, browser version) may be collected via Sentry if you experience a crash. No personal data is included in error reports.</p>
 
                 <h2 style="font-size:1rem;letter-spacing:2px;margin:28px 0 12px;">3. HOW WE USE YOUR DATA</h2>
@@ -46,6 +48,7 @@
                     <li>To display your progress on the leaderboard (username and word counts only)</li>
                     <li>To enable social features: friends, messaging, and chapter sharing</li>
                     <li>To diagnose and fix technical errors</li>
+                    <li>To produce your Writing Record, and any report you choose to share</li>
                     <li>To prevent abuse via bot protection (reCAPTCHA)</li>
                 </ul>
                 <p>We do not use your data for advertising. We do not sell your data to any third party.</p>
@@ -54,6 +57,7 @@
                 <ul style="padding-left:20px;margin:0 0 16px;">
                     <li><strong>All signed-in users</strong> can see your username and word count totals on the leaderboard.</li>
                     <li><strong>Friends only</strong> can see content you explicitly share with them, and messages you send them.</li>
+                    <li><strong>Anyone with a Writing Record share link</strong> you create can see that report (titles, your name and the figures — never your writing).</li>
                     <li><strong>Private</strong>: your writing, notes, characters, and email address are never visible to other users.</li>
                 </ul>
 

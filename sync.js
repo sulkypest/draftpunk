@@ -463,10 +463,11 @@ async function showAccountOverlay() {
         const btn = document.getElementById('dpResetBtn');
         btn.disabled = true; btn.textContent = 'RESETTING...';
         try {
-            // Delete writing subcollection
-            const writingSnap = await getDocs(collection(db, 'users', user.uid, 'writing'));
+            // Delete chapters, Writing Record figures and share links
+            const owned = await collectOwnedDocRefs(user.uid);
+            await deleteShareLinks(owned.shareIds);
+            await deleteInBatches(owned.refs);
             const batch = writeBatch(db);
-            writingSnap.docs.forEach(d => batch.delete(d.ref));
             // Reset user doc (keep username and auth fields, wipe data)
             batch.set(doc(db, 'users', user.uid), {
                 username:    data.username || '',
@@ -489,10 +490,11 @@ async function showAccountOverlay() {
         const btn = document.getElementById('dpDeleteBtn');
         btn.disabled = true; btn.textContent = 'DELETING...';
         try {
-            // Delete writing subcollection
-            const writingSnap = await getDocs(collection(db, 'users', user.uid, 'writing'));
+            // Delete chapters, Writing Record figures and share links
+            const owned = await collectOwnedDocRefs(user.uid);
+            await deleteShareLinks(owned.shareIds);
+            await deleteInBatches(owned.refs);
             const batch = writeBatch(db);
-            writingSnap.docs.forEach(d => batch.delete(d.ref));
             // Delete username reservation
             if (data.username) batch.delete(doc(db, 'usernames', data.username));
             // Delete user doc
@@ -752,6 +754,9 @@ window.createEvidenceShare = async function(snapshot) {
     if (!currentUser) throw new Error('Sign in to create a share link.');
     const id = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
     await setDoc(doc(db, 'evidenceShares', id), { ...snapshot, uid: currentUser.uid, createdAt: Date.now() });
+    // Private list of this writer's share links, so account deletion can remove them
+    // (share links can't be searched for). Kept in the owner-only evidence area.
+    await setDoc(doc(db, 'users', currentUser.uid, 'evidence', '_shares'), { ids: arrayUnion(id) }, { merge: true });
     return id;
 };
 window.updateEvidenceShare = async function(id, snapshot) {
@@ -761,7 +766,45 @@ window.updateEvidenceShare = async function(id, snapshot) {
 window.deleteEvidenceShare = async function(id) {
     if (!currentUser) throw new Error('Sign in to stop sharing.');
     await deleteDoc(doc(db, 'evidenceShares', id));
+    try { await setDoc(doc(db, 'users', currentUser.uid, 'evidence', '_shares'), { ids: arrayRemove(id) }, { merge: true }); } catch (e) {}
 };
+
+// Every cloud document belonging to this writer that sits outside the user doc:
+// chapters, Writing Record figures, and Writing Record share links.
+async function collectOwnedDocRefs(uid) {
+    const refs = [];
+    const writingSnap  = await getDocs(collection(db, 'users', uid, 'writing'));
+    writingSnap.docs.forEach(d => refs.push(d.ref));
+    const evidenceSnap = await getDocs(collection(db, 'users', uid, 'evidence'));
+    const shareIds = new Set();
+    evidenceSnap.docs.forEach(d => {
+        if (d.id === '_shares') (d.data().ids || []).forEach(i => shareIds.add(i));
+        refs.push(d.ref);
+    });
+    // Share links created on this device (also covers any made before the list existed)
+    for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('dpRecordShare_')) { const v = localStorage.getItem(k); if (v) shareIds.add(v); }
+    }
+    return { refs, shareIds: [...shareIds] };
+}
+
+// Remove share links one at a time: one that's already gone (or isn't this
+// writer's) is refused by the rules, and must not stop everything else.
+async function deleteShareLinks(ids) {
+    for (const id of ids) {
+        try { await deleteDoc(doc(db, 'evidenceShares', id)); } catch (e) { /* already gone */ }
+    }
+}
+
+// Firestore batches hold at most 500 writes, so delete in chunks
+async function deleteInBatches(refs) {
+    for (let i = 0; i < refs.length; i += 400) {
+        const batch = writeBatch(db);
+        refs.slice(i, i + 400).forEach(r => batch.delete(r));
+        await batch.commit();
+    }
+}
 window.getEvidenceShare = async function(id) {
     const snap = await getDoc(doc(db, 'evidenceShares', id));
     return snap.exists() ? snap.data() : null;
