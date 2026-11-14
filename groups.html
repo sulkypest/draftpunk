@@ -107,7 +107,21 @@
 
                 <!-- My groups -->
                 <div style="margin-bottom:30px;">
-                    <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">MY GROUPS</span>
+                    <div class="grp-section-head">
+                        <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">MY GROUPS</span>
+                        <button id="grpNewBtn" class="grp-new-btn" onclick="toggleNewGroup()">＋ NEW GROUP</button>
+                    </div>
+                    <div id="grpNewPanel" class="grp-new-panel" style="display:none;">
+                        <label for="grpNewName" class="grp-label">GROUP NAME</label>
+                        <input type="text" id="grpNewName" maxlength="60" placeholder="e.g. Thursday writers">
+                        <div class="grp-label" style="margin-top:12px;">ADD FRIENDS</div>
+                        <div id="grpNewPicker"></div>
+                        <div class="grp-new-foot">
+                            <button type="button" onclick="createGroupHere()">CREATE GROUP</button>
+                            <button type="button" class="grp-cancel-btn" onclick="toggleNewGroup(false)">CANCEL</button>
+                        </div>
+                        <p id="grpNewMsg" class="grp-new-msg" role="status"></p>
+                    </div>
                     <div style="display:flex;gap:4px;margin-top:8px;margin-bottom:8px;">
                         <button class="lb-period-btn-g grp-period-btn lb-period-active" data-gperiod="week"  onclick="setGroupPeriod('week')">THIS WEEK</button>
                         <button class="lb-period-btn-g grp-period-btn" data-gperiod="month" onclick="setGroupPeriod('month')">THIS MONTH</button>
@@ -149,6 +163,7 @@
     <script src="theme.js"></script>
     <script src="sidebar.js"></script>
     <script src="backup.js"></script>
+    <script src="friend-picker.js"></script>
     <script src="groups.js"></script>
     <script type="module" src="sync.js"></script>
     <script>

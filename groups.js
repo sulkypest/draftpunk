@@ -88,7 +88,7 @@ function renderMyGroups() {
     const container = document.getElementById('myGroupsList');
     if (!container) return;
     if (!_myGroups.length) {
-        container.innerHTML = '<div class="lb-empty">YOU\'RE NOT IN ANY GROUPS YET — CREATE ONE IN <a href="messages.html" style="color:inherit;">MESSAGES</a></div>';
+        container.innerHTML = '<div class="lb-empty">YOU\'RE NOT IN ANY GROUPS YET — USE ＋ NEW GROUP TO START ONE WITH YOUR FRIENDS</div>';
         return;
     }
     const field = PERIOD_FIELD[groupPeriod] || 'totalWords';
@@ -96,7 +96,7 @@ function renderMyGroups() {
     container.innerHTML = _myGroups.map(g => {
         const rows = (_groupStats[g.id] || []).slice().sort((a, b) => (b[field] || 0) - (a[field] || 0));
         const total = rows.reduce((s, r) => s + (r[field] || 0), 0);
-        return `<div class="grp-card">
+        return `<div class="grp-card" data-id="${esc(g.id)}">
             <div class="grp-head">
                 <span class="grp-name">${esc(g.name)}</span>
                 <span class="grp-total">${total.toLocaleString()} WDS TOGETHER</span>
@@ -324,4 +324,41 @@ window.doRemoveFriend = async function(uid, username) {
     if (!confirm('Remove ' + username + ' from friends?')) return;
     const result = await window.removeFriend(uid);
     if (result.success) loadFriends();
+};
+
+// ── Create a group here ───────────────────────────────────────────────────────
+const GROUP_MAX = 12;
+
+let _newGroupPicker = null;
+window.toggleNewGroup = function(show) {
+    const panel = document.getElementById('grpNewPanel');
+    const open = show === undefined ? panel.style.display === 'none' : show;
+    panel.style.display = open ? '' : 'none';
+    document.getElementById('grpNewMsg').textContent = '';
+    if (!open) return;
+    const friends = _friendsData.map(f => ({ uid: f.uid, username: f.username }));
+    if (!_newGroupPicker) _newGroupPicker = createFriendPicker(document.getElementById('grpNewPicker'), { friends, max: GROUP_MAX - 1 });
+    else _newGroupPicker.setFriends(friends, []);
+    document.getElementById('grpNewName').focus();
+};
+
+window.createGroupHere = async function() {
+    const name   = document.getElementById('grpNewName').value.trim();
+    const picked = _newGroupPicker ? _newGroupPicker.getSelected() : [];
+    const msg    = document.getElementById('grpNewMsg');
+    if (!name)          { msg.textContent = 'GIVE THE GROUP A NAME'; return; }
+    if (!picked.length) { msg.textContent = 'CHOOSE AT LEAST ONE FRIEND'; return; }
+    if (picked.length > GROUP_MAX - 1) { msg.textContent = 'A GROUP CAN HAVE UP TO 12 PEOPLE INCLUDING YOU'; return; }
+    msg.textContent = 'CREATING...';
+    const r = await window.createGroup(name, picked);
+    if (r && r.success) {
+        document.getElementById('grpNewName').value = '';
+        if (_newGroupPicker) _newGroupPicker.reset();
+        toggleNewGroup(false);
+        await loadMyGroups();
+        const card = document.querySelector(`.grp-card[data-id="${CSS.escape(r.id)}"]`);
+        if (card) { card.classList.add('grp-card-new'); card.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    } else {
+        msg.textContent = (r && r.error) || 'COULD NOT CREATE THE GROUP';
+    }
 };

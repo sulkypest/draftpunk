@@ -1970,3 +1970,48 @@ body.record-page { display: block; padding: 0 16px 40px; }
 .grp-total { font-size: 0.62rem; letter-spacing: 1px; opacity: 0.6; }
 .grp-chat { font-size: 0.62rem; letter-spacing: 1px; color: var(--text); border: 1px solid var(--border); padding: 4px 8px; text-decoration: none; }
 .grp-chat:hover { border-color: var(--neon); color: var(--neon); }
+
+/* ── Writing Groups: create a group ─────────────────────────────────────────── */
+.grp-section-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.grp-new-btn { width: auto; padding: 7px 12px; font-size: 0.68rem; letter-spacing: 1px; }
+.grp-new-panel { border: 1px solid var(--border); padding: 12px; margin: 10px 0; }
+.grp-new-panel input[type=text] { width: 100%; box-sizing: border-box; }
+.grp-label { display: block; font-size: 0.65rem; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 6px; }
+.grp-new-foot { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.grp-new-foot button { width: auto; padding: 8px 14px; font-size: 0.7rem; }
+.grp-new-msg { flex: 1; font-size: 0.7rem; letter-spacing: 1px; color: var(--text); margin: 0; }
+.grp-cancel-btn { background: transparent !important; color: var(--text) !important; border: 1px solid var(--border) !important; }
+.grp-card-new { border-color: var(--neon); }
+.grp-new-panel .grp-new-msg { margin-top: 8px; }
+@media (max-width: 700px) { #groupsContent { padding-bottom: 90px; } }
+
+/* ── Friend picker (search to add) ──────────────────────────────────────────── */
+.fp { position: relative; }
+.fp-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.fp-chips:empty { display: none; }
+.fp-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 4px 4px 10px;
+    border: 1px solid var(--neon); color: var(--text); font-size: 0.78rem; text-transform: none;
+}
+.fp-chip button {
+    width: auto !important; min-height: 0 !important; padding: 2px 6px !important; margin: 0 !important;
+    background: transparent !important; color: var(--text) !important; border: none !important; font-size: 0.75rem; cursor: pointer;
+}
+.fp-chip button:hover { color: #ff4500 !important; }
+.fp-input { width: 100%; box-sizing: border-box; text-transform: none; }
+.fp-list {
+    border: 1px solid var(--border); border-top: none; background: var(--panel);
+    display: flex; flex-direction: column; max-height: 300px; overflow-y: auto;
+}
+.fp-list[hidden] { display: none; }
+.fp-opt {
+    text-align: left; width: 100% !important; margin: 0 !important; padding: 10px 12px !important;
+    background: transparent !important; color: var(--text) !important; border: none !important;
+    border-bottom: 1px solid var(--border-light, var(--border)) !important;
+    font-size: 0.82rem; text-transform: none; letter-spacing: 0; cursor: pointer; min-height: 40px;
+}
+.fp-opt:hover, .fp-opt.active { background: var(--neon) !important; color: var(--panel) !important; }
+.fp-more, .fp-empty { font-size: 0.7rem; color: var(--text-dim); padding: 8px 12px; letter-spacing: 1px; }
+.fp-note { font-size: 0.65rem; color: var(--text-dim); letter-spacing: 1px; margin-top: 4px; min-height: 1em; }
+.fp-list { max-height: none; overflow: visible; }
+.fp-opt { min-height: 36px; padding: 8px 12px !important; }

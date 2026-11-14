@@ -65,7 +65,8 @@ async function loadFriends() {
             ? '<option value="">— CHOOSE A FRIEND —</option>' + _friends.map(f => `<option value="${escapeAttr(f.uid)}">${escapeHtml(f.username)}</option>`).join('')
             : '<option value="">NO FRIENDS YET — ADD THEM IN WRITING GROUPS</option>';
     }
-    renderFriendPicker('newGroupFriends', []);
+    if (_newGroupPicker) _newGroupPicker.setFriends(friendList(), []);
+    if (_addPicker && currentGroup()) _addPicker.setFriends(friendList(), currentGroup().members || []);
     if (_open) renderThread();
 }
 
@@ -185,26 +186,21 @@ window.startConversation = function() {
 };
 
 // ── New group ─────────────────────────────────────────────────────────────────
-function renderFriendPicker(containerId, exclude) {
-    const el = document.getElementById(containerId);
-    if (!el) return;
-    const options = _friends.filter(f => !exclude.includes(f.uid));
-    el.innerHTML = options.length
-        ? options.map(f => `<label class="msg-check"><input type="checkbox" value="${escapeAttr(f.uid)}" data-name="${escapeAttr(f.username)}"> ${escapeHtml(f.username)}</label>`).join('')
-        : '<p class="msg-hint">No friends to add. Add friends on the Writing Groups page.</p>';
-}
+let _newGroupPicker = null, _addPicker = null, _addPickerGroup = null;
+function friendList() { return _friends.map(f => ({ uid: f.uid, username: f.username })); }
 
 window.showNewGroup = function() {
     document.getElementById('newMsgPicker').style.display = 'none';
     const p = document.getElementById('newGroupPanel');
     p.style.display = p.style.display === 'none' ? '' : 'none';
-    renderFriendPicker('newGroupFriends', []);
+    if (!_newGroupPicker) _newGroupPicker = createFriendPicker(document.getElementById('newGroupPicker'), { friends: friendList(), max: GROUP_MAX - 1 });
+    else _newGroupPicker.setFriends(friendList(), []);
     document.getElementById('newGroupMsg').textContent = '';
 };
 
 window.createNewGroup = async function() {
     const name   = document.getElementById('newGroupName').value.trim();
-    const picked = [...document.querySelectorAll('#newGroupFriends input:checked')].map(i => ({ uid: i.value, username: i.dataset.name }));
+    const picked = _newGroupPicker ? _newGroupPicker.getSelected() : [];
     const msg    = document.getElementById('newGroupMsg');
     if (!name)          { msg.textContent = 'GIVE THE GROUP A NAME'; return; }
     if (!picked.length) { msg.textContent = 'CHOOSE AT LEAST ONE FRIEND'; return; }
@@ -214,6 +210,7 @@ window.createNewGroup = async function() {
     if (r && r.success) {
         document.getElementById('newGroupPanel').style.display = 'none';
         document.getElementById('newGroupName').value = '';
+        if (_newGroupPicker) _newGroupPicker.reset();
         msg.textContent = '';
         _pendingOpenGroup = r.id;
         openFromHash();
@@ -225,7 +222,8 @@ function showThreadView() {
     document.getElementById('convListView').style.display = 'none';
     document.getElementById('threadView').style.display   = '';
     document.getElementById('composeMsg').textContent = '';
-    document.getElementById('groupPanel').style.display = 'none';
+    const panel = document.getElementById('groupPanel');
+    panel.style.display = 'none'; panel.dataset.group = ''; _addPicker = null; _addPickerGroup = null;
 }
 
 window.openThread = function(uid) {
@@ -349,32 +347,40 @@ window.toggleGroupPanel = function() {
 function renderGroupPanel() {
     const g = currentGroup();
     if (!g) return;
+    const panel = document.getElementById('groupPanel');
     const isOwner = g.ownerId === _me;
+    // Build the panel once per group; live updates only refresh the parts that
+    // change, so a half-chosen list of friends or a rename in progress survives
+    if (panel.dataset.group !== g.id || panel.dataset.owner !== String(isOwner)) {
+        panel.dataset.group = g.id; panel.dataset.owner = String(isOwner);
+        panel.innerHTML = `<div class="msg-label">MEMBERS</div><div id="groupMembers"></div>` +
+            (isOwner ? `<div class="msg-label msg-gap">RENAME</div>
+                <div class="msg-picker-row"><input type="text" id="groupRename" maxlength="60" value="${escapeAttr(g.name)}"><button onclick="renameGroup()">SAVE</button></div>
+                <div class="msg-label msg-gap" id="groupAddLabel">ADD FRIENDS</div>
+                <div id="groupAddPicker"></div>
+                <button class="msg-small" id="groupAddBtn" onclick="addMembers()">ADD CHOSEN</button>
+                <div class="msg-danger"><button class="msg-small danger" onclick="deleteThisGroup()">DELETE GROUP</button>
+                <span class="msg-hint">Deletes the group and all its messages for everyone.</span></div>`
+            : '<div class="msg-danger"><button class="msg-small danger" onclick="leaveThisGroup()">LEAVE GROUP</button></div>') +
+            '<p id="groupPanelMsg" class="msg-status"></p>';
+        _addPicker = null; _addPickerGroup = null;
+    }
     const names = g.memberNames || {};
-    const keepChecked = new Set([...document.querySelectorAll('#groupAddFriends input:checked')].map(i => i.value));
-    const renameDraft = document.getElementById('groupRename') ? document.getElementById('groupRename').value : null;
-    const rows = (g.members || []).map(uid => `<div class="msg-member">
+    document.getElementById('groupMembers').innerHTML = (g.members || []).map(uid => `<div class="msg-member">
         <span>${escapeHtml(names[uid] || '?')}${uid === g.ownerId ? ' <em>(created the group)</em>' : ''}${uid === _me ? ' <em>(you)</em>' : ''}</span>
         ${isOwner && uid !== _me ? `<button class="msg-small" onclick="removeMember('${escapeAttr(uid)}')">REMOVE</button>` : ''}
     </div>`).join('');
-    let html = `<div class="msg-label">MEMBERS</div>${rows}`;
     if (isOwner) {
         const room = GROUP_MAX - (g.members || []).length;
-        html += `<div class="msg-label msg-gap">RENAME</div>
-            <div class="msg-picker-row"><input type="text" id="groupRename" maxlength="60" value="${escapeAttr(renameDraft != null ? renameDraft : g.name)}"><button onclick="renameGroup()">SAVE</button></div>
-            <div class="msg-label msg-gap">ADD FRIENDS ${room > 0 ? `(UP TO ${room} MORE)` : '(GROUP IS FULL)'}</div>
-            <div id="groupAddFriends" class="msg-checks"></div>
-            ${room > 0 ? '<button class="msg-small" onclick="addMembers()">ADD SELECTED</button>' : ''}
-            <div class="msg-danger"><button class="msg-small danger" onclick="deleteThisGroup()">DELETE GROUP</button>
-            <span class="msg-hint">Deletes the group and all its messages for everyone.</span></div>`;
-    } else {
-        html += '<div class="msg-danger"><button class="msg-small danger" onclick="leaveThisGroup()">LEAVE GROUP</button></div>';
-    }
-    html += '<p id="groupPanelMsg" class="msg-status"></p>';
-    document.getElementById('groupPanel').innerHTML = html;
-    if (isOwner) {
-        renderFriendPicker('groupAddFriends', g.members || []);
-        document.querySelectorAll('#groupAddFriends input').forEach(i => { if (keepChecked.has(i.value)) i.checked = true; });
+        document.getElementById('groupAddLabel').textContent = room > 0 ? `ADD FRIENDS (UP TO ${room} MORE)` : 'ADD FRIENDS (GROUP IS FULL)';
+        document.getElementById('groupAddBtn').style.display = room > 0 ? '' : 'none';
+        document.getElementById('groupAddPicker').style.display = room > 0 ? '' : 'none';
+        if (!_addPicker || _addPickerGroup !== g.id) {
+            _addPicker = createFriendPicker(document.getElementById('groupAddPicker'), { friends: friendList(), exclude: g.members || [], max: Math.max(1, room) });
+            _addPickerGroup = g.id;
+        } else {
+            _addPicker.setFriends(friendList(), g.members || []);
+        }
     }
 }
 
@@ -389,10 +395,11 @@ window.renameGroup = async function() {
 };
 window.addMembers = async function() {
     const g = currentGroup(); if (!g) return;
-    const picked = [...document.querySelectorAll('#groupAddFriends input:checked')].map(i => ({ uid: i.value, username: i.dataset.name }));
-    if (!picked.length) return;
+    const picked = _addPicker ? _addPicker.getSelected() : [];
+    if (!picked.length) { panelMsg('CHOOSE SOMEONE TO ADD'); return; }
     if ((g.members || []).length + picked.length > GROUP_MAX) { panelMsg(`A GROUP CAN HAVE UP TO ${GROUP_MAX} PEOPLE`); return; }
     const r = await window.updateGroup(g.id, { members: [...groupMembersList(g), ...picked] });
+    if (r && r.success) { _addPicker = null; _addPickerGroup = null; }
     panelMsg(r && r.success ? 'ADDED' : (r && r.error) || 'COULD NOT ADD');
 };
 window.removeMember = async function(uid) {
