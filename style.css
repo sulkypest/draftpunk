@@ -1167,6 +1167,7 @@ body {
 
 .write-toolbar {
     display: flex;
+    align-items: center;
     gap: 4px;
     padding: 6px 10px;
     background: var(--panel2);
@@ -1191,8 +1192,85 @@ body {
     border-color: var(--border-mid);
 }
 
+/* Clear formatting: neutral like the other format buttons, so it can't be
+   mistaken for the red ✕ that deletes a chapter */
 .write-tb-clear {
-    color: #ff4444;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: bold;
+}
+.write-tb-clear sub {
+    font-family: inherit;
+    font-size: 0.65em;
+    font-weight: normal;
+    vertical-align: -0.25em;
+    line-height: 0;
+    text-transform: none;
+}
+
+.write-tb-undo {
+    font-size: 1rem;
+    line-height: 1;
+    min-width: 32px;
+    -webkit-tap-highlight-color: transparent;
+}
+.write-tb-undo:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+/* Bigger, easier targets on touch screens */
+@media (pointer: coarse) {
+    .write-tb-undo {
+        min-width: 44px;
+        min-height: 36px;
+        font-size: 1.15rem;
+    }
+}
+
+/* Toolbar layout: buttons sit in groups that never split across lines.
+   Wide: one row — undo/redo | formatting | text sizes ........ SYNC
+   Narrow: editing tools on top; text sizes and SYNC on their own strip below */
+.write-chapter-body { container-type: inline-size; }
+.write-tb-row,
+.write-tb-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+}
+.write-tb-row-view {
+    flex: 1;
+    gap: 8px;
+    padding-left: 8px;
+    margin-left: 4px;
+    border-left: 1px solid var(--border);
+}
+.write-tb-row-view .write-tb-sync { margin-left: auto; }
+
+@container (max-width: 560px) {
+    .write-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 0;
+    }
+    .write-tb-row { padding: 6px 10px; }
+    .write-tb-row-edit { flex-wrap: wrap; row-gap: 6px; }
+    .write-tb-row-view {
+        margin-left: 0;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        justify-content: space-between;
+    }
+    /* SYNC goes to the left of the strip so it never sits under Clear formatting */
+    .write-tb-row-view .write-tb-sync { order: -1; margin-left: 0; }
+}
+/* Very small phones: tighten spacing so editing tools stay on one line */
+@container (max-width: 300px) {
+    .write-tb-row { padding: 6px 8px; }
+    .write-tb-row-edit, .write-tb-group { gap: 3px; }
+    .write-tb-row-edit .write-tb-btn { padding: 3px 6px; }
+    .write-tb-undo { min-width: 36px !important; }
+    .write-tb-row-edit .write-tb-sep { margin: 3px 1px; }
 }
 
 .write-tb-sep {
@@ -1255,10 +1333,15 @@ body {
     color: var(--neon);
 }
 
+/* The editor itself is included so a chapter's opening paragraph (which the
+   browser stores as bare text, not in a block) is indented like the rest */
+.write-area,
 .write-area p,
 .write-area div {
     text-indent: 2em;
 }
+.write-area h2,
+.write-area h3 { text-indent: 0; }
 
 .write-area h2 {
     font-family: 'Courier New', monospace;
@@ -1597,3 +1680,93 @@ body.write-focus .write-focus-bar {
     color: var(--neon);
 }
 
+
+/* ── Writing Record ─────────────────────────────────────────────────────────── */
+.write-record-link {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    color: var(--text);
+    text-decoration: none;
+    letter-spacing: 1px;
+    font-size: 0.8rem;
+    box-sizing: border-box;
+}
+.write-record-link:hover { border-color: var(--neon); color: var(--neon); }
+
+body.record-page { display: block; padding: 0 16px 40px; }
+.record-topbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 4px;
+}
+.record-back {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+}
+.record-back:hover { color: var(--neon); }
+.record-app { max-width: 820px; margin: 0 auto; }
+.record-kicker { font-size: 0.65rem; letter-spacing: 3px; color: var(--text-dim); }
+.record-title { margin: 6px 0 4px; word-break: break-word; }
+.record-meta { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 1px; }
+.record-muted { font-size: 0.75rem; color: var(--text-dim); line-height: 1.5; }
+.record-headline { display: flex; align-items: baseline; gap: 14px; margin: 28px 0 12px; flex-wrap: wrap; }
+.record-big { font-size: 3.2rem; font-weight: 900; color: var(--neon); line-height: 1; }
+.record-big-label { font-size: 0.9rem; max-width: 460px; line-height: 1.4; }
+.record-bar { display: flex; height: 12px; border: 1px solid var(--border); overflow: hidden; }
+.record-bar .seg { display: block; height: 100%; }
+.seg.typed, .sw.typed       { background: var(--neon); }
+.seg.pasted, .sw.pasted     { background: repeating-linear-gradient(45deg, var(--text-dim) 0 3px, transparent 3px 6px); }
+.seg.imported, .sw.imported { background: var(--border); }
+.record-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.72rem; margin-top: 8px; letter-spacing: 1px; }
+.record-legend .sw { display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -2px; border: 1px solid var(--border); }
+.record-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+    margin: 22px 0 6px;
+}
+.record-facts > div { border: 1px solid var(--border); padding: 10px 12px; }
+.record-facts b { display: block; font-size: 1.3rem; }
+.record-facts span { display: block; font-size: 0.68rem; color: var(--text-dim); letter-spacing: 1px; margin-top: 4px; line-height: 1.4; }
+.record-h2 { font-size: 0.8rem; letter-spacing: 3px; margin: 34px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.record-days { display: flex; flex-direction: column; gap: 4px; font-size: 0.72rem; }
+.record-day {
+    display: grid;
+    grid-template-columns: 150px 1fr 60px 100px 80px;
+    gap: 10px;
+    align-items: center;
+}
+.rd-bar { height: 8px; background: var(--panel2, transparent); border: 1px solid var(--border); }
+.rd-bar span { display: block; height: 100%; background: var(--neon); }
+.rd-min, .rd-words, .rd-typed { text-align: right; color: var(--text-dim); }
+@media (max-width: 600px) {
+    .record-day { grid-template-columns: 1fr 52px 84px; }
+    .record-day .rd-bar, .record-day .rd-typed { display: none; }
+}
+.record-table-wrap { overflow-x: auto; }
+.record-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+.record-table th { text-align: left; font-size: 0.62rem; letter-spacing: 1px; color: var(--text-dim); font-weight: normal; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.record-table td { padding: 7px 8px; border-bottom: 1px solid var(--border-light, var(--border)); }
+.record-tag { font-size: 0.55rem; letter-spacing: 1px; border: 1px solid var(--border); padding: 1px 4px; }
+.record-about p { font-size: 0.8rem; line-height: 1.6; margin: 0 0 10px; }
+.record-actions { margin-top: 30px; display: flex; flex-direction: column; gap: 12px; }
+.record-share input { width: 100%; margin: 6px 0; box-sizing: border-box; font-size: 0.75rem; }
+.record-share-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.record-share-btns button { flex: 1; min-width: 120px; }
+.record-stop { background: transparent !important; border: 1px solid #ff4444 !important; color: #ff4444 !important; }
+
+@media print {
+    .no-print, .app-nav, .sb-fixed, #mobSideTrigger { display: none !important; }
+    body, body.record-page { background: #fff !important; color: #000 !important; padding: 0 !important; }
+    .record-app { max-width: none; border: none !important; box-shadow: none !important; }
+    .record-page * { color: #000 !important; border-color: #999 !important; }
+    .seg.typed, .sw.typed, .rd-bar span { background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .seg.imported, .sw.imported { background: #bbb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .record-day, .record-table tr { break-inside: avoid; }
+}

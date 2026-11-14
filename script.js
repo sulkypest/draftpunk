@@ -100,8 +100,11 @@ if (state.active !== false && state.total > 0 && (state.xp == null || state.xp <
     state.xp = state.total;
     save();
 }
-// Migrate old 0-indexed month key (e.g. '2026-4') to 1-indexed padded ('2026-05')
-if (state.lastMonthReset && /^\d{4}-\d{1,2}$/.test(state.lastMonthReset)) {
+// Migrate old 0-indexed month key (e.g. '2026-4') to 1-indexed padded ('2026-05').
+// Only unpadded single-digit months are unambiguously old format: the previous
+// pattern also matched current keys like '2026-11', so this "migration" ran on
+// every dashboard load and zeroed the monthly word count.
+if (state.lastMonthReset && /^\d{4}-\d$/.test(state.lastMonthReset)) {
     const parts = state.lastMonthReset.split('-');
     const oldMonth = parseInt(parts[1]);
     if (oldMonth <= 11) {
@@ -125,30 +128,30 @@ function save() {
 }
 
 // ── One-time buddy backfill ───────────────────────────────────────────────────
+function wordRunnerRescued() {
+    try {
+        const wr = JSON.parse(localStorage.getItem('wordRunnerData') || '{}');
+        return Array.isArray(wr.rescued) ? wr.rescued : [];
+    } catch (e) { return []; }
+}
+
 function backfillBuddies() {
+    // One buddy per 5,000 words. (Counts the whole collection, as before, so
+    // this doesn't start adding buddies on page load for existing writers.)
     const expected = Math.floor((state.total || 0) / 5000);
-    if ((state.inventory || []).length >= expected) return;
     state.inventory = state.inventory || [];
+    if (state.inventory.length >= expected) return;
     while (state.inventory.length < expected) {
-        let buddyID, buddyFile, attempts = 0;
-        do {
-            buddyID   = Math.floor(Math.random() * 100) + 1;
-            buddyFile = `buddy${buddyID}.png`;
-            attempts++;
-        } while (state.inventory.includes(buddyFile) && attempts < 200);
-        if (!state.inventory.includes(buddyFile)) state.inventory.push(buddyFile);
-        else break;
+        const file = window.DPTracker.rollNewBuddy(state.inventory);
+        if (!file) break;
+        state.inventory.push(file);
     }
     save();
 }
 
 // ── Period reset (weekly / monthly / yearly counters) ─────────────────────────
 function checkPeriodResets() {
-    let changed = false;
-    if (state.lastWeekReset  !== getWeekKey())  { state.wordsThisWeek  = 0; state.lastWeekReset  = getWeekKey();  changed = true; }
-    if (state.lastMonthReset !== getMonthKey()) { state.wordsThisMonth = 0; state.lastMonthReset = getMonthKey(); changed = true; }
-    if (state.lastYearReset  !== getYearKey())  { state.wordsThisYear  = 0; state.lastYearReset  = getYearKey();  changed = true; }
-    if (changed) save();
+    if (window.DPTracker.applyPeriodResets(state)) save();
 }
 
 // ── Start a new project ───────────────────────────────────────────────────────
@@ -229,50 +232,16 @@ window.addWords = function() {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
 
-    const prevWriterLevel = getWriterLevel(state.xp || 0);
+    // All the tracker rules live in tracker.js, shared with the Write page
+    const ev = window.DPTracker.awardWords(state, val);
 
-    // ── Base XP: 1 per word ───────────────────────────────────────────────────
-    state.xp              = (state.xp || 0) + val;
-    state.total          += val;
-    state.wordsThisWeek   = (state.wordsThisWeek  || 0) + val;
-    state.wordsThisMonth  = (state.wordsThisMonth || 0) + val;
-    state.wordsThisYear   = (state.wordsThisYear  || 0) + val;
-    state.logs.push({ date: new Date().toLocaleDateString(), total: state.total });
+    if (ev.streak)  showCombatToast(`🔥 ${ev.streak.days}-DAY STREAK`, `+${ev.streak.bonus} BONUS XP`, null);
+    if (ev.session) showCombatToast(ev.session.label, `+${ev.session.bonus} BONUS XP`, ev.session.bonus >= 500 ? '💥' : '⚡');
 
-    // ── Daily streak bonus ────────────────────────────────────────────────────
-    const today = getTodayKey();
-    if (state.lastWritingDate !== today) {
-        if (state.lastWritingDate === getYesterdayKey()) {
-            state.currentStreak = (state.currentStreak || 0) + 1;
-        } else {
-            state.currentStreak = 1;
-        }
-        state.lastWritingDate = today;
-        if (state.currentStreak > 1) {
-            const streakBonus = state.currentStreak * 10;
-            state.xp += streakBonus;
-            showCombatToast(`🔥 ${state.currentStreak}-DAY STREAK`, `+${streakBonus} BONUS XP`, null);
-        }
-    }
-
-    // ── Session length bonus ──────────────────────────────────────────────────
-    if (val >= 5000) {
-        state.xp += 500;
-        showCombatToast('MEGA SESSION', '+500 BONUS XP', '💥');
-    } else if (val >= 2000) {
-        state.xp += 250;
-        showCombatToast('LONG SESSION', '+250 BONUS XP', '⚡');
-    }
-
-    // ── Boss beat defeated (award XP for every beat crossed) ─────────────────
-    const progress = (state.total / state.goal) * 100;
-    const newIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
-    if (newIdx > state.lastLevel) {
-        const beatsSkipped = newIdx - state.lastLevel;
-        state.xp += 500 * beatsSkipped;
-        state.lastLevel = newIdx;
-        document.getElementById('bossBeatTitle').innerText = BOSS_BEATS[newIdx].name;
-        document.getElementById('defeatedBossSprite').src = window.getBossImgSrc(newIdx + 1);
+    // ── Boss beat defeated ────────────────────────────────────────────────────
+    if (ev.beat) {
+        document.getElementById('bossBeatTitle').innerText = ev.beat.name;
+        document.getElementById('defeatedBossSprite').src = window.getBossImgSrc(ev.beat.idx + 1);
         document.getElementById('levelOverlay').style.display = 'flex';
         if (window.SFX) SFX.bossDefeated();
         const app = document.querySelector('.app');
@@ -281,22 +250,13 @@ window.addWords = function() {
         app.classList.add('app-shake');
     }
 
-    // ── Buddy found (one per 5000-word threshold crossed) ────────────────────
-    const oldBuddyThreshold = Math.floor((state.total - val) / 5000);
-    const newBuddyThreshold = Math.floor(state.total / 5000);
-    for (let t = oldBuddyThreshold + 1; t <= newBuddyThreshold; t++) {
-        const totalBuddiesAvailable = 100;
-        const buddyID   = Math.floor(Math.random() * totalBuddiesAvailable) + 1;
-        const buddyFile = `buddy${buddyID}.png`;
-        if (!state.inventory.includes(buddyFile)) {
-            state.inventory.push(buddyFile);
-            state.xp += 200;
-            const overlayImg = document.getElementById('newBuddySprite');
-            if (overlayImg) overlayImg.src = `buddies/${buddyFile}`;
-            document.getElementById('buddyOverlay').style.display = 'flex';
-            if (window.SFX) SFX.buddyRescued();
-        }
-    }
+    // ── Buddy found ───────────────────────────────────────────────────────────
+    ev.buddies.forEach(buddyFile => {
+        const overlayImg = document.getElementById('newBuddySprite');
+        if (overlayImg) overlayImg.src = `buddies/${buddyFile}`;
+        document.getElementById('buddyOverlay').style.display = 'flex';
+        if (window.SFX) SFX.buddyRescued();
+    });
 
     const sprite = document.getElementById('bossSprite');
     sprite.classList.remove('hit-shake');
@@ -307,33 +267,28 @@ window.addWords = function() {
     // 1–3% chance of floating damage number
     if (Math.random() < (0.01 + Math.random() * 0.02)) showDamageNumber(val);
 
-    // ── Writer level-up (after all XP awarded this session) ──────────────────
-    const newWriterLevel = getWriterLevel(state.xp);
-    if (newWriterLevel > prevWriterLevel) {
-        const rankName  = RANKS[newWriterLevel - 1] || 'AUTHOR';
-        const tier      = Math.min(5, Math.ceil(newWriterLevel / 5));
+    // ── Writer level-up ───────────────────────────────────────────────────────
+    if (ev.levelUp) {
+        const tier      = Math.min(5, Math.ceil(ev.levelUp.level / 5));
         const shield    = document.getElementById('levelUpShield');
         shield.src      = `shields/${tier}.png`;
         shield.classList.remove('shield-pop');
         void shield.offsetWidth; // reflow to restart animation
         shield.classList.add('shield-pop');
-        document.getElementById('levelUpNumber').innerText = newWriterLevel;
-        document.getElementById('levelUpRank').innerText   = rankName;
+        document.getElementById('levelUpNumber').innerText = ev.levelUp.level;
+        document.getElementById('levelUpRank').innerText   = ev.levelUp.rank;
         document.getElementById('levelUpOverlay').style.display = 'flex';
         if (window.SFX) SFX.levelUp();
     }
 
     // ── Minion encounters ─────────────────────────────────────────────────────
-    const newMinionIdx = MINIONS.findLastIndex(m => progress >= m.pct);
-    if (newMinionIdx > (state.lastMinionIdx ?? -1)) {
-        state.lastMinionIdx = newMinionIdx;
-        const minion = MINIONS[newMinionIdx];
+    if (ev.minion) {
         const labels = ['HENCHMAN DEFEATED', 'MINION SUBDUED', 'FOE VANQUISHED', 'OBSTACLE CRUSHED'];
-        const label  = labels[newMinionIdx % labels.length];
-        const mKey   = 'MonsterV' + (newMinionIdx + 1);
+        const label  = labels[ev.minion.idx % labels.length];
+        const mKey   = 'MonsterV' + (ev.minion.idx + 1);
         const mData  = window.gameManifest && window.gameManifest.monsters[mKey];
         const mSprite = mData && mData.Idle && mData.Idle[0] ? mData.Idle[0] : null;
-        showCombatToast(label, minion.name, minion.emoji, minion.taunt, mSprite);
+        showCombatToast(label, ev.minion.name, ev.minion.emoji, ev.minion.taunt, mSprite);
         if (window.SFX) SFX.minionDefeated();
     }
 
@@ -371,9 +326,13 @@ window.applyCorrection = function() {
     state.lastLevel = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
 
     // Recalculate buddy count — 1 buddy per 5000 words, capped at inventory earned
+    // Word Runner sprint rescues are earned separately and are never removed.
     const expectedBuddies = Math.floor(newTotal / 5000);
-    if (state.inventory.length > expectedBuddies) {
-        state.inventory = state.inventory.slice(0, expectedBuddies);
+    const rescued = wordRunnerRescued();
+    const earned  = state.inventory.filter(b => !rescued.includes(b));
+    if (earned.length > expectedBuddies) {
+        const keepEarned = earned.slice(0, expectedBuddies);
+        state.inventory = state.inventory.filter(b => rescued.includes(b) || keepEarned.includes(b));
     }
 
     save(); updateUI(); updateGraph();

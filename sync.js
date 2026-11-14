@@ -729,6 +729,44 @@ window.pullWritingFromCloud = async function(projectId) {
     } catch (err) { console.error('Writing pull error:', err); return null; }
 };
 
+// ── Writing Record (evidence of how text was entered) ─────────────────────────
+// Each device writes only its own figures (devices.<deviceId>), merged into one
+// document per chapter, so devices never overwrite each other.
+window.pushEvidenceToCloud = async function(chapterId, meta, deviceId, counters) {
+    if (!currentUser) return;
+    try {
+        await setDoc(doc(db, 'users', currentUser.uid, 'evidence', chapterId),
+            { ...meta, devices: { [deviceId]: counters }, updatedAt: Date.now() }, { merge: true });
+    } catch (err) { console.warn('Writing Record push error:', err); }
+};
+
+window.pullEvidenceFromCloud = async function(projectId) {
+    if (!currentUser) return null;
+    const snap = await getDocs(collection(db, 'users', currentUser.uid, 'evidence'));
+    return snap.docs.map(d => ({ ...d.data(), id: d.id })).filter(d => d.projectId === projectId);
+};
+
+// Read-only share links: a snapshot of the report (figures only, no chapter
+// text) that anyone with the link can view.
+window.createEvidenceShare = async function(snapshot) {
+    if (!currentUser) throw new Error('Sign in to create a share link.');
+    const id = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
+    await setDoc(doc(db, 'evidenceShares', id), { ...snapshot, uid: currentUser.uid, createdAt: Date.now() });
+    return id;
+};
+window.updateEvidenceShare = async function(id, snapshot) {
+    if (!currentUser) throw new Error('Sign in to update the share link.');
+    await setDoc(doc(db, 'evidenceShares', id), { ...snapshot, uid: currentUser.uid, createdAt: Date.now() });
+};
+window.deleteEvidenceShare = async function(id) {
+    if (!currentUser) throw new Error('Sign in to stop sharing.');
+    await deleteDoc(doc(db, 'evidenceShares', id));
+};
+window.getEvidenceShare = async function(id) {
+    const snap = await getDoc(doc(db, 'evidenceShares', id));
+    return snap.exists() ? snap.data() : null;
+};
+
 window.getCurrentUsername = async function() {
     if (!currentUser) return null;
     const snap = await getDoc(doc(db, 'users', currentUser.uid));

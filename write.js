@@ -27,6 +27,7 @@ function init() {
         writingData = { projectId: activeProjectId, chapters: [] };
     }
 
+    reconcileSyncLedger();
     renderAll();
     updateFooter();
 
@@ -37,13 +38,26 @@ function init() {
             if (!e.target.classList.contains('write-area')) return;
             e.preventDefault();
             const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            if (window.DPEvidence) window.DPEvidence.notePaste(e.target.id.replace('cheditor_', ''), text);
             document.execCommand('insertText', false, text);
         }, true);
+        list.addEventListener('beforeinput', onEditorBeforeInput, true);
     }
 }
 
 function saveMeta() {
-    localStorage.setItem('writingData', JSON.stringify(writingData));
+    const json = JSON.stringify(writingData);
+    try {
+        localStorage.setItem('writingData', json);
+    } catch (e) {
+        // Browser storage is full. The chapter text matters most: free the
+        // Writing Record's local copy (backed up to the cloud for signed-in
+        // writers) and try again. Either way, carry on so the cloud save
+        // still happens.
+        if (window.DPEvidence) window.DPEvidence.dropLocal();
+        try { localStorage.setItem('writingData', json); }
+        catch (e2) { console.error('Local save failed (storage full):', e2); setSaveStatus && setSaveStatus('local-only'); }
+    }
 }
 
 function makeId() {
@@ -84,7 +98,17 @@ window.deleteChapter = function(id) {
     writingData.chapters = writingData.chapters.filter(c => c.id !== id);
     writingData.chapters.forEach((c, i) => c.order = i);
     saveMeta();
+    // Its counted words leave the ledger (the tracker total itself is unchanged)
+    if (ch.syncedWords) {
+        const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+        const proj   = dpData.projects && dpData.projects[activeProjectId];
+        if (proj && proj.writeWords !== undefined) {
+            proj.writeWords = Math.max(0, proj.writeWords - ch.syncedWords);
+            localStorage.setItem('draftPunkData', JSON.stringify(dpData));
+        }
+    }
     if (window.deleteWritingChapterFromCloud) window.deleteWritingChapterFromCloud(id);
+    if (window.DPEvidence) window.DPEvidence.removeChapter(id);
     renderAll();
     updateFooter();
 };
@@ -118,63 +142,115 @@ window.promptMoveChapter = function(id) {
     renderAll();
 };
 
-window.syncChapter = function(id) {
-    const ch = writingData.chapters.find(c => c.id === id);
-    if (!ch) return;
-    const delta = (ch.wordCount || 0) - (ch.syncedWords || 0);
-    if (delta <= 0) { showWriteToast(null, 'ALREADY SYNCED', ch.title.toUpperCase()); return; }
-    if (!confirm(`Add ${delta.toLocaleString()} words from "${ch.title}" to your tracker?`)) return;
+window.syncChapter = function(id) { syncChaptersToTracker([id]); };
 
+// ── Counted-words ledger ──────────────────────────────────────────────────────
+// Each chapter's syncedWords is how many of its words are already on the
+// tracker. Both SYNC routes (per chapter, and the footer button for all
+// chapters) use it, so the same words can never be counted twice.
+// proj.writeWords (synced to the cloud with the project) is the total of those
+// figures, and is used to repair chapter figures that arrive stale from another
+// device.
+function unsyncedWords(ch) {
+    return Math.max(0, (ch.wordCount || 0) - (ch.syncedWords || 0));
+}
+
+// Bring chapter syncedWords up to the project's recorded total. Only ever
+// raises chapter figures (so nothing already counted is offered again) and only
+// writes the chapter list locally — it never changes the project or its totals.
+function reconcileSyncLedger() {
+    if (!writingData || !writingData.chapters.length) return;
     const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
-    if (!dpData.activeProjectId || !dpData.projects) return;
-    const proj = dpData.projects[dpData.activeProjectId];
+    const proj   = dpData.projects && dpData.projects[activeProjectId];
     if (!proj) return;
 
-    const oldTotal     = proj.total || 0;
-    const oldLastLevel = proj.lastLevel ?? -1;
-    proj.inventory     = proj.inventory || [];
-    proj.total          = oldTotal + delta;
-    proj.xp             = (proj.xp || 0) + delta;
-    proj.wordsThisWeek  = (proj.wordsThisWeek  || 0) + delta;
-    proj.wordsThisMonth = (proj.wordsThisMonth || 0) + delta;
-    proj.wordsThisYear  = (proj.wordsThisYear  || 0) + delta;
-    proj.logs           = proj.logs || [];
-    proj.logs.push({ date: new Date().toLocaleDateString(), total: proj.total });
-    proj.writeWords     = (proj.writeWords || 0) + delta;
-
-    const goal        = proj.goal || 80000;
-    const newProgress = (proj.total / goal) * 100;
-    const newLevelIdx = BOSS_BEATS.findLastIndex(b => newProgress >= b.pct);
-    if (newLevelIdx > oldLastLevel) {
-        const beatsSkipped = newLevelIdx - oldLastLevel;
-        proj.xp += 500 * beatsSkipped;
-        proj.lastLevel = newLevelIdx;
-        const beat = BOSS_BEATS[newLevelIdx];
-        setTimeout(() => showWriteToast(window.getBossImgSrc ? window.getBossImgSrc(newLevelIdx) : `bosses/${newLevelIdx}.png`, 'BEAT DEFEATED', beat.name.toUpperCase()), 400);
+    const synced = writingData.chapters.reduce((s, c) => s + (c.syncedWords || 0), 0);
+    let target;
+    if (proj.writeWords !== undefined) {
+        target = proj.writeWords;
+    } else if (synced === 0) {
+        // Never synced from Write: the old footer button treated words already
+        // on the tracker as covering the Write page, so keep that baseline.
+        const written = writingData.chapters.reduce((s, c) => s + (c.wordCount || 0), 0);
+        target = Math.min(proj.total || 0, written);
+    } else {
+        return;
     }
+    let remaining = target - synced;
+    if (remaining <= 0) return;
+    writingData.chapters
+        .slice().sort((a, b) => (a.order || 0) - (b.order || 0))
+        .forEach(ch => {
+            if (remaining <= 0) return;
+            const add = Math.min(unsyncedWords(ch), remaining);
+            if (add > 0) { ch.syncedWords = (ch.syncedWords || 0) + add; remaining -= add; }
+        });
+    saveMeta();
+}
 
-    const oldBuddyThreshold = Math.floor(oldTotal / 5000);
-    const newBuddyThreshold = Math.floor(proj.total / 5000);
-    for (let t = oldBuddyThreshold + 1; t <= newBuddyThreshold; t++) {
-        const buddyID   = Math.floor(Math.random() * 100) + 1;
-        const buddyFile = `buddy${buddyID}.png`;
-        if (!proj.inventory.includes(buddyFile)) {
-            proj.inventory.push(buddyFile);
-            proj.xp += 200;
-            setTimeout(() => showWriteToast(`buddies/${buddyFile}`, 'NEW BUDDY!', 'CHECK YOUR COLLECTION'), 800);
+function syncChaptersToTracker(ids) {
+    const chapters = writingData.chapters.filter(c => ids.includes(c.id) && unsyncedWords(c) > 0);
+    const delta    = chapters.reduce((s, c) => s + unsyncedWords(c), 0);
+    if (delta <= 0) {
+        if (ids.length === 1) {
+            const ch = writingData.chapters.find(c => c.id === ids[0]);
+            showWriteToast(null, 'ALREADY SYNCED', ch ? ch.title.toUpperCase() : '');
         }
+        return;
     }
+    const label = ids.length === 1 && chapters.length === 1 ? ` from "${chapters[0].title}"` : '';
+    if (!confirm(`Add ${delta.toLocaleString()} words${label} to your tracker?`)) return;
 
-    proj.updatedAt = Date.now();
+    const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+    if (!dpData.activeProjectId || !dpData.projects) { alert('No active project found.'); return; }
+    const proj = dpData.projects[dpData.activeProjectId];
+    if (!proj) { alert('No active project found.'); return; }
+
+    const ev = window.DPTracker.awardWords(proj, delta);
+
+    chapters.forEach(ch => { ch.syncedWords = ch.wordCount || 0; });
+    proj.writeWords = writingData.chapters.reduce((s, c) => s + (c.syncedWords || 0), 0);
+    proj.updatedAt  = Date.now();
     dpData.projects[dpData.activeProjectId] = proj;
     localStorage.setItem('draftPunkData', JSON.stringify(dpData));
 
-    ch.syncedWords = ch.wordCount || 0;
     saveMeta();
+    chapters.forEach(ch => pushChapter(ch));
     updateFooter();
     renderAll();
-    showWriteToast(null, '✓ SYNCED', `${delta.toLocaleString()} WORDS ADDED`);
-};
+    if (window.updateSidebar) window.updateSidebar();
+
+    // Show what happened, one toast at a time
+    queueToast(null, '✓ SYNCED', `${delta.toLocaleString()} WORDS ADDED`);
+    if (ev.streak)  queueToast(null, `🔥 ${ev.streak.days}-DAY STREAK`, `+${ev.streak.bonus} BONUS XP`);
+    if (ev.session) queueToast(null, ev.session.label, `+${ev.session.bonus} BONUS XP`);
+    if (ev.beat)    queueToast(window.getBossImgSrc ? window.getBossImgSrc(ev.beat.idx + 1) : null, 'BEAT DEFEATED', ev.beat.name.toUpperCase());
+    ev.buddies.forEach(f => queueToast(`buddies/${f}`, 'NEW BUDDY!', 'CHECK YOUR COLLECTION'));
+    if (ev.minion)  queueToast(null, `${ev.minion.emoji} FOE VANQUISHED`, ev.minion.name.toUpperCase());
+    if (ev.levelUp) queueToast(`shields/${Math.min(5, Math.ceil(ev.levelUp.level / 5))}.png`, `LEVEL ${ev.levelUp.level}!`, ev.levelUp.rank.toUpperCase());
+}
+
+let _toastQueue = [], _toastBusy = false;
+function queueToast(sprite, title, sub) {
+    _toastQueue.push([sprite, title, sub]);
+    if (_toastBusy) return;
+    _toastBusy = true;
+    (function next() {
+        const t = _toastQueue.shift();
+        if (!t) { _toastBusy = false; return; }
+        showWriteToast(t[0], t[1], t[2]);
+        setTimeout(next, _toastQueue.length ? 2200 : 0);
+    })();
+}
+
+function pushChapter(ch) {
+    if (!window.pushWritingChapterToCloud) return;
+    window.pushWritingChapterToCloud({
+        id: ch.id, title: ch.title, content: ch.content,
+        order: ch.order, wordCount: ch.wordCount, syncedWords: ch.syncedWords || 0,
+        projectId: activeProjectId, updatedAt: ch.updatedAt
+    });
+}
 
 window.renameChapter = function(id, newTitle) {
     const ch = writingData.chapters.find(c => c.id === id);
@@ -196,7 +272,7 @@ function renderAll() {
     if (!container) return;
 
     container.innerHTML = writingData.chapters.map(ch => {
-        const synced = (ch.syncedWords || 0) >= (ch.wordCount || 0);
+        const synced = unsyncedWords(ch) === 0;
         return `
             <div class="write-chapter" id="chap_${ch.id}">
                 <div class="write-chapter-header" onclick="toggleChapter('${ch.id}')">
@@ -225,23 +301,37 @@ function renderAll() {
                 </div>
                 <div class="write-chapter-body">
                     <div class="write-toolbar">
-                        <button class="write-tb-btn" onpointerdown="event.preventDefault(); document.execCommand('bold')"      title="Bold"><b>B</b></button>
-                        <button class="write-tb-btn" onpointerdown="event.preventDefault(); document.execCommand('italic')"    title="Italic"><em>I</em></button>
-                        <button class="write-tb-btn" onpointerdown="event.preventDefault(); document.execCommand('underline')" title="Underline"><u>U</u></button>
-                        <button class="write-tb-btn" onpointerdown="event.preventDefault(); applyHeading('${ch.id}')"          title="Scene heading">H2</button>
-                        <button class="write-tb-btn write-tb-clear" onpointerdown="event.preventDefault(); document.execCommand('removeFormat')" title="Clear formatting">✕</button>
-                        <span class="write-tb-sep"></span>
-                        <button class="write-fs-btn${currentFontSize==='sm'?' active':''}" onpointerdown="event.preventDefault()" onclick="setFontSize('sm')" title="Small text">A</button>
-                        <button class="write-fs-btn${currentFontSize==='md'?' active':''}" onpointerdown="event.preventDefault()" onclick="setFontSize('md')" title="Medium text" style="font-size:0.9rem;">A</button>
-                        <button class="write-fs-btn${currentFontSize==='lg'?' active':''}" onpointerdown="event.preventDefault()" onclick="setFontSize('lg')" title="Large text" style="font-size:1.1rem;">A</button>
-                        <button class="write-tb-btn write-tb-sync${synced ? ' synced' : ''}" onpointerdown="event.preventDefault()"
-                            onclick="syncChapter('${ch.id}')" title="Sync this chapter to tracker">⊕ SYNC</button>
+                        <div class="write-tb-row write-tb-row-edit">
+                            <div class="write-tb-group">
+                                <button class="write-tb-btn write-tb-undo" id="undoBtn_${ch.id}" onpointerdown="event.preventDefault()"
+                                    onclick="undoChapter('${ch.id}')" title="Undo" aria-label="Undo" disabled>↶</button>
+                                <button class="write-tb-btn write-tb-undo" id="redoBtn_${ch.id}" onpointerdown="event.preventDefault()"
+                                    onclick="redoChapter('${ch.id}')" title="Redo" aria-label="Redo" disabled>↷</button>
+                            </div>
+                            <span class="write-tb-sep"></span>
+                            <div class="write-tb-group">
+                                <button class="write-tb-btn" onpointerdown="event.preventDefault(); document.execCommand('bold')"      title="Bold"><b>B</b></button>
+                                <button class="write-tb-btn" onpointerdown="event.preventDefault(); document.execCommand('italic')"    title="Italic"><em>I</em></button>
+                                <button class="write-tb-btn" onpointerdown="event.preventDefault(); document.execCommand('underline')" title="Underline"><u>U</u></button>
+                                <button class="write-tb-btn" onpointerdown="event.preventDefault(); applyHeading('${ch.id}')"          title="Scene heading">H2</button>
+                                <button class="write-tb-btn write-tb-clear" onpointerdown="event.preventDefault(); document.execCommand('removeFormat')" title="Clear formatting" aria-label="Clear formatting">T<sub>x</sub></button>
+                            </div>
+                        </div>
+                        <div class="write-tb-row write-tb-row-view">
+                            <div class="write-tb-group write-tb-sizes">
+                                <button class="write-fs-btn${currentFontSize==='sm'?' active':''}" onpointerdown="event.preventDefault()" onclick="setFontSize('sm')" title="Small text">A</button>
+                                <button class="write-fs-btn${currentFontSize==='md'?' active':''}" onpointerdown="event.preventDefault()" onclick="setFontSize('md')" title="Medium text" style="font-size:0.9rem;">A</button>
+                                <button class="write-fs-btn${currentFontSize==='lg'?' active':''}" onpointerdown="event.preventDefault()" onclick="setFontSize('lg')" title="Large text" style="font-size:1.1rem;">A</button>
+                            </div>
+                            <button class="write-tb-btn write-tb-sync${synced ? ' synced' : ''}" onpointerdown="event.preventDefault()"
+                                onclick="syncChapter('${ch.id}')" title="Sync this chapter to tracker">⊕ SYNC</button>
+                        </div>
                     </div>
                     <div class="write-area"
                          contenteditable="true"
                          id="cheditor_${ch.id}"
                          spellcheck="true"
-                         oninput="onEditorInput('${ch.id}')"
+                         oninput="onEditorInput('${ch.id}', event)"
                          onfocus="onEditorFocus('${ch.id}')"></div>
                 </div>
             </div>`;
@@ -251,14 +341,266 @@ function renderAll() {
     writingData.chapters.forEach(ch => {
         const editor = document.getElementById('cheditor_' + ch.id);
         if (!editor) return;
-        const clean = sanitizeHtml(ch.content || '');
+        const raw   = ch.content || '';
+        const clean = sanitizeHtml(raw);
         editor.innerHTML = clean;
         if (clean !== ch.content) { ch.content = clean; }
+        if (window.DPEvidence) {
+            try { window.DPEvidence.attach(ch.id, activeProjectId, editor); } catch (err) { console.warn('Writing Record:', err); }
+        }
+        syncHistoryAfterRender(ch.id, raw, clean);
+    });
+    // Drop history for chapters that no longer exist
+    Object.keys(undoHistories).forEach(id => {
+        if (!writingData.chapters.some(c => c.id === id)) delete undoHistories[id];
     });
 }
 
+// ── Undo / redo ───────────────────────────────────────────────────────────────
+// Each chapter keeps its own history in memory (never written to storage).
+// The browser's built-in undo is unreliable here: phones offer no undo control
+// for contenteditable, and renderAll() replaces the editors, which wipes the
+// native undo stack. Restoring a state goes through the normal save path.
+const UNDO_MAX_STEPS   = 100;   // per chapter
+const UNDO_IDLE_MS     = 1000;  // a pause in typing starts a new undo step
+const UNDO_MAX_STEP_MS = 4000;  // long uninterrupted bursts are split up
+const UNDO_BIG_CHANGE  = 30;    // characters; larger single changes get their own step
+const undoHistories    = {};
+
+function newHistory(html) {
+    return {
+        stack: [{ html: html, caret: null, caretBefore: null, sealed: true }],
+        index: 0,
+        lastInputAt: 0,
+        stepStartedAt: 0,
+        lastCategory: null,
+        forceNext: false,
+        pendingBoundary: false,
+        lastSelBefore: null
+    };
+}
+
+// After renderAll() rebuilds an editor, keep its history if the content is the
+// state we already know about; otherwise (e.g. newer content arrived from the
+// cloud) start a fresh history so undo can never resurrect stale text.
+function syncHistoryAfterRender(id, raw, clean) {
+    const h = undoHistories[id];
+    if (h && h.stack[h.index].html === raw) {
+        h.stack[h.index].html = clean;
+        h.forceNext = true;
+    } else if (!h || h.stack[h.index].html !== clean) {
+        undoHistories[id] = newHistory(clean);
+    }
+    updateUndoButtons(id);
+}
+
+function updateUndoButtons(id) {
+    const h = undoHistories[id];
+    const u = document.getElementById('undoBtn_' + id);
+    const r = document.getElementById('redoBtn_' + id);
+    if (u) u.disabled = !h || h.index <= 0;
+    if (r) r.disabled = !h || h.index >= h.stack.length - 1;
+}
+
+// Caret position as a plain-text character offset within the editor
+function getCaretOffset(editor, useStart) {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return null;
+    const range = sel.getRangeAt(0);
+    if (!editor.contains(range.startContainer)) return null;
+    const pre = document.createRange();
+    pre.selectNodeContents(editor);
+    if (useStart) pre.setEnd(range.startContainer, range.startOffset);
+    else          pre.setEnd(range.endContainer, range.endOffset);
+    return pre.toString().length;
+}
+
+function rangeAtOffset(editor, offset) {
+    const range  = document.createRange();
+    const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+    let remaining = offset, node, last = null;
+    while ((node = walker.nextNode())) {
+        last = node;
+        if (remaining <= node.length) {
+            range.setStart(node, remaining);
+            range.collapse(true);
+            return range;
+        }
+        remaining -= node.length;
+    }
+    if (last) range.setStart(last, last.length);
+    else      range.setStart(editor, editor.childNodes.length);
+    range.collapse(true);
+    return range;
+}
+
+function placeCaret(editor, offset) {
+    if (offset == null) return;
+    const range = rangeAtOffset(editor, offset);
+    // Only move the selection if the writer is in this editor — on phones,
+    // setting a selection elsewhere can pop the keyboard up unexpectedly.
+    if (document.activeElement === editor) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+    // Bring the restored spot into view so the writer can see what changed
+    let rect = range.getBoundingClientRect();
+    if (!rect || (rect.top === 0 && rect.bottom === 0)) {
+        const el = range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer;
+        if (el && el.getBoundingClientRect) rect = el.getBoundingClientRect();
+    }
+    if (!rect) return;
+    const scroller = editor.scrollHeight > editor.clientHeight + 1 ? editor : null;
+    if (scroller) {
+        const box = scroller.getBoundingClientRect();
+        if (rect.top < box.top + 20 || rect.bottom > box.bottom - 20) {
+            scroller.scrollTop += rect.top - box.top - box.height / 3;
+        }
+    } else {
+        const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        if (rect.top < 80 || rect.bottom > vh - 40) {
+            window.scrollBy(0, rect.top - vh / 3);
+        }
+    }
+}
+
+function inputCategory(type) {
+    if (!type) return 'other';
+    if (type.startsWith('delete')) return 'delete';
+    if (type === 'insertText' || type === 'insertCompositionText') return 'type';
+    return type;
+}
+
+// Called before the browser applies a change (not fired for execCommand)
+function onEditorBeforeInput(e) {
+    const editor = e.target.closest && e.target.closest('.write-area');
+    if (!editor) return;
+    const id = editor.id.replace('cheditor_', '');
+    const type = e.inputType || '';
+
+    // Route the browser's own undo/redo (Edit menu, iOS shake, keyboard
+    // shortcuts that slip past keydown) through our history instead
+    if (type === 'historyUndo' || type === 'historyRedo') {
+        e.preventDefault();
+        if (type === 'historyUndo') undoChapter(id); else redoChapter(id);
+        return;
+    }
+
+    const h = undoHistories[id];
+    if (!h) return;
+    const sel = window.getSelection();
+    const hasSelection = sel && sel.rangeCount && !sel.getRangeAt(0).collapsed;
+    h.lastSelBefore = getCaretOffset(editor, true);
+    if (hasSelection ||
+        type === 'deleteByCut' || type === 'deleteByDrag' ||
+        type === 'insertFromPaste' || type === 'insertFromDrop' ||
+        type === 'insertReplacementText' || type.startsWith('format') ||
+        type.startsWith('deleteWord') || type.startsWith('deleteSoftLine') ||
+        type.startsWith('deleteHardLine') || type === 'deleteEntireSoftLine') {
+        h.pendingBoundary = true;
+    }
+
+    // A line break the writer didn't ask for (e.g. some phone keyboards send one
+    // for Return) becomes a new paragraph so it gets its indent. Shift+Enter on
+    // a physical keyboard still gives a deliberate soft line break.
+    if (type === 'insertLineBreak' && Date.now() - lastShiftEnterAt > 500) {
+        e.preventDefault();
+        document.execCommand('insertParagraph');
+    }
+}
+
+let lastShiftEnterAt = 0;
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.shiftKey) lastShiftEnterAt = Date.now();
+}, true);
+
+function recordHistory(id, editor, html, inputType) {
+    let h = undoHistories[id];
+    if (!h) { h = undoHistories[id] = newHistory(html); updateUndoButtons(id); return; }
+
+    const now      = Date.now();
+    const cur      = h.stack[h.index];
+    if (cur.html === html) return;
+    const category = inputCategory(inputType);
+    const big      = Math.abs(html.length - cur.html.length) > UNDO_BIG_CHANGE;
+    const boundary = h.pendingBoundary || big || (category !== 'type' && category !== 'delete');
+    const caret    = getCaretOffset(editor, false);
+
+    const startNew = cur.sealed || h.forceNext || boundary ||
+                     category !== h.lastCategory ||
+                     now - h.lastInputAt > UNDO_IDLE_MS ||
+                     now - h.stepStartedAt > UNDO_MAX_STEP_MS;
+
+    if (startNew) {
+        h.stack.length = h.index + 1;            // a new edit discards any redo steps
+        h.stack.push({
+            html: html,
+            caret: caret,
+            caretBefore: h.lastSelBefore != null ? h.lastSelBefore : cur.caret,
+            sealed: boundary                     // big/structural changes stay a single step
+        });
+        h.index = h.stack.length - 1;
+        h.stepStartedAt = now;
+        if (h.stack.length > UNDO_MAX_STEPS) {
+            h.stack.shift();
+            h.stack[0].sealed = true;
+            h.index--;
+        }
+    } else {
+        cur.html  = html;
+        cur.caret = caret;
+    }
+
+    h.lastInputAt     = now;
+    h.lastCategory    = category;
+    h.forceNext       = false;
+    h.pendingBoundary = false;
+    h.lastSelBefore   = null;
+    updateUndoButtons(id);
+}
+
+function restoreHistoryStep(id, newIndex, caretOffset) {
+    const h      = undoHistories[id];
+    const editor = document.getElementById('cheditor_' + id);
+    if (!h || !editor) return;
+    h.index     = newIndex;
+    h.forceNext = true;                          // next keystroke starts a fresh step
+    editor.innerHTML = h.stack[newIndex].html;
+    if (window.DPEvidence) window.DPEvidence.resync(id, editor);   // restored text isn't new writing
+    commitEditorContent(id);
+    placeCaret(editor, caretOffset);
+    updateUndoButtons(id);
+}
+
+window.undoChapter = function(id) {
+    const h = undoHistories[id];
+    if (!h || h.index <= 0) return;
+    const from = h.stack[h.index];
+    restoreHistoryStep(id, h.index - 1,
+        from.caretBefore != null ? from.caretBefore : h.stack[h.index - 1].caret);
+};
+
+window.redoChapter = function(id) {
+    const h = undoHistories[id];
+    if (!h || h.index >= h.stack.length - 1) return;
+    restoreHistoryStep(id, h.index + 1, h.stack[h.index + 1].caret);
+};
+
 // ── Editor events ─────────────────────────────────────────────────────────────
-window.onEditorInput = function(id) {
+window.onEditorInput = function(id, e) {
+    const editor = document.getElementById('cheditor_' + id);
+    if (!editor) return;
+    recordHistory(id, editor, editor.innerHTML, e && e.inputType);
+    if (window.DPEvidence) {
+        try { window.DPEvidence.recordInput(id, activeProjectId, editor, e && e.inputType); }
+        catch (err) { console.warn('Writing Record:', err); }
+    }
+    commitEditorContent(id);
+};
+
+// Save the editor's current content: word counts, local storage, cloud
+function commitEditorContent(id) {
     const editor = document.getElementById('cheditor_' + id);
     if (!editor) return;
 
@@ -335,10 +677,7 @@ function countWords(html) {
 // ── Footer ────────────────────────────────────────────────────────────────────
 function updateFooter() {
     const total   = writingData.chapters.reduce((s, c) => s + (c.wordCount || 0), 0);
-    const dpData  = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
-    const proj    = dpData.projects && dpData.projects[activeProjectId];
-    const tracked = (proj && proj.writeWords !== undefined) ? proj.writeWords : (proj && proj.total || 0);
-    const delta   = total - tracked;
+    const delta   = writingData.chapters.reduce((s, c) => s + unsyncedWords(c), 0);
 
     const totalEl = document.getElementById('writeTotalWords');
     if (totalEl) totalEl.textContent = 'TOTAL: ' + total.toLocaleString() + ' WORDS';
@@ -359,63 +698,7 @@ function updateFooter() {
 
 // ── Sync to tracker ───────────────────────────────────────────────────────────
 window.syncToTracker = function() {
-    const total  = writingData.chapters.reduce((s, c) => s + (c.wordCount || 0), 0);
-    const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
-    if (!dpData.activeProjectId || !dpData.projects) { alert('No active project found.'); return; }
-    const proj = dpData.projects[dpData.activeProjectId];
-    if (!proj) { alert('No active project found.'); return; }
-
-    // Use proj.writeWords as the baseline (survives device switches).
-    // On first use, fall back to proj.total so we don't re-count already-tracked words.
-    const tracked = (proj.writeWords !== undefined) ? proj.writeWords : (proj.total || 0);
-    const delta   = total - tracked;
-    if (delta <= 0) return;
-    if (!confirm('Add ' + delta.toLocaleString() + ' words to your Draft Punk tracker?')) return;
-
-    const oldTotal     = proj.total || 0;
-    const oldLastLevel = proj.lastLevel ?? -1;
-    proj.inventory     = proj.inventory || [];
-
-    proj.total          = oldTotal + delta;
-    proj.xp             = (proj.xp || 0) + delta;
-    proj.wordsThisWeek  = (proj.wordsThisWeek  || 0) + delta;
-    proj.wordsThisMonth = (proj.wordsThisMonth || 0) + delta;
-    proj.wordsThisYear  = (proj.wordsThisYear  || 0) + delta;
-    proj.logs           = proj.logs || [];
-    proj.logs.push({ date: new Date().toLocaleDateString(), total: proj.total });
-    proj.writeWords     = total;
-
-    // Boss beat check
-    const goal        = proj.goal || 80000;
-    const newProgress = (proj.total / goal) * 100;
-    const newLevelIdx = BOSS_BEATS.findLastIndex(b => newProgress >= b.pct);
-    if (newLevelIdx > oldLastLevel) {
-        const beatsSkipped = newLevelIdx - oldLastLevel;
-        proj.xp += 500 * beatsSkipped;
-        proj.lastLevel = newLevelIdx;
-        const beat = BOSS_BEATS[newLevelIdx];
-        setTimeout(() => showWriteToast(window.getBossImgSrc ? window.getBossImgSrc(newLevelIdx) : `bosses/${newLevelIdx}.png`, 'BEAT DEFEATED', beat.name.toUpperCase()), 400);
-    }
-
-    // Buddy check — loop through every 5000-word threshold crossed
-    const oldBuddyThreshold = Math.floor(oldTotal / 5000);
-    const newBuddyThreshold = Math.floor(proj.total / 5000);
-    for (let t = oldBuddyThreshold + 1; t <= newBuddyThreshold; t++) {
-        const buddyID   = Math.floor(Math.random() * 100) + 1;
-        const buddyFile = `buddy${buddyID}.png`;
-        if (!proj.inventory.includes(buddyFile)) {
-            proj.inventory.push(buddyFile);
-            proj.xp += 200;
-            setTimeout(() => showWriteToast(`buddies/${buddyFile}`, 'NEW BUDDY!', 'CHECK YOUR COLLECTION'), 800);
-        }
-    }
-
-    proj.updatedAt = Date.now();
-    dpData.projects[dpData.activeProjectId] = proj;
-    localStorage.setItem('draftPunkData', JSON.stringify(dpData));
-
-    updateFooter();
-    showWriteToast(null, '✓ SYNCED', delta.toLocaleString() + ' WORDS ADDED');
+    syncChaptersToTracker(writingData.chapters.map(c => c.id));
 };
 
 // ── Write screen toast notifications ─────────────────────────────────────────
@@ -579,13 +862,21 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         saveAllNow();
     }
+    // Undo / redo shortcuts inside a chapter use the app's own history
+    const editor = e.target && e.target.closest && e.target.closest('.write-area');
+    if (editor && (e.metaKey || e.ctrlKey) && !e.altKey) {
+        const key = e.key.toLowerCase();
+        const id  = editor.id.replace('cheditor_', '');
+        if (key === 'z' && !e.shiftKey) { e.preventDefault(); undoChapter(id); }
+        else if ((key === 'z' && e.shiftKey) || key === 'y') { e.preventDefault(); redoChapter(id); }
+    }
 });
 
 function saveAllNow() {
     saveMeta();
     setSaveStatus('saving');
     const promises = writingData.chapters.map(ch => {
-        if (window.pushWritingChapterToCloud) return window.pushWritingChapterToCloud(ch);
+        if (window.pushWritingChapterToCloud) return window.pushWritingChapterToCloud({ ...ch, projectId: activeProjectId });
         return Promise.resolve();
     });
     Promise.all(promises).then(() => setSaveStatus('saved')).catch(() => setSaveStatus('saved'));
@@ -700,7 +991,7 @@ function scheduleCloudSave(ch) {
             try {
                 await window.pushWritingChapterToCloud({
                     id: ch.id, title: ch.title, content: ch.content,
-                    order: ch.order, wordCount: ch.wordCount,
+                    order: ch.order, wordCount: ch.wordCount, syncedWords: ch.syncedWords || 0,
                     projectId: activeProjectId, updatedAt: ch.updatedAt
                 });
                 setSaveStatus('saved');
@@ -723,7 +1014,7 @@ window.addEventListener('beforeunload', () => {
         const ch = writingData && writingData.chapters.find(c => c.id === id);
         if (ch) window.pushWritingChapterToCloud({
             id: ch.id, title: ch.title, content: ch.content,
-            order: ch.order, wordCount: ch.wordCount,
+            order: ch.order, wordCount: ch.wordCount, syncedWords: ch.syncedWords || 0,
             projectId: activeProjectId, updatedAt: ch.updatedAt
         });
     });
@@ -731,13 +1022,18 @@ window.addEventListener('beforeunload', () => {
 
 // On sign-in: compare local vs cloud timestamps and use the newer version
 document.addEventListener('dpAuthChanged', async function(e) {
+    if (e.detail.user && window.pullEvidenceFromCloud && window.DPEvidence) {
+        window.pullEvidenceFromCloud(activeProjectId)
+            .then(docs => { if (docs) window.DPEvidence.mergeFromCloud(docs); })
+            .catch(err => console.warn('Writing Record pull failed:', err));
+    }
     if (!e.detail.user || !window.pullWritingFromCloud) return;
     const cloudChapters = await window.pullWritingFromCloud(activeProjectId);
     if (!cloudChapters || cloudChapters.length === 0) {
         // Nothing in cloud — push whatever we have locally
         if (writingData.chapters.length > 0) {
             writingData.chapters.forEach(ch => {
-                if (window.pushWritingChapterToCloud) window.pushWritingChapterToCloud(ch);
+                if (window.pushWritingChapterToCloud) window.pushWritingChapterToCloud({ ...ch, projectId: activeProjectId });
             });
         }
         return;
@@ -749,13 +1045,14 @@ document.addEventListener('dpAuthChanged', async function(e) {
     if (cloudMax > localMax) {
         writingData.chapters = cloudChapters;
         saveMeta();
+        reconcileSyncLedger();
         renderAll();
         updateFooter();
         setSaveStatus('saved');
     } else {
         // Local is newer — push all chapters to cloud to ensure it's current
         writingData.chapters.forEach(ch => {
-            if (window.pushWritingChapterToCloud) window.pushWritingChapterToCloud(ch);
+            if (window.pushWritingChapterToCloud) window.pushWritingChapterToCloud({ ...ch, projectId: activeProjectId });
         });
     }
 });
@@ -820,13 +1117,14 @@ window.importStory = function(e) {
                 id, title: ch.title || ('Chapter ' + (order + 1)),
                 order, wordCount: wc, content: html, updatedAt: Date.now() + i
             });
+            if (window.DPEvidence) window.DPEvidence.recordNewChapter(id, activeProjectId, lines.join(''), 'import');
         });
         writingData.chapters.forEach((c, i) => c.order = i);
         saveMeta();
         renderAll();
         updateFooter();
         if (window.pushWritingChapterToCloud) {
-            writingData.chapters.slice(-chapters.length).forEach(ch => window.pushWritingChapterToCloud(ch));
+            writingData.chapters.slice(-chapters.length).forEach(ch => window.pushWritingChapterToCloud({ ...ch, projectId: activeProjectId }));
         }
         showWriteToast(null, '✓ IMPORTED', count + ' CHAPTER' + (count !== 1 ? 'S' : '') + ' ADDED');
     };

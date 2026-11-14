@@ -124,6 +124,7 @@ window.startSprint = function() {
     sprint.active = true;
 
     document.getElementById('sprintText').value = '';
+    sprintPastedChars = 0;
     document.getElementById('sprintTargetDisplay').innerText = sprint.target.toLocaleString();
     document.getElementById('sprintWordCount').innerText = '0';
     document.getElementById('sprintBar').style.width = '0%';
@@ -305,6 +306,11 @@ window.addSprintToWrite = function() {
 
     writingData.chapters.push(ch);
     localStorage.setItem('writingData', JSON.stringify(writingData));
+    // Writing Record: sprint text was typed here, apart from anything pasted in
+    if (window.DPEvidence) {
+        try { window.DPEvidence.recordNewChapter(ch.id, projId, text.replace(/\n/g, ''), 'sprint', sprintPastedChars); }
+        catch (e) { console.warn('Writing Record:', e); }
+    }
     // Push to cloud immediately — writingData is not in DATA_KEYS so the normal
     // schedulePush path won't do it, and sign-out before visiting Write would lose it.
     if (window.pushWritingChapterToCloud) {
@@ -331,3 +337,11 @@ function updateWRUI() {
 }
 
 window.onload = function() { updateWRUI(); };
+
+// ── Writing Record: count text pasted into the sprint box ─────────────────────
+let sprintPastedChars = 0;
+document.addEventListener('paste', function(e) {
+    if (!e.target || e.target.id !== 'sprintText') return;
+    const t = (e.clipboardData || window.clipboardData).getData('text/plain') || '';
+    sprintPastedChars += t.replace(/\n/g, '').length;
+}, true);

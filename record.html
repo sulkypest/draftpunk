@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WRITING RECORD — Draft Punk</title>
+    <link rel="icon" href="DRAFTPUNK.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <script src="sentry.js"></script>
+</head>
+<body class="record-page sb-ready">
+
+    <div class="record-topbar no-print">
+        <a href="write.html" id="recordBack" class="record-back">← BACK TO WRITE</a>
+        <a href="index.html" id="recordMadeWith" class="record-back" style="display:none;">MADE WITH DRAFT PUNK</a>
+    </div>
+
+    <div class="app record-app">
+        <div id="recordRoot">
+            <p class="record-muted">LOADING…</p>
+        </div>
+
+        <div id="recordActions" class="record-actions no-print" style="display:none;">
+            <button onclick="window.print()">⎙ PRINT / SAVE AS PDF</button>
+            <div id="recordShareBox" class="record-share"></div>
+        </div>
+    </div>
+
+    <script src="theme.js"></script>
+    <script src="evidence.js"></script>
+    <script src="record.js"></script>
+    <script type="module" src="sync.js"></script>
+</body>
+</html>
