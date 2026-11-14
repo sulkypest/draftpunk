@@ -826,6 +826,18 @@ async function collectOwnedDocRefs(uid) {
     const refs = [];
     const writingSnap  = await getDocs(collection(db, 'users', uid, 'writing'));
     writingSnap.docs.forEach(d => refs.push(d.ref));
+    // Private copy of notes/projects (privacy migration) and the version index
+    const privateSnap  = await getDocs(collection(db, 'users', uid, 'private'));
+    const chapterIds   = new Set(writingSnap.docs.map(d => d.id));
+    privateSnap.docs.forEach(d => {
+        if (d.id === 'versionIndex') (d.data().chapterIds || []).forEach(c => chapterIds.add(c));
+        refs.push(d.ref);
+    });
+    // Saved versions of every chapter, including chapters since deleted
+    for (const cid of chapterIds) {
+        const vs = await getDocs(collection(db, 'users', uid, 'writing', cid, 'versions'));
+        vs.docs.forEach(d => refs.push(d.ref));
+    }
     const evidenceSnap = await getDocs(collection(db, 'users', uid, 'evidence'));
     const shareIds = new Set();
     evidenceSnap.docs.forEach(d => {
@@ -859,6 +871,27 @@ async function deleteInBatches(refs) {
 window.getEvidenceShare = async function(id) {
     const snap = await getDoc(doc(db, 'evidenceShares', id));
     return snap.exists() ? snap.data() : null;
+};
+
+// ── Version history (owner-only, under each chapter) ──────────────────────────
+// users/{uid}/writing/{chapterId}/versions/{versionId}. A private index of
+// chapters that have versions is kept so account deletion can find versions
+// of chapters that were themselves deleted.
+window.pushVersionToCloud = async function(chapterId, v) {
+    if (!currentUser) return false;
+    const { stored, ...data } = v;
+    await setDoc(doc(db, 'users', currentUser.uid, 'writing', chapterId, 'versions', v.id), data);
+    try { await setDoc(doc(db, 'users', currentUser.uid, 'private', 'versionIndex'), { chapterIds: arrayUnion(chapterId) }, { merge: true }); } catch (e) {}
+    return true;
+};
+window.listCloudVersions = async function(chapterId) {
+    if (!currentUser) return [];
+    const snap = await getDocs(collection(db, 'users', currentUser.uid, 'writing', chapterId, 'versions'));
+    return snap.docs.map(d => d.data());
+};
+window.deleteCloudVersion = async function(chapterId, versionId) {
+    if (!currentUser) return;
+    await deleteDoc(doc(db, 'users', currentUser.uid, 'writing', chapterId, 'versions', versionId));
 };
 
 window.getCurrentUsername = async function() {

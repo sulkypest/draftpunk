@@ -95,6 +95,7 @@ window.deleteChapter = function(id) {
     const ch = writingData.chapters.find(c => c.id === id);
     if (!ch) return;
     if (!confirm('Delete "' + ch.title + '"? This cannot be undone.')) return;
+    if (window.DPVersions) window.DPVersions.saveDeleted(id, ch.content || '', activeProjectId);
     writingData.chapters = writingData.chapters.filter(c => c.id !== id);
     writingData.chapters.forEach((c, i) => c.order = i);
     saveMeta();
@@ -323,6 +324,8 @@ function renderAll() {
                                 <button class="write-fs-btn${currentFontSize==='md'?' active':''}" onpointerdown="event.preventDefault()" onclick="setFontSize('md')" title="Medium text" style="font-size:0.9rem;">A</button>
                                 <button class="write-fs-btn${currentFontSize==='lg'?' active':''}" onpointerdown="event.preventDefault()" onclick="setFontSize('lg')" title="Large text" style="font-size:1.1rem;">A</button>
                             </div>
+                            <button class="write-tb-btn write-tb-history" onpointerdown="event.preventDefault()"
+                                onclick="openVersionHistory('${ch.id}')" title="Version history">⟲ HISTORY</button>
                             <button class="write-tb-btn write-tb-sync${synced ? ' synced' : ''}" onpointerdown="event.preventDefault()"
                                 onclick="syncChapter('${ch.id}')" title="Sync this chapter to tracker">⊕ SYNC</button>
                         </div>
@@ -332,7 +335,8 @@ function renderAll() {
                          id="cheditor_${ch.id}"
                          spellcheck="true"
                          oninput="onEditorInput('${ch.id}', event)"
-                         onfocus="onEditorFocus('${ch.id}')"></div>
+                         onfocus="onEditorFocus('${ch.id}')"
+                         onblur="window.DPVersions && DPVersions.sessionEnd('${ch.id}')"></div>
                 </div>
             </div>`;
     }).join('');
@@ -347,6 +351,9 @@ function renderAll() {
         if (clean !== ch.content) { ch.content = clean; }
         if (window.DPEvidence) {
             try { window.DPEvidence.attach(ch.id, activeProjectId, editor); } catch (err) { console.warn('Writing Record:', err); }
+        }
+        if (window.DPVersions) {
+            try { window.DPVersions.attach(ch.id, activeProjectId, editor.innerHTML); } catch (err) { console.warn('Versions:', err); }
         }
         syncHistoryAfterRender(ch.id, raw, clean);
     });
@@ -568,6 +575,7 @@ function restoreHistoryStep(id, newIndex, caretOffset) {
     h.forceNext = true;                          // next keystroke starts a fresh step
     editor.innerHTML = h.stack[newIndex].html;
     if (window.DPEvidence) window.DPEvidence.resync(id, editor);   // restored text isn't new writing
+    if (window.DPVersions) window.DPVersions.resync(id, editor.innerHTML);
     commitEditorContent(id);
     placeCaret(editor, caretOffset);
     updateUndoButtons(id);
@@ -595,6 +603,10 @@ window.onEditorInput = function(id, e) {
     if (window.DPEvidence) {
         try { window.DPEvidence.recordInput(id, activeProjectId, editor, e && e.inputType); }
         catch (err) { console.warn('Writing Record:', err); }
+    }
+    if (window.DPVersions) {
+        try { window.DPVersions.onInput(id, editor.innerHTML); }
+        catch (err) { console.warn('Versions:', err); }
     }
     commitEditorContent(id);
 };
@@ -884,6 +896,30 @@ function saveAllNow() {
 window.saveAllNow = saveAllNow;
 
 // ── Export story as RTF ───────────────────────────────────────────────────────
+// ── Restore a chapter from version history ──────────────────────────────────
+// The current text is saved as a version first (and that save must succeed)
+// before anything is replaced, so a restore can always be undone. The restore
+// is also a single undo step.
+window.restoreChapterVersion = async function(id, html) {
+    const ch     = writingData.chapters.find(c => c.id === id);
+    const editor = document.getElementById('cheditor_' + id);
+    if (!ch || !editor) return false;
+    let saved = null;
+    try { saved = await window.DPVersions.saveBeforeRestore(id, editor.innerHTML); } catch (e) { saved = null; }
+    if (!saved || !saved.stored) {
+        alert('Sorry — your current text couldn\'t be saved as a version first, so nothing was changed.');
+        return false;
+    }
+    editor.innerHTML = sanitizeHtml(html);
+    recordHistory(id, editor, editor.innerHTML, 'restore');
+    if (window.DPEvidence) window.DPEvidence.resync(id, editor);
+    window.DPVersions.resync(id, editor.innerHTML);
+    commitEditorContent(id);
+    updateUndoButtons(id);
+    showWriteToast(null, 'VERSION RESTORED', 'YOUR PREVIOUS TEXT IS IN HISTORY');
+    return true;
+};
+
 // Export lives in export.js; it reads chapters through this getter only.
 window.getExportChapters = function() {
     return writingData && Array.isArray(writingData.chapters) ? writingData.chapters : [];
