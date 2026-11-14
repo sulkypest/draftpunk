@@ -71,30 +71,40 @@
             <!-- Main content -->
             <div id="messagesContent" style="display:none;">
 
-                <!-- Compose -->
-                <div style="margin-bottom:30px;">
-                    <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">NEW MESSAGE</span>
-                    <select id="composeToSelect" style="width:100%;margin-top:8px;margin-bottom:8px;"></select>
-                    <textarea id="composeBody" maxlength="500" placeholder="WRITE YOUR MESSAGE..."
-                        oninput="updateCharCount(this)"
-                        style="width:100%;box-sizing:border-box;height:100px;resize:vertical;
-                               font-family:'Courier New',monospace;font-size:0.85rem;
-                               background:var(--panel);border:1px solid var(--border);
-                               color:var(--text);padding:10px;letter-spacing:1px;"></textarea>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                        <span id="composeMsg" style="font-size:0.75rem;height:1.2em;letter-spacing:1px;"></span>
-                        <span id="composeCharCount" style="font-size:0.65rem;opacity:0.4;letter-spacing:1px;">0 / 500</span>
+                <!-- Conversation list -->
+                <div id="convListView">
+                    <div class="msg-bar">
+                        <span class="msg-bar-title">CONVERSATIONS</span>
+                        <button id="newMsgBtn" class="msg-new-btn" onclick="showNewMessage()">＋ NEW MESSAGE</button>
                     </div>
-                    <button onclick="doSendMessage()" style="width:100%;">⤴ SEND</button>
+                    <div id="newMsgPicker" class="msg-picker" style="display:none;">
+                        <label for="composeToSelect" class="msg-label">MESSAGE A FRIEND</label>
+                        <div class="msg-picker-row">
+                            <select id="composeToSelect"></select>
+                            <button onclick="startConversation()">OPEN</button>
+                        </div>
+                    </div>
+                    <div id="convList" class="msg-conv-list"><div class="lb-loading">LOADING...</div></div>
                 </div>
 
-                <!-- Inbox / Sent tabs -->
-                <div>
-                    <div style="display:flex;gap:4px;margin-bottom:12px;">
-                        <button class="lb-period-btn msg-tab lb-period-active" data-view="inbox"  onclick="setView('inbox')">INBOX</button>
-                        <button class="lb-period-btn msg-tab"                  data-view="sent"   onclick="setView('sent')">SENT</button>
+                <!-- One conversation -->
+                <div id="threadView" style="display:none;">
+                    <div class="msg-bar">
+                        <button class="msg-back" onclick="closeThread()">← ALL CONVERSATIONS</button>
                     </div>
-                    <div id="messagesList"></div>
+                    <div class="msg-thread-name" id="threadName"></div>
+                    <div id="threadMessages" class="msg-thread" aria-live="polite"></div>
+                    <div id="replyBox" class="msg-reply">
+                        <textarea id="composeBody" maxlength="500" placeholder="Write a reply…"
+                            oninput="updateCharCount(this)" onkeydown="replyKey(event)" rows="3"></textarea>
+                        <div class="msg-reply-foot">
+                            <span id="composeMsg" class="msg-status"></span>
+                            <span id="composeCharCount" class="msg-count">0 / 500</span>
+                            <button id="sendBtn" onclick="doSendMessage()">⤴ SEND</button>
+                        </div>
+                        <p class="msg-hint">Ctrl/Cmd + Enter to send</p>
+                    </div>
+                    <p id="replyBlocked" class="msg-hint" style="display:none;">You're no longer friends, so you can't reply in this conversation.</p>
                 </div>
 
             </div>

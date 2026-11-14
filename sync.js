@@ -3,7 +3,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
     getFirestore, doc, setDoc, getDoc, deleteDoc, writeBatch,
-    collection, query, orderBy, limit, where, getDocs, arrayUnion, arrayRemove
+    collection, query, orderBy, limit, where, getDocs, arrayUnion, arrayRemove, onSnapshot
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { initializeAppCheck, ReCaptchaV3Provider }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js';
@@ -945,6 +945,28 @@ window.getSent = async function() {
     } catch (err) {
         return { error: err.message };
     }
+};
+
+// Live view of every message to or from the signed-in writer. Calls back with
+// the full combined list (newest last) whenever anything changes. Read-only.
+// Returns a function that stops listening.
+window.watchMessages = function(callback, onError) {
+    if (!currentUser) return () => {};
+    const uid = currentUser.uid;
+    let incoming = [], outgoing = [], ready = { in: false, out: false };
+    const emit = () => {
+        if (!ready.in || !ready.out) return;
+        const all = [...incoming, ...outgoing];
+        all.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+        callback(all);
+    };
+    const asList = snap => snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const fail = err => { if (onError) onError(err); };
+    const stopIn  = onSnapshot(query(collection(db, 'messages'), where('to', '==', uid)),
+        snap => { incoming = asList(snap); ready.in = true; emit(); }, fail);
+    const stopOut = onSnapshot(query(collection(db, 'messages'), where('from', '==', uid)),
+        snap => { outgoing = asList(snap); ready.out = true; emit(); }, fail);
+    return () => { stopIn(); stopOut(); };
 };
 
 window.markMessageRead = async function(messageId) {

@@ -1,4 +1,4 @@
-const CACHE = 'draftpunk-v104';
+const CACHE = 'draftpunk-v105';
 
 const PRECACHE = [
     './',
