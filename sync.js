@@ -70,7 +70,45 @@ async function pushToCloud(user) {
     payload.displayName    = user.displayName || '';
     payload.photoURL       = user.photoURL    || '';
     await setDoc(doc(db, 'users', user.uid), payload, { merge: true });
+
+    // PRIVACY MIGRATION, STEP 2 (copy only): also keep an identical copy of the
+    // private material, with the same timestamp, in an owner-only record. The
+    // profile copy above is unchanged and still complete. If this copy can't be
+    // saved, nothing else is affected.
+    const privatePayload = { updatedAt: stamp };
+    DATA_KEYS.forEach(k => { privatePayload[k] = payload[k]; });
+    try {
+        await setDoc(doc(db, 'users', user.uid, 'private', 'data'), privatePayload, { merge: true });
+        await verifyPrivateCopy(user, privatePayload);
+    } catch (err) {
+        console.warn('Private copy not saved (profile copy is fine):', err);
+    }
     setSyncStatus('synced');
+}
+
+// Once per visit, read the private copy back and check it matches exactly what
+// was just saved. If it does, stamp the profile with privateCopyVerifiedAt so
+// it's visible in the Firestore console which writers are safely migrated
+// (needed before the old copy can ever be removed). Only that one field is
+// written — updatedAt and everything else in the profile are untouched.
+let privateCopyVerified = false;
+// JSON with object keys sorted, so the comparison doesn't depend on the order
+// Firestore happens to return fields in
+function canonical(v) {
+    if (Array.isArray(v)) return '[' + v.map(canonical).join(',') + ']';
+    if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + canonical(v[k])).join(',') + '}';
+    return JSON.stringify(v);
+}
+async function verifyPrivateCopy(user, expected) {
+    if (privateCopyVerified) return;
+    const snap = await getDoc(doc(db, 'users', user.uid, 'private', 'data'));
+    if (!snap.exists()) return;
+    const saved = snap.data();
+    const same = (saved.updatedAt === expected.updatedAt) &&
+        DATA_KEYS.every(k => canonical(saved[k] ?? null) === canonical(expected[k] ?? null));
+    if (!same) { console.warn('Private copy did not match; not marking as verified.'); return; }
+    await setDoc(doc(db, 'users', user.uid), { privateCopyVerifiedAt: Date.now() }, { merge: true });
+    privateCopyVerified = true;
 }
 
 // ── Pull cloud data down; returns true if page needs a reload ─────────────────
@@ -80,7 +118,20 @@ async function pullFromCloud(user) {
         await pushToCloud(user);
         return false;
     }
-    const cloud     = snap.data();
+    // Use whichever cloud copy is newer: the profile copy, or the owner-only
+    // private copy (step 2 of the privacy migration). When they're equal, or the
+    // private copy is missing or can't be read, the profile copy is used,
+    // exactly as before.
+    let cloud = snap.data();
+    try {
+        const privSnap = await getDoc(doc(db, 'users', user.uid, 'private', 'data'));
+        if (privSnap.exists()) {
+            const priv = privSnap.data();
+            if ((priv.updatedAt || 0) > (cloud.updatedAt || 0)) cloud = priv;
+        }
+    } catch (err) {
+        console.warn('Private copy not read (using profile copy):', err);
+    }
     const localTime = parseInt(localStorage.getItem('dpLastUpdated') || '0');
     const cloudTime = cloud.updatedAt || 0;
 

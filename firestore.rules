@@ -38,6 +38,12 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
+      // Private copy of notes, beat notes, characters, Word Runner and project
+      // data (privacy migration). Owner only.
+      match /private/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
       // Writing Record: how text was entered, per chapter. Owner only.
       match /evidence/{chapterId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
