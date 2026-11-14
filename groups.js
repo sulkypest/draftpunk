@@ -1,5 +1,35 @@
 (function() { const _dp = JSON.parse(localStorage.getItem('draftPunkData') || '{}'); const _ok = _dp.activeProjectId && _dp.projects && _dp.projects[_dp.activeProjectId] && _dp.projects[_dp.activeProjectId].active; if (!_ok) window.location.replace('index.html'); })();
 
+// ── Safe output ───────────────────────────────────────────────────────────────
+// Names, titles and shared chapters come from other writers, so everything is
+// escaped, and shared chapter text is reduced to the editor's own formatting.
+function esc(str) {
+    return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+const SAFE_TAGS = new Set(['B','STRONG','I','EM','U','H2','H3','P','BR','DIV']);
+function safeChapterHtml(html) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = String(html || '');
+    const clean = node => {
+        [...node.childNodes].forEach(n => {
+            if (n.nodeType === 1) {
+                if (!SAFE_TAGS.has(n.tagName)) {
+                    if (/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|TEMPLATE|SVG|MATH)$/.test(n.tagName)) { n.remove(); return; }
+                    clean(n);
+                    n.replaceWith(...n.childNodes);
+                    return;
+                }
+                [...n.attributes].forEach(a => n.removeAttribute(a.name));
+                clean(n);
+            } else if (n.nodeType !== 3) n.remove();
+        });
+    };
+    clean(tpl.content);
+    const div = document.createElement('div'); div.appendChild(tpl.content);
+    return div.innerHTML;
+}
+
 // ── Auth handling ─────────────────────────────────────────────────────────────
 function handleAuthState(user) {
     if (!user) {
@@ -29,6 +59,56 @@ function loadAll() {
     loadFriends();
     loadSharedWithMe();
     loadLeaderboard();
+    loadMyGroups();
+}
+
+// ── My groups: word counts per group ─────────────────────────────────────────
+let groupPeriod = 'week';
+let _myGroups = [];
+const _groupStats = {};
+
+window.setGroupPeriod = function(period) {
+    groupPeriod = period;
+    document.querySelectorAll('.grp-period-btn').forEach(b => b.classList.toggle('lb-period-active', b.dataset.gperiod === period));
+    renderMyGroups();
+};
+
+async function loadMyGroups() {
+    const container = document.getElementById('myGroupsList');
+    if (!container || !window.getMyGroups) return;
+    container.innerHTML = '<div class="lb-loading">LOADING...</div>';
+    const groups = await window.getMyGroups();
+    if (!Array.isArray(groups)) { container.innerHTML = '<div class="lb-empty">COULD NOT LOAD GROUPS</div>'; return; }
+    _myGroups = groups.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+    await Promise.all(_myGroups.map(async g => { _groupStats[g.id] = await window.getGroupStats(g); }));
+    renderMyGroups();
+}
+
+function renderMyGroups() {
+    const container = document.getElementById('myGroupsList');
+    if (!container) return;
+    if (!_myGroups.length) {
+        container.innerHTML = '<div class="lb-empty">YOU\'RE NOT IN ANY GROUPS YET — CREATE ONE IN <a href="messages.html" style="color:inherit;">MESSAGES</a></div>';
+        return;
+    }
+    const field = PERIOD_FIELD[groupPeriod] || 'totalWords';
+    const me = window.getCurrentUser && window.getCurrentUser();
+    container.innerHTML = _myGroups.map(g => {
+        const rows = (_groupStats[g.id] || []).slice().sort((a, b) => (b[field] || 0) - (a[field] || 0));
+        const total = rows.reduce((s, r) => s + (r[field] || 0), 0);
+        return `<div class="grp-card">
+            <div class="grp-head">
+                <span class="grp-name">${esc(g.name)}</span>
+                <span class="grp-total">${total.toLocaleString()} WDS TOGETHER</span>
+                <a class="grp-chat" href="messages.html#group=${encodeURIComponent(g.id)}">OPEN CHAT</a>
+            </div>
+            ${rows.map((r, i) => `<div class="lb-row ${me && r.uid === me.uid ? 'lb-row-me' : ''}">
+                <span class="lb-rank">#${i + 1}</span>
+                <span class="lb-name">${esc(r.username)}</span>
+                <span class="lb-words">${(r[field] || 0).toLocaleString()} WDS</span>
+            </div>`).join('')}
+        </div>`;
+    }).join('');
 }
 
 // ── Pending friend requests ───────────────────────────────────────────────────
@@ -47,12 +127,12 @@ async function loadPendingRequests() {
     section.style.display = 'block';
     container.innerHTML = result.map(req => `
         <div class="lb-row" style="gap:8px;">
-            <span class="lb-name" style="flex:1;">${req.fromUsername || 'UNKNOWN'}</span>
-            <button onclick="doAccept('${req.id}', '${req.from}')"
+            <span class="lb-name" style="flex:1;">${esc(req.fromUsername || 'UNKNOWN')}</span>
+            <button data-id="${esc(req.id)}" data-from="${esc(req.from)}" onclick="doAccept(this.dataset.id, this.dataset.from)"
                 style="font-size:0.7rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">
                 ✓ ACCEPT
             </button>
-            <button onclick="doDecline('${req.id}')"
+            <button data-id="${esc(req.id)}" onclick="doDecline(this.dataset.id)"
                 style="font-size:0.7rem;padding:6px 10px;letter-spacing:1px;background:#333;white-space:nowrap;">
                 ✕ DECLINE
             </button>
@@ -117,7 +197,7 @@ async function loadLeaderboard() {
     container.innerHTML = active.map((u, i) => `
         <div class="lb-row ${currentUser && u.uid === currentUser.uid ? 'lb-row-me' : ''}">
             <span class="lb-rank">#${i + 1}</span>
-            <span class="lb-name">${u.username}</span>
+            <span class="lb-name">${esc(u.username)}</span>
             <span class="lb-words">${(u[field] || 0).toLocaleString()} WDS</span>
         </div>
     `).join('');
@@ -136,9 +216,9 @@ function renderFriends(list) {
     container.innerHTML = list.map(u => `
         <div class="lb-row">
             <span class="lb-rank">✦</span>
-            <span class="lb-name">${u.username}</span>
+            <span class="lb-name">${esc(u.username)}</span>
             <span class="lb-words">${(u.totalWords || 0).toLocaleString()} WDS</span>
-            <button class="lb-remove-btn" onclick="doRemoveFriend('${u.uid}', '${u.username}')">✕</button>
+            <button class="lb-remove-btn" data-uid="${esc(u.uid)}" data-name="${esc(u.username)}" onclick="doRemoveFriend(this.dataset.uid, this.dataset.name)">✕</button>
         </div>
     `).join('');
 }
@@ -217,11 +297,11 @@ async function loadSharedWithMe() {
     container.innerHTML = result.map(share => `
         <div class="lb-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px;">
             <div style="display:flex;width:100%;align-items:center;gap:8px;">
-                <span class="lb-name" style="flex:1;">${share.chapterTitle}</span>
-                <span class="lb-words">${(share.wordCount || 0).toLocaleString()} WDS</span>
-                <button onclick="viewShare('${share.id}')" style="font-size:0.7rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">READ</button>
+                <span class="lb-name" style="flex:1;">${esc(share.chapterTitle)}</span>
+                <span class="lb-words">${(Number(share.wordCount) || 0).toLocaleString()} WDS</span>
+                <button data-id="${esc(share.id)}" onclick="viewShare(this.dataset.id)" style="font-size:0.7rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">READ</button>
             </div>
-            <div style="font-size:0.65rem;opacity:0.4;letter-spacing:1px;">${share.projectTitle} — FROM ${share.ownerUsername}</div>
+            <div style="font-size:0.65rem;opacity:0.4;letter-spacing:1px;">${esc(share.projectTitle)} — FROM ${esc(share.ownerUsername)}${share.groupName ? ' · VIA GROUP ' + esc(share.groupName) : ''}</div>
         </div>
     `).join('');
 }
@@ -231,7 +311,7 @@ window.viewShare = function(shareId) {
     if (!share) return;
     document.getElementById('shareViewTitle').textContent = share.chapterTitle.toUpperCase();
     document.getElementById('shareViewMeta').textContent  = share.projectTitle + ' — BY ' + share.ownerUsername;
-    document.getElementById('shareViewContent').innerHTML = share.content || '<em style="opacity:0.4;">No content.</em>';
+    document.getElementById('shareViewContent').innerHTML = share.content ? safeChapterHtml(share.content) : '<em style="opacity:0.4;">No content.</em>';
     document.getElementById('shareViewOverlay').style.display = 'flex';
 };
 

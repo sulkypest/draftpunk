@@ -99,7 +99,9 @@
             </div>
 
             <label for="shareFriendSelect" style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;">SHARE WITH FRIEND</label>
-            <select id="shareFriendSelect" style="width:100%;margin-top:8px;margin-bottom:16px;"></select>
+            <select id="shareFriendSelect" onchange="shareChoice('friend')" style="width:100%;margin-top:8px;margin-bottom:12px;"></select>
+            <label for="shareGroupSelect" style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;">OR SHARE WITH A GROUP</label>
+            <select id="shareGroupSelect" onchange="shareChoice('group')" style="width:100%;margin-top:8px;margin-bottom:16px;"></select>
             <p id="shareMsg" style="font-size:0.75rem;height:1.2em;margin-bottom:12px;letter-spacing:1px;"></p>
             <div style="display:flex;gap:10px;">
                 <button onclick="confirmShare()" style="flex:1;">⤴ SHARE</button>

@@ -105,6 +105,18 @@
                     <div id="sharedWithMeList" style="margin-top:10px;"></div>
                 </div>
 
+                <!-- My groups -->
+                <div style="margin-bottom:30px;">
+                    <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">MY GROUPS</span>
+                    <div style="display:flex;gap:4px;margin-top:8px;margin-bottom:8px;">
+                        <button class="lb-period-btn-g grp-period-btn lb-period-active" data-gperiod="week"  onclick="setGroupPeriod('week')">THIS WEEK</button>
+                        <button class="lb-period-btn-g grp-period-btn" data-gperiod="month" onclick="setGroupPeriod('month')">THIS MONTH</button>
+                        <button class="lb-period-btn-g grp-period-btn" data-gperiod="year"  onclick="setGroupPeriod('year')">THIS YEAR</button>
+                        <button class="lb-period-btn-g grp-period-btn" data-gperiod="all"   onclick="setGroupPeriod('all')">ALL TIME</button>
+                    </div>
+                    <div id="myGroupsList"></div>
+                </div>
+
                 <!-- Global leaderboard -->
                 <div>
                     <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">GLOBAL LEADERBOARD</span>

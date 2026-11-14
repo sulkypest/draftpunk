@@ -103,6 +103,50 @@ service cloud.firestore {
         (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid);
     }
 
+    // Writing groups (group chat and group word counts). Only members can see
+    // a group; only the creator can change it, except that any other member
+    // may remove themselves. At most 12 members.
+    match /groups/{groupId} {
+      allow get, list: if request.auth != null && request.auth.uid in resource.data.members;
+      allow create: if request.auth != null
+                    && request.resource.data.ownerId == request.auth.uid
+                    && request.resource.data.members is list
+                    && request.auth.uid in request.resource.data.members
+                    && request.resource.data.members.size() <= 12
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() <= 60;
+      allow update: if request.auth != null && (
+                      (resource.data.ownerId == request.auth.uid
+                        && request.resource.data.ownerId == request.auth.uid
+                        && request.auth.uid in request.resource.data.members
+                        && request.resource.data.members.size() <= 12
+                        && request.resource.data.name.size() <= 60)
+                      ||
+                      (request.auth.uid in resource.data.members
+                        && request.auth.uid != resource.data.ownerId
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+                        && request.resource.data.members.toSet() == resource.data.members.toSet().difference([request.auth.uid].toSet()))
+                    );
+      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+
+      // Messages in a group: members read and post (as themselves); writers can
+      // always find their own (so account deletion can remove them); the
+      // sender or the group's creator can delete.
+      match /messages/{messageId} {
+        allow read: if request.auth != null
+                    && (resource.data.from == request.auth.uid
+                        || request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members);
+        allow create: if request.auth != null
+                      && request.resource.data.from == request.auth.uid
+                      && request.resource.data.body is string
+                      && request.resource.data.body.size() <= 500
+                      && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members;
+        allow delete: if request.auth != null
+                      && (resource.data.from == request.auth.uid
+                          || get(/databases/$(database)/documents/groups/$(groupId)).data.ownerId == request.auth.uid);
+      }
+    }
+
     match /shares/{shareId} {
       allow get: if request.auth != null &&
         (resource == null || resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.sharedWith);

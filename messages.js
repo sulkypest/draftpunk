@@ -4,17 +4,22 @@
     if (!_ok) window.location.replace('index.html');
 })();
 
-// ── Messages as conversations ─────────────────────────────────────────────────
-// Messages are stored exactly as before (one record per message, with from/to).
-// This page groups them by the other person into conversations, shows each as a
-// back-and-forth thread, and updates live while open. Nothing is moved or
-// rewritten; the only writes are sending, marking read, and deleting.
+// ── Messages: one-to-one conversations and group chats ────────────────────────
+// Direct messages are stored exactly as before (one record per message with
+// from/to); this page groups them into conversations. Group chats live in
+// groups/{id}/messages. Both update live while the page is open.
 
-let _all       = [];      // every message to or from me, oldest first
-let _friends   = [];      // [{ uid, username }]
-let _openUid   = null;    // conversation currently open
-let _stopWatch = null;
-let _me        = null;
+const GROUP_MAX = 12;
+let _all        = [];      // direct messages to or from me, oldest first
+let _friends    = [];      // [{ uid, username }]
+let _groups     = [];      // groups I'm in
+let _groupMsgs  = {};      // groupId -> messages, oldest first
+let _groupStops = {};      // groupId -> stop listening
+let _reads      = {};      // groupId -> time I last read it
+let _open       = null;    // { type: 'dm', uid } | { type: 'group', id }
+let _stopWatch  = null, _stopGroups = null;
+let _me         = null;
+let _pendingOpenGroup = null;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 function showGate() {
@@ -32,9 +37,16 @@ function showContent() {
     startWatching();
 }
 
+function stopAll() {
+    if (_stopWatch) _stopWatch();
+    if (_stopGroups) _stopGroups();
+    Object.values(_groupStops).forEach(f => f());
+    _groupStops = {};
+    _stopWatch = _stopGroups = null;
+}
+
 document.addEventListener('dpAuthChanged', function(e) {
-    if (e.detail.user) showContent();
-    else { if (_stopWatch) { _stopWatch(); _stopWatch = null; } _me = null; showGate(); }
+    if (e.detail.user) showContent(); else { stopAll(); _me = null; showGate(); }
 });
 
 window.addEventListener('load', function() {
@@ -45,27 +57,41 @@ window.addEventListener('load', function() {
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 async function loadFriends() {
-    const select = document.getElementById('composeToSelect');
     const friends = await window.getFriends();
     _friends = Array.isArray(friends) ? friends.map(f => ({ uid: f.uid, username: f.username })) : [];
+    const select = document.getElementById('composeToSelect');
     if (select) {
         select.innerHTML = _friends.length
             ? '<option value="">— CHOOSE A FRIEND —</option>' + _friends.map(f => `<option value="${escapeAttr(f.uid)}">${escapeHtml(f.username)}</option>`).join('')
             : '<option value="">NO FRIENDS YET — ADD THEM IN WRITING GROUPS</option>';
     }
-    if (_openUid) renderThread();
+    renderFriendPicker('newGroupFriends', []);
+    if (_open) renderThread();
 }
 
-function startWatching() {
-    if (_stopWatch) _stopWatch();
-    if (window.watchMessages) {
-        _stopWatch = window.watchMessages(list => { _all = list; refresh(); }, () => fallbackLoad());
-    } else {
-        fallbackLoad();
-    }
+async function startWatching() {
+    stopAll();
+    _reads = (window.getGroupReads ? await window.getGroupReads() : {}) || {};
+    if (window.watchMessages) _stopWatch = window.watchMessages(list => { _all = list; refresh(); }, () => fallbackLoad());
+    else fallbackLoad();
+    if (window.watchGroups) _stopGroups = window.watchGroups(onGroups, () => {});
 }
 
-// If live updates aren't available, load once (as the old page did)
+function onGroups(groups) {
+    _groups = groups;
+    const ids = new Set(groups.map(g => g.id));
+    groups.forEach(g => {
+        if (_groupStops[g.id]) return;
+        _groupStops[g.id] = window.watchGroupMessages(g.id, list => { _groupMsgs[g.id] = list; refresh(); }, () => {});
+    });
+    Object.keys(_groupStops).forEach(id => {
+        if (!ids.has(id)) { _groupStops[id](); delete _groupStops[id]; delete _groupMsgs[id]; }
+    });
+    if (_open && _open.type === 'group' && !ids.has(_open.id)) closeThread();
+    refresh();
+    openFromHash();
+}
+
 async function fallbackLoad() {
     const [inbox, sent] = await Promise.all([window.getInbox(), window.getSent()]);
     if (!Array.isArray(inbox) || !Array.isArray(sent)) {
@@ -77,9 +103,7 @@ async function fallbackLoad() {
 }
 
 function otherOf(m) {
-    return m.from === _me
-        ? { uid: m.to,   username: m.toUsername   || '?' }
-        : { uid: m.from, username: m.fromUsername || '?' };
+    return m.from === _me ? { uid: m.to, username: m.toUsername || '?' } : { uid: m.from, username: m.fromUsername || '?' };
 }
 
 function conversations() {
@@ -87,25 +111,36 @@ function conversations() {
     _all.forEach(m => {
         const o = otherOf(m);
         if (!o.uid) return;
-        const c = map.get(o.uid) || { uid: o.uid, username: o.username, messages: [], unread: 0 };
+        const c = map.get(o.uid) || { type: 'dm', key: o.uid, name: o.username, messages: [], unread: 0 };
         c.messages.push(m);
         if (m.to === _me && !m.read) c.unread++;
-        if (o.username && o.username !== '?') c.username = o.username;   // latest known name
+        if (o.username && o.username !== '?') c.name = o.username;
         map.set(o.uid, c);
     });
-    return [...map.values()].sort((a, b) => last(b).createdAt - last(a).createdAt);
+    const list = [...map.values()];
+    _groups.forEach(g => {
+        const msgs = _groupMsgs[g.id] || [];
+        const read = _reads[g.id] || 0;
+        list.push({ type: 'group', key: g.id, name: g.name, group: g, messages: msgs,
+                    unread: msgs.filter(m => m.from !== _me && (m.createdAt || 0) > read).length });
+    });
+    return list.sort((a, b) => lastTime(b) - lastTime(a));
 }
-function last(c) { return c.messages[c.messages.length - 1] || { createdAt: 0 }; }
+function lastTime(c) {
+    const m = c.messages[c.messages.length - 1];
+    return m ? m.createdAt : (c.group ? c.group.createdAt || 0 : 0);
+}
 
 function refresh() {
     renderList();
-    if (_openUid) renderThread();
+    if (_open) renderThread();
     updateBadge();
 }
 
 function updateBadge() {
-    const unread = _all.filter(m => m.to === _me && !m.read).length;
-    if (window.updateMessageBadge) window.updateMessageBadge(unread);
+    const dm  = _all.filter(m => m.to === _me && !m.read).length;
+    const grp = conversations().filter(c => c.type === 'group').reduce((s, c) => s + c.unread, 0);
+    if (window.updateMessageBadge) window.updateMessageBadge(dm + grp);
 }
 
 // ── Conversation list ─────────────────────────────────────────────────────────
@@ -113,24 +148,31 @@ function renderList() {
     const el = document.getElementById('convList');
     const convs = conversations();
     if (!convs.length) {
-        el.innerHTML = '<div class="lb-empty">NO CONVERSATIONS YET — START ONE WITH ＋ NEW MESSAGE</div>';
+        el.innerHTML = '<div class="lb-empty">NO CONVERSATIONS YET — START ONE WITH ＋ NEW MESSAGE OR ＋ NEW GROUP</div>';
         return;
     }
     el.innerHTML = convs.map(c => {
-        const m = last(c);
-        const mine = m.from === _me;
-        return `<button class="msg-conv${c.unread ? ' unread' : ''}" onclick="openThread('${escapeAttr(c.uid)}')">
+        const m = c.messages[c.messages.length - 1];
+        let preview = 'No messages yet';
+        if (m) {
+            const who = m.from === _me ? 'You' : (c.type === 'group' ? (m.fromUsername || '?') : '');
+            preview = (who ? who + ': ' : '') + snippet(m.body);
+        }
+        const call = c.type === 'group' ? `openGroup('${escapeAttr(c.key)}')` : `openThread('${escapeAttr(c.key)}')`;
+        return `<button class="msg-conv${c.unread ? ' unread' : ''}" onclick="${call}">
             <span class="msg-conv-top">
-                <span class="msg-conv-name">${escapeHtml(c.username)}</span>
+                <span class="msg-conv-name">${escapeHtml(c.name)}</span>
+                ${c.type === 'group' ? `<span class="msg-group-tag">GROUP · ${(c.group.members || []).length}</span>` : ''}
                 ${c.unread ? `<span class="msg-unread">${c.unread} NEW</span>` : ''}
-                <span class="msg-conv-time">${escapeHtml(shortTime(m.createdAt))}</span>
+                <span class="msg-conv-time">${m ? escapeHtml(shortTime(m.createdAt)) : ''}</span>
             </span>
-            <span class="msg-conv-snippet">${mine ? 'You: ' : ''}${escapeHtml(snippet(m.body))}</span>
+            <span class="msg-conv-snippet">${escapeHtml(preview)}</span>
         </button>`;
     }).join('');
 }
 
 window.showNewMessage = function() {
+    document.getElementById('newGroupPanel').style.display = 'none';
     const p = document.getElementById('newMsgPicker');
     p.style.display = p.style.display === 'none' ? '' : 'none';
 };
@@ -142,91 +184,261 @@ window.startConversation = function() {
     openThread(uid);
 };
 
-// ── Thread ────────────────────────────────────────────────────────────────────
-window.openThread = function(uid) {
-    _openUid = uid;
+// ── New group ─────────────────────────────────────────────────────────────────
+function renderFriendPicker(containerId, exclude) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const options = _friends.filter(f => !exclude.includes(f.uid));
+    el.innerHTML = options.length
+        ? options.map(f => `<label class="msg-check"><input type="checkbox" value="${escapeAttr(f.uid)}" data-name="${escapeAttr(f.username)}"> ${escapeHtml(f.username)}</label>`).join('')
+        : '<p class="msg-hint">No friends to add. Add friends on the Writing Groups page.</p>';
+}
+
+window.showNewGroup = function() {
+    document.getElementById('newMsgPicker').style.display = 'none';
+    const p = document.getElementById('newGroupPanel');
+    p.style.display = p.style.display === 'none' ? '' : 'none';
+    renderFriendPicker('newGroupFriends', []);
+    document.getElementById('newGroupMsg').textContent = '';
+};
+
+window.createNewGroup = async function() {
+    const name   = document.getElementById('newGroupName').value.trim();
+    const picked = [...document.querySelectorAll('#newGroupFriends input:checked')].map(i => ({ uid: i.value, username: i.dataset.name }));
+    const msg    = document.getElementById('newGroupMsg');
+    if (!name)          { msg.textContent = 'GIVE THE GROUP A NAME'; return; }
+    if (!picked.length) { msg.textContent = 'CHOOSE AT LEAST ONE FRIEND'; return; }
+    if (picked.length > GROUP_MAX - 1) { msg.textContent = `A GROUP CAN HAVE UP TO ${GROUP_MAX} PEOPLE INCLUDING YOU`; return; }
+    msg.textContent = 'CREATING...';
+    const r = await window.createGroup(name, picked);
+    if (r && r.success) {
+        document.getElementById('newGroupPanel').style.display = 'none';
+        document.getElementById('newGroupName').value = '';
+        msg.textContent = '';
+        _pendingOpenGroup = r.id;
+        openFromHash();
+    } else msg.textContent = (r && r.error) || 'COULD NOT CREATE THE GROUP';
+};
+
+// ── Open a conversation ───────────────────────────────────────────────────────
+function showThreadView() {
     document.getElementById('convListView').style.display = 'none';
     document.getElementById('threadView').style.display   = '';
     document.getElementById('composeMsg').textContent = '';
+    document.getElementById('groupPanel').style.display = 'none';
+}
+
+window.openThread = function(uid) {
+    _open = { type: 'dm', uid };
+    showThreadView();
     renderThread(true);
-    const box = document.getElementById('composeBody');
-    if (box && window.matchMedia('(pointer: fine)').matches) box.focus();
+    focusReply();
 };
 
+window.openGroup = function(id) {
+    _open = { type: 'group', id };
+    showThreadView();
+    renderThread(true);
+    focusReply();
+    if (location.hash !== '#group=' + id) history.replaceState(null, '', '#group=' + id);
+};
+
+function focusReply() {
+    const box = document.getElementById('composeBody');
+    if (box && window.matchMedia('(pointer: fine)').matches) box.focus();
+}
+
 window.closeThread = function() {
-    _openUid = null;
+    _open = null;
+    if (location.hash) history.replaceState(null, '', location.pathname);
     document.getElementById('threadView').style.display   = 'none';
     document.getElementById('convListView').style.display = '';
     renderList();
 };
 
+// messages.html#group=ID opens that group (used by the Writing Groups page)
+function openFromHash() {
+    if (_pendingOpenGroup && _groups.some(g => g.id === _pendingOpenGroup)) {
+        const id = _pendingOpenGroup; _pendingOpenGroup = null; openGroup(id); return;
+    }
+    const m = location.hash.match(/^#group=(.+)$/);
+    if (m && !_open && _groups.some(g => g.id === m[1])) openGroup(m[1]);
+}
+
+function currentGroup() { return _open && _open.type === 'group' ? _groups.find(g => g.id === _open.id) : null; }
+
 function renderThread(scrollToEnd) {
-    const uid = _openUid;
-    const msgs = _all.filter(m => (m.from === uid && m.to === _me) || (m.from === _me && m.to === uid));
-    const friend = _friends.find(f => f.uid === uid);
-    const name = (friend && friend.username) || (msgs.length ? otherOf(msgs[msgs.length - 1]).username : '?');
-    document.getElementById('threadName').textContent = name;
+    const isGroup = _open.type === 'group';
+    const group = currentGroup();
+    if (isGroup && !group) return;
+    const msgs = isGroup
+        ? (_groupMsgs[_open.id] || [])
+        : _all.filter(m => (m.from === _open.uid && m.to === _me) || (m.from === _me && m.to === _open.uid));
+    const friend = !isGroup && _friends.find(f => f.uid === _open.uid);
+
+    const title = isGroup ? group.name : ((friend && friend.username) || (msgs.length ? otherOf(msgs[msgs.length - 1]).username : '?'));
+    document.getElementById('threadName').textContent = title;
+    document.getElementById('threadSub').innerHTML = isGroup
+        ? `${(group.members || []).length} members · <button class="msg-link" onclick="toggleGroupPanel()">MEMBERS &amp; SETTINGS</button>`
+        : '';
 
     const box = document.getElementById('threadMessages');
     const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    const isOwner = isGroup && group.ownerId === _me;
     if (!msgs.length) {
         box.innerHTML = '<div class="lb-empty">NO MESSAGES YET — SAY HELLO</div>';
     } else {
-        let html = '', lastDay = '';
+        let html = '', lastDay = '', lastFrom = '';
         msgs.forEach(m => {
             const day = dayLabel(m.createdAt);
-            if (day !== lastDay) { html += `<div class="msg-day">${escapeHtml(day)}</div>`; lastDay = day; }
+            if (day !== lastDay) { html += `<div class="msg-day">${escapeHtml(day)}</div>`; lastDay = day; lastFrom = ''; }
             const mine = m.from === _me;
+            const showName = isGroup && !mine && m.from !== lastFrom;
+            const canDelete = mine || isOwner;
+            const delTitle = isGroup ? 'Delete for everyone in the group' : 'Delete for both of you';
+            const status = mine && !isGroup ? (m.read ? ' · Read' : ' · Sent') : '';
             html += `<div class="msg-bubble-row ${mine ? 'mine' : 'theirs'}">
                 <div class="msg-bubble">
+                    ${showName ? `<div class="msg-sender">${escapeHtml(m.fromUsername || (group.memberNames || {})[m.from] || '?')}</div>` : ''}
                     <div class="msg-text">${escapeHtml(m.body)}</div>
                     <div class="msg-meta">
-                        <span>${escapeHtml(timeOnly(m.createdAt))}${mine ? (m.read ? ' · Read' : ' · Sent') : ''}</span>
-                        <button class="msg-del" onclick="doDeleteMessage('${escapeAttr(m.id)}')" title="Delete for both of you" aria-label="Delete for both of you">✕</button>
+                        <span>${escapeHtml(timeOnly(m.createdAt))}${status}</span>
+                        ${canDelete ? `<button class="msg-del" onclick="doDeleteMessage('${escapeAttr(m.id)}')" title="${delTitle}" aria-label="${delTitle}">✕</button>` : ''}
                     </div>
                 </div>
             </div>`;
+            lastFrom = m.from;
         });
         box.innerHTML = html;
     }
     if (scrollToEnd || atBottom) box.scrollTop = box.scrollHeight;
 
-    // Replies only to current friends (as the old compose list allowed)
-    document.getElementById('replyBox').style.display     = friend ? '' : 'none';
-    document.getElementById('replyBlocked').style.display = friend ? 'none' : '';
+    const canReply = isGroup || !!friend;
+    document.getElementById('replyBox').style.display     = canReply ? '' : 'none';
+    document.getElementById('replyBlocked').style.display = canReply ? 'none' : '';
 
-    // Mark only this conversation's messages to me as read
-    const unread = msgs.filter(m => m.to === _me && !m.read);
-    if (unread.length && document.visibilityState === 'visible') {
-        unread.forEach(m => { m.read = true; window.markMessageRead(m.id); });
-        updateBadge();
-        renderList();
+    if (isGroup && document.getElementById('groupPanel').style.display !== 'none') renderGroupPanel();
+
+    // Mark as read only what's open, only while the page is visible
+    if (document.visibilityState !== 'visible') return;
+    if (isGroup) {
+        const latest = msgs.length ? msgs[msgs.length - 1].createdAt : 0;
+        if (latest > (_reads[_open.id] || 0)) {
+            _reads[_open.id] = latest;
+            window.markGroupRead(_open.id, latest);
+            updateBadge(); renderList();
+        }
+    } else {
+        const unread = msgs.filter(m => m.to === _me && !m.read);
+        if (unread.length) {
+            unread.forEach(m => { m.read = true; window.markMessageRead(m.id); });
+            updateBadge(); renderList();
+        }
     }
 }
 
-// Opening the page in the background shouldn't mark messages read; do it on return
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && _openUid) renderThread(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && _open) renderThread(); });
+
+// ── Group members & settings ──────────────────────────────────────────────────
+window.toggleGroupPanel = function() {
+    const p = document.getElementById('groupPanel');
+    p.style.display = p.style.display === 'none' ? '' : 'none';
+    if (p.style.display !== 'none') renderGroupPanel();
+};
+
+function renderGroupPanel() {
+    const g = currentGroup();
+    if (!g) return;
+    const isOwner = g.ownerId === _me;
+    const names = g.memberNames || {};
+    const keepChecked = new Set([...document.querySelectorAll('#groupAddFriends input:checked')].map(i => i.value));
+    const renameDraft = document.getElementById('groupRename') ? document.getElementById('groupRename').value : null;
+    const rows = (g.members || []).map(uid => `<div class="msg-member">
+        <span>${escapeHtml(names[uid] || '?')}${uid === g.ownerId ? ' <em>(created the group)</em>' : ''}${uid === _me ? ' <em>(you)</em>' : ''}</span>
+        ${isOwner && uid !== _me ? `<button class="msg-small" onclick="removeMember('${escapeAttr(uid)}')">REMOVE</button>` : ''}
+    </div>`).join('');
+    let html = `<div class="msg-label">MEMBERS</div>${rows}`;
+    if (isOwner) {
+        const room = GROUP_MAX - (g.members || []).length;
+        html += `<div class="msg-label msg-gap">RENAME</div>
+            <div class="msg-picker-row"><input type="text" id="groupRename" maxlength="60" value="${escapeAttr(renameDraft != null ? renameDraft : g.name)}"><button onclick="renameGroup()">SAVE</button></div>
+            <div class="msg-label msg-gap">ADD FRIENDS ${room > 0 ? `(UP TO ${room} MORE)` : '(GROUP IS FULL)'}</div>
+            <div id="groupAddFriends" class="msg-checks"></div>
+            ${room > 0 ? '<button class="msg-small" onclick="addMembers()">ADD SELECTED</button>' : ''}
+            <div class="msg-danger"><button class="msg-small danger" onclick="deleteThisGroup()">DELETE GROUP</button>
+            <span class="msg-hint">Deletes the group and all its messages for everyone.</span></div>`;
+    } else {
+        html += '<div class="msg-danger"><button class="msg-small danger" onclick="leaveThisGroup()">LEAVE GROUP</button></div>';
+    }
+    html += '<p id="groupPanelMsg" class="msg-status"></p>';
+    document.getElementById('groupPanel').innerHTML = html;
+    if (isOwner) {
+        renderFriendPicker('groupAddFriends', g.members || []);
+        document.querySelectorAll('#groupAddFriends input').forEach(i => { if (keepChecked.has(i.value)) i.checked = true; });
+    }
+}
+
+function groupMembersList(g) { return (g.members || []).map(uid => ({ uid, username: (g.memberNames || {})[uid] || '?' })); }
+function panelMsg(t) { const el = document.getElementById('groupPanelMsg'); if (el) el.textContent = t; }
+
+window.renameGroup = async function() {
+    const g = currentGroup(); const name = document.getElementById('groupRename').value.trim();
+    if (!g || !name) return;
+    const r = await window.updateGroup(g.id, { name });
+    panelMsg(r && r.success ? 'RENAMED' : (r && r.error) || 'COULD NOT RENAME');
+};
+window.addMembers = async function() {
+    const g = currentGroup(); if (!g) return;
+    const picked = [...document.querySelectorAll('#groupAddFriends input:checked')].map(i => ({ uid: i.value, username: i.dataset.name }));
+    if (!picked.length) return;
+    if ((g.members || []).length + picked.length > GROUP_MAX) { panelMsg(`A GROUP CAN HAVE UP TO ${GROUP_MAX} PEOPLE`); return; }
+    const r = await window.updateGroup(g.id, { members: [...groupMembersList(g), ...picked] });
+    panelMsg(r && r.success ? 'ADDED' : (r && r.error) || 'COULD NOT ADD');
+};
+window.removeMember = async function(uid) {
+    const g = currentGroup(); if (!g) return;
+    const name = (g.memberNames || {})[uid] || 'this member';
+    if (!confirm(`Remove ${name} from "${g.name}"?\n\nTheir past messages stay in the group.`)) return;
+    const r = await window.updateGroup(g.id, { members: groupMembersList(g).filter(m => m.uid !== uid) });
+    panelMsg(r && r.success ? 'REMOVED' : (r && r.error) || 'COULD NOT REMOVE');
+};
+window.leaveThisGroup = async function() {
+    const g = currentGroup(); if (!g) return;
+    if (!confirm(`Leave "${g.name}"?\n\nYou won't see its messages any more unless you're added again. Your past messages stay in the group.`)) return;
+    const r = await window.leaveGroup(g.id);
+    if (r && r.success) closeThread(); else panelMsg((r && r.error) || 'COULD NOT LEAVE');
+};
+window.deleteThisGroup = async function() {
+    const g = currentGroup(); if (!g) return;
+    if (!confirm(`Delete "${g.name}" for everyone?\n\nAll of its messages will be deleted. This can't be undone.`)) return;
+    const r = await window.deleteGroup(g.id);
+    if (r && r.success) closeThread(); else panelMsg((r && r.error) || 'COULD NOT DELETE');
+};
 
 // ── Sending ───────────────────────────────────────────────────────────────────
 window.doSendMessage = async function() {
-    const textarea  = document.getElementById('composeBody');
-    const status    = document.getElementById('composeMsg');
-    const btn       = document.getElementById('sendBtn');
-    const friend    = _friends.find(f => f.uid === _openUid);
-    const body      = textarea.value.trim();
+    const textarea = document.getElementById('composeBody');
+    const status   = document.getElementById('composeMsg');
+    const btn      = document.getElementById('sendBtn');
+    const body     = textarea.value.trim();
+    if (!body) { status.style.color = '#ff4500'; status.textContent = 'MESSAGE CANNOT BE EMPTY'; return; }
 
-    if (!friend) { status.style.color = '#ff4500'; status.textContent = 'YOU CAN ONLY MESSAGE FRIENDS'; return; }
-    if (!body)   { status.style.color = '#ff4500'; status.textContent = 'MESSAGE CANNOT BE EMPTY'; return; }
-
+    let send;
+    if (_open.type === 'group') {
+        const gid = _open.id;
+        send = () => window.sendGroupMessage(gid, body);
+    } else {
+        const friend = _friends.find(f => f.uid === _open.uid);
+        if (!friend) { status.style.color = '#ff4500'; status.textContent = 'YOU CAN ONLY MESSAGE FRIENDS'; return; }
+        send = () => window.sendMessage(friend.uid, friend.username, body);
+    }
     status.style.color = ''; status.textContent = 'SENDING...';
     btn.disabled = true;
     try {
-        const result = await window.sendMessage(friend.uid, friend.username, body);
+        const result = await send();
         if (result && result.success) {
-            textarea.value = '';
-            updateCharCount(textarea);
-            status.textContent = '';
-            if (!_stopWatch) fallbackLoad();   // live view picks it up otherwise
+            textarea.value = ''; updateCharCount(textarea); status.textContent = '';
+            if (_open && _open.type === 'dm' && !_stopWatch) fallbackLoad();
         } else {
             status.style.color = '#ff4500';
             status.textContent = (result && result.error) || 'COULD NOT SEND — YOUR MESSAGE IS STILL HERE';
@@ -249,13 +461,14 @@ window.updateCharCount = function(el) {
 
 // ── Deleting ──────────────────────────────────────────────────────────────────
 window.doDeleteMessage = async function(id) {
-    if (!confirm('Delete this message for both of you?\n\nIt will disappear from both your conversation and theirs. This can\'t be undone.')) return;
-    const result = await window.deleteMessage(id);
-    if (result && result.success) {
-        if (!_stopWatch) fallbackLoad();
-    } else {
-        alert('Could not delete the message.');
-    }
+    const isGroup = _open && _open.type === 'group';
+    const text = isGroup
+        ? 'Delete this message for everyone in the group?\n\nThis can\'t be undone.'
+        : 'Delete this message for both of you?\n\nIt will disappear from both your conversation and theirs. This can\'t be undone.';
+    if (!confirm(text)) return;
+    const result = isGroup ? await window.deleteGroupMessage(_open.id, id) : await window.deleteMessage(id);
+    if (result && result.success) { if (!isGroup && !_stopWatch) fallbackLoad(); }
+    else alert('Could not delete the message.');
 };
 
 // ── Formatting ────────────────────────────────────────────────────────────────

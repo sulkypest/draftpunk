@@ -541,6 +541,9 @@ async function showAccountOverlay() {
         const btn = document.getElementById('dpDeleteBtn');
         btn.disabled = true; btn.textContent = 'DELETING...';
         try {
+            // Groups, shared chapters and messages first (needs the private
+            // group history, which is removed with the rest below)
+            await deleteSocialData(user.uid);
             // Delete chapters, Writing Record figures and share links
             const owned = await collectOwnedDocRefs(user.uid);
             await deleteShareLinks(owned.shareIds);
@@ -852,6 +855,53 @@ async function collectOwnedDocRefs(uid) {
     return { refs, shareIds: [...shareIds] };
 }
 
+// Social data for account deletion: leave groups (deleting those I created),
+// remove my messages in every group I've been in, chapters I've shared, and
+// direct messages to or from me. Each step is tolerant: anything already gone
+// or not removable is skipped so it can't block the rest.
+async function deleteSocialData(uid) {
+    const tryDo = async f => { try { await f(); } catch (e) { console.warn('Account deletion step skipped:', e); } };
+    let groupIds = new Set();
+    await tryDo(async () => {
+        const h = await getDoc(doc(db, 'users', uid, 'private', 'groupHistory'));
+        if (h.exists()) (h.data().ids || []).forEach(id => groupIds.add(id));
+    });
+    let current = [];
+    await tryDo(async () => {
+        const snap = await getDocs(query(collection(db, 'groups'), where('members', 'array-contains', uid)));
+        current = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        current.forEach(g => groupIds.add(g.id));
+    });
+    for (const g of current) {
+        if (g.ownerId === uid) {
+            await tryDo(async () => {
+                const msgs = await getDocs(collection(db, 'groups', g.id, 'messages'));
+                await deleteInBatches(msgs.docs.map(d => d.ref));
+                await deleteDoc(doc(db, 'groups', g.id));
+            });
+        }
+    }
+    for (const gid of groupIds) {
+        await tryDo(async () => {
+            const mine = await getDocs(query(collection(db, 'groups', gid, 'messages'), where('from', '==', uid)));
+            await deleteInBatches(mine.docs.map(d => d.ref));
+        });
+    }
+    for (const g of current) {
+        if (g.ownerId !== uid) await tryDo(() => setDoc(doc(db, 'groups', g.id), { members: arrayRemove(uid) }, { merge: true }));
+    }
+    await tryDo(async () => {
+        const shares = await getDocs(query(collection(db, 'shares'), where('ownerId', '==', uid)));
+        await deleteInBatches(shares.docs.map(d => d.ref));
+    });
+    for (const field of ['from', 'to']) {
+        await tryDo(async () => {
+            const msgs = await getDocs(query(collection(db, 'messages'), where(field, '==', uid)));
+            await deleteInBatches(msgs.docs.map(d => d.ref));
+        });
+    }
+}
+
 // Remove share links one at a time: one that's already gone (or isn't this
 // writer's) is refused by the rules, and must not stop everything else.
 async function deleteShareLinks(ids) {
@@ -892,6 +942,167 @@ window.listCloudVersions = async function(chapterId) {
 window.deleteCloudVersion = async function(chapterId, versionId) {
     if (!currentUser) return;
     await deleteDoc(doc(db, 'users', currentUser.uid, 'writing', chapterId, 'versions', versionId));
+};
+
+// ── Writing groups ────────────────────────────────────────────────────────────
+// groups/{id}: { name, ownerId, ownerUsername, members: [uids], memberNames:
+// { uid: username }, createdAt }. groups/{id}/messages/{id}: { from,
+// fromUsername, body, createdAt }. Read status lives in the owner-only
+// users/{uid}/private/groupReads; groups ever joined are listed in
+// users/{uid}/private/groupHistory so account deletion can find them.
+const GROUP_MAX = 12;
+
+async function myUsername() {
+    const snap = await getDoc(doc(db, 'users', currentUser.uid));
+    return snap.exists() ? (snap.data().username || '') : '';
+}
+
+window.createGroup = async function(name, friends) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    const me = currentUser.uid;
+    const members = [me, ...friends.map(f => f.uid).filter(u => u !== me)].slice(0, GROUP_MAX);
+    const memberNames = { [me]: await myUsername() };
+    friends.forEach(f => { if (members.includes(f.uid)) memberNames[f.uid] = f.username; });
+    try {
+        const ref = doc(collection(db, 'groups'));
+        await setDoc(ref, { name: String(name).trim().slice(0, 60) || 'Writing group', ownerId: me,
+                            ownerUsername: memberNames[me], members, memberNames, createdAt: Date.now() });
+        return { success: true, id: ref.id };
+    } catch (err) { return { error: err.message }; }
+};
+
+// Live list of my groups. Also records each group in my private history.
+window.watchGroups = function(callback, onError) {
+    if (!currentUser) return () => {};
+    const uid = currentUser.uid;
+    const seen = new Set();
+    return onSnapshot(query(collection(db, 'groups'), where('members', 'array-contains', uid)), snap => {
+        const groups = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const fresh = groups.map(g => g.id).filter(id => !seen.has(id));
+        fresh.forEach(id => seen.add(id));
+        if (fresh.length) {
+            setDoc(doc(db, 'users', uid, 'private', 'groupHistory'), { ids: arrayUnion(...fresh) }, { merge: true }).catch(() => {});
+        }
+        callback(groups);
+    }, err => { if (onError) onError(err); });
+};
+
+window.getMyGroups = async function() {
+    if (!currentUser) return [];
+    try {
+        const snap = await getDocs(query(collection(db, 'groups'), where('members', 'array-contains', currentUser.uid)));
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (err) { return { error: err.message }; }
+};
+
+// Creator only: rename, or set the member list
+window.updateGroup = async function(groupId, changes) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        const snap = await getDoc(doc(db, 'groups', groupId));
+        if (!snap.exists()) return { error: 'Group not found.' };
+        const g = snap.data();
+        const next = { ...g };
+        if (changes.name != null) next.name = String(changes.name).trim().slice(0, 60) || g.name;
+        if (changes.members) {
+            next.members = [currentUser.uid, ...changes.members.map(m => m.uid).filter(u => u !== currentUser.uid)].slice(0, GROUP_MAX);
+            const names = { ...(g.memberNames || {}) };
+            changes.members.forEach(m => { names[m.uid] = m.username; });
+            Object.keys(names).forEach(u => { if (!next.members.includes(u)) delete names[u]; });
+            next.memberNames = names;
+        }
+        await setDoc(doc(db, 'groups', groupId), next);
+        return { success: true };
+    } catch (err) { return { error: err.message }; }
+};
+
+window.leaveGroup = async function(groupId) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        await setDoc(doc(db, 'groups', groupId), { members: arrayRemove(currentUser.uid) }, { merge: true });
+        return { success: true };
+    } catch (err) { return { error: err.message }; }
+};
+
+// Creator only: removes every message, then the group
+window.deleteGroup = async function(groupId) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        const msgs = await getDocs(collection(db, 'groups', groupId, 'messages'));
+        await deleteInBatches(msgs.docs.map(d => d.ref));
+        await deleteDoc(doc(db, 'groups', groupId));
+        return { success: true };
+    } catch (err) { return { error: err.message }; }
+};
+
+window.watchGroupMessages = function(groupId, callback, onError) {
+    if (!currentUser) return () => {};
+    return onSnapshot(collection(db, 'groups', groupId, 'messages'), snap => {
+        const list = snap.docs.map(d => ({ id: d.id, groupId, ...d.data() }));
+        list.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+        callback(list);
+    }, err => { if (onError) onError(err); });
+};
+
+window.sendGroupMessage = async function(groupId, body) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        await setDoc(doc(collection(db, 'groups', groupId, 'messages')), {
+            from: currentUser.uid, fromUsername: await myUsername(),
+            body: String(body).trim().slice(0, 500), createdAt: Date.now()
+        });
+        return { success: true };
+    } catch (err) { return { error: err.message }; }
+};
+
+window.deleteGroupMessage = async function(groupId, messageId) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try { await deleteDoc(doc(db, 'groups', groupId, 'messages', messageId)); return { success: true }; }
+    catch (err) { return { error: err.message }; }
+};
+
+window.getGroupReads = async function() {
+    if (!currentUser) return {};
+    try { const s = await getDoc(doc(db, 'users', currentUser.uid, 'private', 'groupReads')); return s.exists() ? s.data() : {}; }
+    catch (err) { return {}; }
+};
+window.markGroupRead = async function(groupId, time) {
+    if (!currentUser) return;
+    try { await setDoc(doc(db, 'users', currentUser.uid, 'private', 'groupReads'), { [groupId]: time }, { merge: true }); } catch (err) {}
+};
+
+// Word counts for each member (profile totals are already public to signed-in writers)
+window.getGroupStats = async function(group) {
+    const rows = await Promise.all((group.members || []).map(async uid => {
+        try {
+            const s = await getDoc(doc(db, 'users', uid));
+            const d = s.exists() ? s.data() : {};
+            return { uid, username: d.username || (group.memberNames || {})[uid] || '?',
+                     totalWords: d.totalWords || 0, wordsThisWeek: d.wordsThisWeek || 0,
+                     wordsThisMonth: d.wordsThisMonth || 0, wordsThisYear: d.wordsThisYear || 0,
+                     updatedAt: d.updatedAt || 0 };
+        } catch (e) { return { uid, username: (group.memberNames || {})[uid] || '?', totalWords: 0, wordsThisWeek: 0, wordsThisMonth: 0, wordsThisYear: 0 }; }
+    }));
+    return rows;
+};
+
+// Share a chapter with every current member of a group (an ordinary share,
+// labelled with the group; members who join later don't get it automatically)
+window.createGroupShare = async function({ projectId, projectTitle, chapterId, chapterTitle, content, wordCount, group }) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        const others = (group.members || []).filter(u => u !== currentUser.uid);
+        if (!others.length) return { error: 'There is no one else in this group yet.' };
+        await setDoc(doc(db, 'shares', `${currentUser.uid}_${chapterId}_group_${group.id}`), {
+            ownerId: currentUser.uid, ownerUsername: await myUsername(),
+            projectId, projectTitle, chapterId, chapterTitle, content, wordCount,
+            sharedWith: others,
+            sharedWithUsernames: others.map(u => (group.memberNames || {})[u] || '?'),
+            groupId: group.id, groupName: group.name,
+            updatedAt: Date.now()
+        });
+        return { success: true };
+    } catch (err) { return { error: err.message }; }
 };
 
 window.getCurrentUsername = async function() {

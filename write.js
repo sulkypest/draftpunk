@@ -746,10 +746,21 @@ window.shareChapter = async function(id) {
     select.innerHTML = '<option value="">LOADING...</option>';
     document.getElementById('shareOverlay').style.display = 'flex';
 
-    const [friends, activeShares] = await Promise.all([
+    const groupSelect = document.getElementById('shareGroupSelect');
+    groupSelect.innerHTML = '<option value="">LOADING...</option>';
+    const [friends, activeShares, groups] = await Promise.all([
         window.getFriends(),
-        window.getMySharesForChapter(id)
+        window.getMySharesForChapter(id),
+        window.getMyGroups ? window.getMyGroups() : []
     ]);
+    _shareGroups = Array.isArray(groups) ? groups : [];
+    const groupShared = new Set((activeShares || []).filter(s => s.groupId).map(s => s.groupId));
+    const groupChoices = _shareGroups.filter(g => !groupShared.has(g.id) && (g.members || []).length > 1);
+    groupSelect.innerHTML = !_shareGroups.length
+        ? '<option value="">NOT IN ANY GROUPS YET</option>'
+        : groupChoices.length
+            ? '<option value="">— SELECT GROUP —</option>' + groupChoices.map(g => `<option value="${escapeAttr(g.id)}">${escapeAttr(g.name)} (${(g.members || []).length - 1} ${((g.members || []).length - 1) === 1 ? 'PERSON' : 'PEOPLE'})</option>`).join('')
+            : '<option value="">ALREADY SHARED WITH YOUR GROUPS</option>';
 
     // Show active shares with revoke buttons
     const activeSection = document.getElementById('activeSharesSection');
@@ -758,8 +769,8 @@ window.shareChapter = async function(id) {
         activeSection.style.display = 'block';
         activeList.innerHTML = activeShares.map(s => `
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                <span style="flex:1;font-size:0.8rem;letter-spacing:1px;">${s.sharedWithUsernames && s.sharedWithUsernames[0] || '?'}</span>
-                <button onclick="revokeShare('${s.id}')"
+                <span style="flex:1;font-size:0.8rem;letter-spacing:1px;">${s.groupId ? 'GROUP: ' + escapeAttr(s.groupName || '?') + ' (' + (s.sharedWith || []).length + ')' : escapeAttr(s.sharedWithUsernames && s.sharedWithUsernames[0] || '?')}</span>
+                <button data-id="${escapeAttr(s.id)}" onclick="revokeShare(this.dataset.id)"
                     style="font-size:0.65rem;padding:4px 8px;background:#333;letter-spacing:1px;white-space:nowrap;">
                     ✕ REVOKE
                 </button>
@@ -769,7 +780,7 @@ window.shareChapter = async function(id) {
     }
 
     // Populate friend picker (exclude already-shared friends)
-    const sharedUids = new Set((activeShares || []).map(s => s.sharedWith && s.sharedWith[0]));
+    const sharedUids = new Set((activeShares || []).filter(s => !s.groupId).map(s => s.sharedWith && s.sharedWith[0]));
     if (!friends || friends.error || friends.length === 0) {
         select.innerHTML = '<option value="">NO FRIENDS YET</option>';
         return;
@@ -779,7 +790,7 @@ window.shareChapter = async function(id) {
         select.innerHTML = '<option value="">ALL FRIENDS ALREADY HAVE ACCESS</option>';
     } else {
         select.innerHTML = '<option value="">— SELECT FRIEND —</option>' +
-            available.map(f => `<option value="${f.uid}">${f.username}</option>`).join('');
+            available.map(f => `<option value="${escapeAttr(f.uid)}">${escapeAttr(f.username)}</option>`).join('');
     }
 };
 
@@ -799,11 +810,20 @@ window.closeShareOverlay = function() {
     _sharingChapterId = null;
 };
 
+let _shareGroups = [];
+// Choosing a friend clears the group choice, and vice versa
+window.shareChoice = function(which) {
+    const other = document.getElementById(which === 'friend' ? 'shareGroupSelect' : 'shareFriendSelect');
+    if (other) other.value = '';
+};
+
 window.confirmShare = async function() {
     const select = document.getElementById('shareFriendSelect');
     const msg    = document.getElementById('shareMsg');
     const uid    = select.value;
-    if (!uid) { msg.style.color = '#ff4500'; msg.textContent = 'SELECT A FRIEND FIRST'; return; }
+    const gid    = document.getElementById('shareGroupSelect').value;
+    if (!uid && !gid) { msg.style.color = '#ff4500'; msg.textContent = 'CHOOSE A FRIEND OR A GROUP'; return; }
+    if (gid) return confirmGroupShare(gid);
 
     const ch = writingData.chapters.find(c => c.id === _sharingChapterId);
     if (!ch) return;
@@ -834,6 +854,31 @@ window.confirmShare = async function() {
         msg.textContent = (result && result.error) || 'COULD NOT SHARE';
     }
 };
+
+async function confirmGroupShare(gid) {
+    const msg   = document.getElementById('shareMsg');
+    const group = _shareGroups.find(g => g.id === gid);
+    const ch    = writingData.chapters.find(c => c.id === _sharingChapterId);
+    if (!group || !ch) return;
+    const n = (group.members || []).length - 1;
+    if (!confirm(`Share "${ch.title}" with all ${n} ${n === 1 ? 'person' : 'people'} in "${group.name}"?\n\nPeople who join the group later won't see it unless you share it again.`)) return;
+    const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+    const proj   = dpData.projects && dpData.projects[activeProjectId];
+    msg.style.color = 'var(--text-dim)';
+    msg.textContent = 'SHARING...';
+    const result = await window.createGroupShare({
+        projectId: activeProjectId, projectTitle: (proj && proj.title) || 'UNTITLED',
+        chapterId: ch.id, chapterTitle: ch.title, content: ch.content, wordCount: ch.wordCount || 0, group
+    });
+    if (result && result.success) {
+        msg.style.color = 'var(--neon)';
+        msg.textContent = 'SHARED WITH THE GROUP!';
+        setTimeout(window.closeShareOverlay, 1200);
+    } else {
+        msg.style.color = '#ff4500';
+        msg.textContent = (result && result.error) || 'COULD NOT SHARE';
+    }
+}
 
 // ── Focus mode ────────────────────────────────────────────────────────────────
 window._focusedChapterId = null;

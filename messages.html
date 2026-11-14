@@ -75,13 +75,26 @@
                 <div id="convListView">
                     <div class="msg-bar">
                         <span class="msg-bar-title">CONVERSATIONS</span>
-                        <button id="newMsgBtn" class="msg-new-btn" onclick="showNewMessage()">＋ NEW MESSAGE</button>
+                        <span class="msg-bar-btns">
+                            <button id="newMsgBtn" class="msg-new-btn" onclick="showNewMessage()">＋ NEW MESSAGE</button>
+                            <button id="newGroupBtn" class="msg-new-btn" onclick="showNewGroup()">＋ NEW GROUP</button>
+                        </span>
                     </div>
                     <div id="newMsgPicker" class="msg-picker" style="display:none;">
                         <label for="composeToSelect" class="msg-label">MESSAGE A FRIEND</label>
                         <div class="msg-picker-row">
                             <select id="composeToSelect"></select>
                             <button onclick="startConversation()">OPEN</button>
+                        </div>
+                    </div>
+                    <div id="newGroupPanel" class="msg-picker" style="display:none;">
+                        <label for="newGroupName" class="msg-label">GROUP NAME</label>
+                        <input type="text" id="newGroupName" maxlength="60" placeholder="e.g. Thursday writers">
+                        <div class="msg-label msg-gap">ADD FRIENDS (UP TO 11)</div>
+                        <div id="newGroupFriends" class="msg-checks"></div>
+                        <div class="msg-picker-row msg-gap">
+                            <span id="newGroupMsg" class="msg-status"></span>
+                            <button onclick="createNewGroup()">CREATE GROUP</button>
                         </div>
                     </div>
                     <div id="convList" class="msg-conv-list"><div class="lb-loading">LOADING...</div></div>
@@ -93,6 +106,8 @@
                         <button class="msg-back" onclick="closeThread()">← ALL CONVERSATIONS</button>
                     </div>
                     <div class="msg-thread-name" id="threadName"></div>
+                    <div class="msg-thread-sub" id="threadSub"></div>
+                    <div id="groupPanel" class="msg-picker" style="display:none;"></div>
                     <div id="threadMessages" class="msg-thread" aria-live="polite"></div>
                     <div id="replyBox" class="msg-reply">
                         <textarea id="composeBody" maxlength="500" placeholder="Write a reply…"
