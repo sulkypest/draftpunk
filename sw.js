@@ -1,4 +1,4 @@
-const CACHE = 'draftpunk-v102';
+const CACHE = 'draftpunk-v103';
 
 const PRECACHE = [
     './',
@@ -51,6 +51,7 @@ const PRECACHE = [
     './evidence.js',
     './record.html',
     './record.js',
+    './export.js',
 ];
 
 self.addEventListener('install', event => {

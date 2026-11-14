@@ -1770,3 +1770,63 @@ body.record-page { display: block; padding: 0 16px 40px; }
     .seg.imported, .sw.imported { background: #bbb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .record-day, .record-table tr { break-inside: avoid; }
 }
+
+/* ── Export dialog ──────────────────────────────────────────────────────────── */
+.export-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 2000;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 24px 12px;
+}
+.export-box {
+    background: var(--panel);
+    border: 2px solid var(--neon);
+    width: 100%;
+    max-width: 560px;
+    padding: 20px;
+    color: var(--text);
+}
+.exp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.exp-head h2 { margin: 0; font-size: 1rem; letter-spacing: 3px; }
+.exp-x { background: transparent !important; color: var(--text) !important; border: none !important; font-size: 1.1rem; padding: 4px 8px; width: auto; }
+.exp-sec { border-top: 1px solid var(--border); padding: 14px 0 4px; }
+.exp-label { font-size: 0.65rem; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 8px; display: flex; justify-content: space-between; }
+.exp-links button { background: none !important; border: none !important; color: var(--text-dim) !important; font-size: 0.65rem; letter-spacing: 1px; padding: 0; width: auto; cursor: pointer; text-decoration: underline; }
+.exp-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.exp-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.exp-chip span {
+    display: inline-block; padding: 8px 12px; border: 1px solid var(--border);
+    font-size: 0.72rem; letter-spacing: 1px; cursor: pointer; min-height: 20px;
+}
+.exp-chip input:checked + span { border-color: var(--neon); background: var(--neon); color: var(--panel); }
+.exp-chip input:focus-visible + span { outline: 2px solid var(--neon); outline-offset: 2px; }
+.exp-note { font-size: 0.68rem; color: var(--text-dim); line-height: 1.5; margin: 8px 0 4px; }
+.exp-chapters { max-height: 180px; overflow-y: auto; border: 1px solid var(--border); }
+.exp-ch { display: flex; align-items: center; gap: 8px; padding: 7px 10px; font-size: 0.78rem; border-bottom: 1px solid var(--border-light, var(--border)); cursor: pointer; }
+.exp-ch:last-child { border-bottom: none; }
+.exp-ch span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.exp-ch em { font-style: normal; color: var(--text-dim); font-size: 0.7rem; }
+.exp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin-top: 10px; }
+.exp-grid > label { display: flex; flex-direction: column; gap: 4px; font-size: 0.62rem; letter-spacing: 1px; color: var(--text-dim); }
+.exp-grid select, .exp-grid input[type=text], .exp-grid textarea { font-size: 0.8rem; padding: 6px; width: 100%; box-sizing: border-box; color: var(--text); background: var(--bg); border: 1px solid var(--border); font-family: inherit; }
+.exp-grid .exp-wide { grid-column: 1 / -1; }
+.exp-check { display: flex !important; flex-direction: row !important; align-items: center; gap: 8px; font-size: 0.72rem !important; color: var(--text) !important; grid-column: 1 / -1; cursor: pointer; letter-spacing: 0 !important; }
+.exp-foot { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.exp-foot button { width: auto; padding: 10px 22px; }
+.exp-foot button:disabled { opacity: 0.4; cursor: default; }
+@media (max-width: 480px) {
+    .exp-grid { grid-template-columns: 1fr; }
+    .exp-foot { flex-direction: column; align-items: stretch; }
+    .exp-foot button { width: 100%; }
+}
+.exp-ch input[type=checkbox], .exp-check input[type=checkbox] {
+    width: 18px !important; height: 18px !important; min-width: 18px; flex: 0 0 18px;
+    margin: 0 !important; padding: 0 !important; accent-color: var(--neon);
+}
+.exp-label { align-items: baseline; }
+.exp-links { white-space: nowrap; }
+.exp-links button { display: inline !important; width: auto !important; margin: 0 !important; }
