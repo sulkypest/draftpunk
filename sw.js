@@ -1,4 +1,4 @@
-const CACHE = 'draftpunk-v110';
+const CACHE = 'draftpunk-v111';
 
 const PRECACHE = [
     './',
@@ -54,7 +54,6 @@ const PRECACHE = [
     './export.js',
     './versions.js',
     './friend-picker.js',
-    './toolbar-dock.js',
 ];
 
 self.addEventListener('install', event => {

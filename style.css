@@ -2015,37 +2015,3 @@ body.record-page { display: block; padding: 0 16px 40px; }
 .fp-note { font-size: 0.65rem; color: var(--text-dim); letter-spacing: 1px; margin-top: 4px; min-height: 1em; }
 .fp-list { max-height: none; overflow: visible; }
 .fp-opt { min-height: 36px; padding: 8px 12px !important; }
-
-/* ── Toolbar stays within reach ─────────────────────────────────────────────── */
-/* Clip (not hide) keeps the rounded corners without breaking sticky positioning */
-.write-chapter { overflow: clip; }
-.write-chapter.open .write-toolbar {
-    position: sticky;
-    top: var(--nav-h, 0px);
-    z-index: 20;
-    background: var(--panel);
-}
-body.write-focus .write-chapter.write-focus-target .write-toolbar { position: static; }
-
-/* Phones and tablets: editing row pinned to the top of the screen while typing */
-.tb-dock {
-    position: fixed;
-    left: 0; right: 0;
-    z-index: 1500;
-    background: var(--panel);
-    border-bottom: 2px solid var(--border, #ccc);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    padding: 6px 8px;
-    display: none;
-}
-body.tb-docked .tb-dock { display: block; }
-.tb-dock .write-tb-row-edit {
-    display: flex; flex-wrap: nowrap; justify-content: space-between; align-items: center;
-    gap: 4px; padding: 0 !important; border: none !important; overflow-x: auto;
-}
-.tb-dock .write-tb-group { gap: 4px; }
-.tb-dock .write-tb-btn { min-height: 40px; min-width: 40px; }
-.tb-dock .write-tb-sep { align-self: stretch; }
-/* While typing with the row docked, let the rest of the toolbar scroll away
-   so the keyboard-shortened screen is mostly text */
-body.tb-docked .write-chapter.open .write-toolbar { position: static; }
