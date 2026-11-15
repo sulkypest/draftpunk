@@ -2015,3 +2015,17 @@ body.record-page { display: block; padding: 0 16px 40px; }
 .fp-note { font-size: 0.65rem; color: var(--text-dim); letter-spacing: 1px; margin-top: 4px; min-height: 1em; }
 .fp-list { max-height: none; overflow: visible; }
 .fp-opt { min-height: 36px; padding: 8px 12px !important; }
+
+/* ── Toolbar stays on screen ────────────────────────────────────────────────── */
+/* The open chapter's toolbar stays pinned just below the top bar while you
+   scroll through a long chapter. Plain CSS (position: sticky), no scripts
+   watching the scroll or the keyboard. overflow: clip (not hidden) keeps the
+   rounded corners without stopping sticky from working. */
+.write-chapter { overflow: clip; }
+.write-chapter.open .write-toolbar {
+    position: sticky;
+    top: var(--nav-h, 0px);
+    z-index: 20;
+    background: var(--panel);
+}
+body.write-focus .write-chapter.write-focus-target .write-toolbar { position: static; }
