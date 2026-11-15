@@ -2018,13 +2018,15 @@ body.record-page { display: block; padding: 0 16px 40px; }
 
 /* ── Toolbar stays on screen ────────────────────────────────────────────────── */
 /* The open chapter's toolbar stays pinned just below the top bar while you
-   scroll through a long chapter. Plain CSS (position: sticky), no scripts
-   watching the scroll or the keyboard. overflow: clip (not hidden) keeps the
-   rounded corners without stopping sticky from working. */
+   scroll through a long chapter (position: sticky). On iPhone/iPad, while the
+   keyboard is open iOS slides the page up behind the browser bar, taking the
+   top bar with it; --vv-top (set by nav-height.js) is how far, so the toolbar
+   sits at the top of what is actually visible. overflow: clip (not hidden)
+   keeps the rounded corners without stopping sticky from working. */
 .write-chapter { overflow: clip; }
 .write-chapter.open .write-toolbar {
     position: sticky;
-    top: var(--nav-h, 0px);
+    top: max(var(--nav-h, 0px), var(--vv-top, 0px));
     z-index: 20;
     background: var(--panel);
 }
