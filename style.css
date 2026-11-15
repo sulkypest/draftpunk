@@ -2027,15 +2027,15 @@ body.record-page { display: block; padding: 0 16px 40px; }
 }
 body.write-focus .write-chapter.write-focus-target .write-toolbar { position: static; }
 
-/* Phones: editing row docked just above the keyboard while typing */
+/* Phones and tablets: editing row pinned to the top of the screen while typing */
 .tb-dock {
     position: fixed;
     left: 0; right: 0;
     z-index: 1500;
     background: var(--panel);
-    border-top: 2px solid var(--neon);
-    box-shadow: 0 -4px 12px rgba(0,0,0,0.25);
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    border-bottom: 2px solid var(--border, #ccc);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 6px 8px;
     display: none;
 }
 body.tb-docked .tb-dock { display: block; }
@@ -2046,10 +2046,6 @@ body.tb-docked .tb-dock { display: block; }
 .tb-dock .write-tb-group { gap: 4px; }
 .tb-dock .write-tb-btn { min-height: 40px; min-width: 40px; }
 .tb-dock .write-tb-sep { align-self: stretch; }
-body.tb-docked #mobSideTrigger { display: none !important; }
-/* Room to scroll the last lines above the docked row */
-body.tb-docked .notes-page { padding-bottom: calc(var(--dock-h, 56px) + 24px); }
-body.tb-docked.write-focus .write-chapter.write-focus-target .write-area { padding-bottom: calc(var(--dock-h, 56px) + 24px); }
 /* While typing with the row docked, let the rest of the toolbar scroll away
    so the keyboard-shortened screen is mostly text */
 body.tb-docked .write-chapter.open .write-toolbar { position: static; }

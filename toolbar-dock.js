@@ -3,11 +3,14 @@
 //    you scroll through a long chapter (CSS position: sticky; the top offset is
 //    the fixed nav's live height).
 // 2. Phones and tablets, while typing: the editing row (undo/redo, bold,
-//    italic, underline, heading, clear formatting) docks just above the
-//    on-screen keyboard, like iOS Notes, and follows it as the keyboard opens,
-//    closes or the page scrolls. A placeholder keeps its usual space so the
-//    text doesn't jump, and the page scrolls if the caret would end up hidden
-//    under the docked row.
+//    italic, underline, heading, clear formatting) is pinned to the top edge
+//    of the visible screen. iOS moves the visible area around when the
+//    keyboard is up, which defeats CSS sticky/fixed, so the row is placed
+//    against window.visualViewport instead. It is anchored to the TOP, not
+//    the keyboard: the keyboard's reported height includes iOS's own bars
+//    (e.g. the iPad AutoFill strip), so anchoring there left it mid-screen.
+//    A placeholder keeps its usual space so the text doesn't jump, and the
+//    page scrolls if the caret would end up hidden under the row.
 // Purely visual: the row's buttons are the same elements, moved, so they keep
 // working exactly as before. Nothing about chapters or saving is touched.
 (function () {
@@ -25,7 +28,7 @@
 
     if (!touch) return;
 
-    // ── Dock above the keyboard ───────────────────────────────────────────────
+    // ── Pin to the top of the visible screen ───────────────────────────────────────────────
     let dock = null, row = null, home = null, holder = null, editor = null;
 
     function dockEl() {
@@ -42,13 +45,13 @@
     function place() {
         if (!row || !dock) return;
         const vv = window.visualViewport;
-        const h = dock.offsetHeight;
-        const top = vv ? vv.offsetTop + vv.height - h : window.innerHeight - h;
+        const top = vv ? vv.offsetTop : 0;
         dock.style.top = Math.max(0, Math.round(top)) + 'px';
-        keepCaretVisible();
     }
 
-    // Scroll so the caret isn't hidden under the docked row
+    // Scroll so the caret isn't hidden under the docked row. Only ever called
+    // when the writer types or first taps in — never on scroll, or the page
+    // would keep yanking back to the caret while they read through the text.
     function keepCaretVisible() {
         if (!row || !editor) return;
         const sel = window.getSelection();
@@ -61,12 +64,11 @@
             rect = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null;
         }
         if (!rect) return;
-        const vv = window.visualViewport;
-        const dockTop = dock.getBoundingClientRect().top;
-        const overlap = rect.bottom + 12 - dockTop;
+        const dockBottom = dock.getBoundingClientRect().bottom;
+        const overlap = dockBottom + 12 - rect.top;
         if (overlap > 0) {
             const scroller = editor.scrollHeight > editor.clientHeight + 1 ? editor : null;
-            if (scroller) scroller.scrollTop += overlap; else window.scrollBy(0, overlap);
+            if (scroller) scroller.scrollTop -= overlap; else window.scrollBy(0, -overlap);
         }
     }
 
@@ -85,6 +87,7 @@
         dock.style.display = '';
         document.documentElement.style.setProperty('--dock-h', dock.offsetHeight + 'px');
         place();
+        keepCaretVisible();
     }
 
     function undock() {
@@ -125,7 +128,6 @@
         window.visualViewport.addEventListener('scroll', place);
     }
     window.addEventListener('scroll', () => { if (row) place(); }, { passive: true });
-    document.addEventListener('selectionchange', () => { if (row) keepCaretVisible(); });
     document.addEventListener('input', e => { if (row && e.target.closest && e.target.closest('.write-area')) keepCaretVisible(); }, true);
 
     window.DPToolbarDock = { isDocked: () => !!row, _place: place };
