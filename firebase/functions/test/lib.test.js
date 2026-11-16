@@ -94,3 +94,23 @@ test('a late reminder never goes out at or after 22:00', () => {
     const late = settings({ reminder: { enabled: true, time: '23:59', tz: 'Europe/London' } });
     assert.strictEqual(lib.reminderDecision(late, dp({}), at('2026-11-16T23:59:00Z')).send, false);
 });
+
+test('reminder uses the account-wide streak and mentions freezes', () => {
+    const projects = dp({ a: { lastWritingDate: '2026-11-15', currentStreak: 2 } });
+    const streak = { v: 1, start: '2026-11-06', last: '2026-11-15', freezes: 2, days: {}, frozen: [] };
+    const d = lib.reminderDecision(settings(), projects, at('2026-11-16T19:05:00Z'), streak);
+    assert.strictEqual(d.status.streak, 10);
+    assert.strictEqual(d.status.freezes, 2);
+    assert.match(lib.reminderMessage(d.status).body, /2 streak freezes/);
+    // Missed the 15th, one freeze covers it: streak still alive (11 days incl. the frozen day)
+    const s2 = { ...streak, last: '2026-11-14', freezes: 1 };
+    const d2 = lib.reminderDecision(settings(), dp({}), at('2026-11-16T19:05:00Z'), s2);
+    assert.strictEqual(d2.status.streak, 10); assert.strictEqual(d2.status.freezes, 0);
+    assert.match(lib.reminderMessage(d2.status).title, /10-DAY STREAK AT RISK/);
+    // Account streak shows they already wrote today (on another project)
+    const s3 = { ...streak, last: '2026-11-16' };
+    assert.strictEqual(lib.reminderDecision(settings(), projects, at('2026-11-16T19:05:00Z'), s3).reason, 'wrote-today');
+    // Too many missed days for the freezes: no streak to protect
+    const s4 = { ...streak, last: '2026-11-10', freezes: 1 };
+    assert.strictEqual(lib.reminderDecision(settings(), dp({}), at('2026-11-16T19:05:00Z'), s4).status.streak, 0);
+});

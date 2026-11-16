@@ -47,24 +47,42 @@ function inQuietHours(tz, now = new Date()) {
     return minutes >= QUIET_START || minutes < QUIET_END;
 }
 
-// What the writer's saved projects say about today.
-//   wroteToday: some project was written in on `today`
-//   streak:     the longest streak still alive (last written yesterday), i.e.
-//               the one that ends at midnight if they don't write today
-function writingStatus(draftPunkData, today, yesterday) {
+function daysBetween(a, b) {   // b - a, for 'YYYY-MM-DD' keys
+    const t = k => { const [y, m, d] = k.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+    return Math.round((t(b) - t(a)) / 86400000);
+}
+
+// What the writer's saved data says about today.
+//   wroteToday: words were added today (any project)
+//   streak:     the writer streak that ends at midnight if they don't write
+//               today (0 if none is alive)
+//   freezes:    streak freezes held (a freeze would cover today if missed)
+// Uses the account-wide streak (dpStreak) when the writer has one, otherwise
+// the best per-project streak, as before.
+function writingStatus(draftPunkData, today, yesterday, dpStreak) {
     const projects = Object.values((draftPunkData && draftPunkData.projects) || {});
-    let wroteToday = false, streak = 0;
+    let wroteToday = false, streak = 0, freezes = 0;
     for (const p of projects) {
         if (!p) continue;
         if (p.lastWritingDate === today) wroteToday = true;
         if (p.lastWritingDate === yesterday) streak = Math.max(streak, p.currentStreak || 0);
     }
-    return { wroteToday, streak, hasProjects: projects.length > 0 };
+    if (dpStreak && dpStreak.v === 1) {
+        if (dpStreak.last === today) wroteToday = true;
+        freezes = Math.max(0, Math.min(3, dpStreak.freezes || 0));
+        streak = 0;
+        if (dpStreak.start && dpStreak.last) {
+            const missed = daysBetween(dpStreak.last, today) - 1;   // days with no writing before today
+            if (missed <= 0) streak = daysBetween(dpStreak.start, dpStreak.last) + 1;
+            else if (freezes >= missed) { streak = daysBetween(dpStreak.start, today); freezes -= missed; }
+        }
+    }
+    return { wroteToday, streak, freezes, hasProjects: projects.length > 0 };
 }
 
 // Should the daily reminder go out right now?
 // Returns { send: boolean, reason, local } — reason is for logs/tests.
-function reminderDecision(settings, draftPunkData, now = new Date()) {
+function reminderDecision(settings, draftPunkData, now = new Date(), dpStreak = null) {
     const r = (settings && settings.reminder) || {};
     if (!r.enabled) return { send: false, reason: 'off' };
     if (!settings.tokens || !Object.keys(settings.tokens).length) return { send: false, reason: 'no-devices' };
@@ -73,12 +91,18 @@ function reminderDecision(settings, draftPunkData, now = new Date()) {
     const due = parseTime(r.time);
     if (local.minutes < due) return { send: false, reason: 'not-yet', local };
     if (local.minutes >= Math.min(due + REMINDER_WINDOW_MIN, QUIET_START)) return { send: false, reason: 'window-passed', local };
-    const status = writingStatus(draftPunkData, local.date, local.yesterday);
+    const status = writingStatus(draftPunkData, local.date, local.yesterday, dpStreak);
     if (status.wroteToday) return { send: false, reason: 'wrote-today', local, status };
     return { send: true, reason: 'due', local, status };
 }
 
 function reminderMessage(status) {
+    if (status && status.streak > 1 && status.freezes > 0) {
+        return {
+            title: `KEEP YOUR ${status.streak}-DAY STREAK`,
+            body: `Write today to keep it going. If you don\u2019t, one of your ${status.freezes} streak freeze${status.freezes > 1 ? 's' : ''} will cover it.`
+        };
+    }
     if (status && status.streak > 1) {
         return {
             title: `${status.streak}-DAY STREAK AT RISK`,

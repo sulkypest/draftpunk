@@ -1,4 +1,4 @@
-const CACHE = 'draftpunk-v117';
+const CACHE = 'draftpunk-v118';
 
 const PRECACHE = [
     './',
@@ -7,6 +7,8 @@ const PRECACHE = [
     './script.js',
     './sidebar.js',
     './period-notice.js',
+    './streak.js',
+    './streak-ui.js',
     './push.js',
     './data.js',
     './DRAFTPUNK.png',

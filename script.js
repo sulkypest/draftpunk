@@ -232,6 +232,10 @@ window.addWords = function() {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
 
+    // Writer streak + freezes (all projects together); recorded before the
+    // project is updated so a first-time carry-over isn't counted twice
+    const sev = window.DPStreak ? window.DPStreak.recordWords(val, JSON.parse(JSON.stringify(dpData.projects || {}))) : null;
+
     // All the tracker rules live in tracker.js, shared with the Write page
     const ev = window.DPTracker.awardWords(state, val);
 
@@ -294,6 +298,12 @@ window.addWords = function() {
 
     save(); updateUI(); updateGraph();
     document.getElementById('wordIn').value = '';
+    if (sev) {
+        if (window.dpStreakRefresh) window.dpStreakRefresh();
+        if (sev.frozeDays.length) showCombatToast('\u2744\uFE0F STREAK SAVED', `${sev.frozeDays.length > 1 ? sev.frozeDays.length + ' FREEZES' : 'A FREEZE'} COVERED THE MISSED DAY${sev.frozeDays.length > 1 ? 'S' : ''}`, null);
+        sev.earned.forEach(e => showCombatToast(e.kept ? '\u2744\uFE0F STREAK FREEZE EARNED' : '\u2744\uFE0F FREEZES FULL',
+            e.kept ? (e.reason === 'streak' ? `${e.days} DAYS IN A ROW` : 'OVER 1,500 WORDS TODAY') : 'YOU ALREADY HOLD THE MAXIMUM OF 3', null));
+    }
     // Offer daily reminders (once; only where they can work)
     if (window.dpOfferNotifications) window.dpOfferNotifications();
 };

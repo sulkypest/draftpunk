@@ -38,7 +38,7 @@ if (RECAPTCHA_KEY !== 'YOUR_RECAPTCHA_V3_SITE_KEY') {
     });
 }
 
-const DATA_KEYS = ['draftPunkData', 'beatNotesData', 'charactersData', 'wordRunnerData', 'notesData'];
+const DATA_KEYS = ['draftPunkData', 'beatNotesData', 'charactersData', 'wordRunnerData', 'notesData', 'dpStreak'];
 
 // ── Period boundaries for the public week/month/year counts ──────────────────
 // Each writer's counters reset at their own local midnight (Monday for the

@@ -207,6 +207,11 @@ function syncChaptersToTracker(ids) {
     const proj = dpData.projects[dpData.activeProjectId];
     if (!proj) { alert('No active project found.'); return; }
 
+    // Writer streak + freezes (all projects together). Recorded before the
+    // project itself is updated, so a first-time carry-over of an existing
+    // streak isn't counted twice.
+    const sev = window.DPStreak ? window.DPStreak.recordWords(delta, JSON.parse(JSON.stringify(dpData.projects))) : null;
+
     const ev = window.DPTracker.awardWords(proj, delta);
 
     chapters.forEach(ch => { ch.syncedWords = ch.wordCount || 0; });
@@ -220,10 +225,12 @@ function syncChaptersToTracker(ids) {
     updateFooter();
     renderAll();
     if (window.updateSidebar) window.updateSidebar();
+    if (window.dpStreakRefresh) window.dpStreakRefresh();
 
     // Show what happened, one toast at a time
     queueToast(null, '✓ SYNCED', `${delta.toLocaleString()} WORDS ADDED`);
     if (ev.streak)  queueToast(null, `🔥 ${ev.streak.days}-DAY STREAK`, `+${ev.streak.bonus} BONUS XP`);
+    if (sev) streakToasts(sev).forEach(t => queueToast(null, t[0], t[1]));
     if (ev.session) queueToast(null, ev.session.label, `+${ev.session.bonus} BONUS XP`);
     if (ev.beat)    queueToast(window.getBossImgSrc ? window.getBossImgSrc(ev.beat.idx + 1) : null, 'BEAT DEFEATED', ev.beat.name.toUpperCase());
     ev.buddies.forEach(f => queueToast(`buddies/${f}`, 'NEW BUDDY!', 'CHECK YOUR COLLECTION'));
@@ -232,6 +239,17 @@ function syncChaptersToTracker(ids) {
     // Offer daily reminders (once; only where they can work)
     if (window.dpOfferNotifications) window.dpOfferNotifications();
 }
+
+// Toasts for streak freezes used / earned (see streak.js)
+function streakToasts(sev) {
+    const out = [];
+    if (sev.frozeDays && sev.frozeDays.length) out.push(['\u2744\uFE0F STREAK SAVED', `${sev.frozeDays.length > 1 ? sev.frozeDays.length + ' FREEZES' : 'A FREEZE'} COVERED THE DAY${sev.frozeDays.length > 1 ? 'S' : ''} YOU MISSED`]);
+    (sev.earned || []).forEach(e => out.push(e.kept
+        ? ['\u2744\uFE0F STREAK FREEZE EARNED', e.reason === 'streak' ? `${e.days} DAYS IN A ROW` : 'OVER 1,500 WORDS TODAY']
+        : ['\u2744\uFE0F FREEZES FULL', 'YOU ALREADY HOLD THE MAXIMUM OF 3']));
+    return out;
+}
+window.dpStreakToasts = streakToasts;
 
 let _toastQueue = [], _toastBusy = false;
 function queueToast(sprite, title, sub) {
