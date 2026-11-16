@@ -20,9 +20,9 @@ The notifications need **no rules change**. They only use `users/{uid}/private/n
 ## One-off setup (in this order)
 
 1. **Check the Firestore location.** In the Firebase console, open Firestore Database; the location is shown at the top. Set `REGION` near the top of `functions/index.js` to match:
-   - `europe-west2` → `'europe-west2'` (the current setting)
+   - `nam5` → `'us-central1'` (the current setting: Draft Punk's database is nam5)
+   - `europe-west2` → `'europe-west2'`
    - `eur3` → `'europe-west1'`
-   - `nam5` → `'us-central1'`
    - anything else → that same region name
 
    Firestore triggers can only run in the database's own region, and the deploy fails if this is wrong.

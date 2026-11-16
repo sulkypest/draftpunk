@@ -27,7 +27,7 @@ const lib = require('./lib');
 // the location shown at the top of the Data tab). Firestore triggers can only
 // run in that region. Mapping: europe-west2 → 'europe-west2';
 // eur3 (multi-region) → 'europe-west1'; nam5 → 'us-central1'.
-const REGION = 'europe-west2';
+const REGION = 'us-central1';   // Firestore is in nam5
 
 setGlobalOptions({ region: REGION, maxInstances: 5 });
 
