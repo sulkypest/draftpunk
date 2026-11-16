@@ -39,11 +39,16 @@ const SITE = 'https://www.draft-punk.com/';
 
 function settingsRef(uid) { return db.collection('users').doc(uid).collection('private').doc('notifications'); }
 
+// The writer's projects and streak, from the private copy if there is one
 async function writerData(uid) {
     const priv = await db.collection('users').doc(uid).collection('private').doc('data').get();
-    if (priv.exists && priv.data().draftPunkData) return priv.data().draftPunkData;
+    if (priv.exists && priv.data().draftPunkData) {
+        const d = priv.data();
+        return { draftPunkData: d.draftPunkData, dpStreak: d.dpStreak || null };
+    }
     const pub = await db.collection('users').doc(uid).get();
-    return pub.exists ? (pub.data().draftPunkData || null) : null;
+    const d = pub.exists ? pub.data() : {};
+    return { draftPunkData: d.draftPunkData || null, dpStreak: d.dpStreak || null };
 }
 
 // Send one notification to every device a writer has turned notifications on
@@ -97,7 +102,8 @@ exports.dailyWritingReminder = onSchedule({ schedule: 'every 15 minutes', timeZo
             if (!snap.exists) continue;
             const settings = snap.data();
             if (!settings.reminder || !settings.reminder.enabled) continue;
-            const decision = lib.reminderDecision(settings, await writerData(u.id), now);
+            const w = await writerData(u.id);
+            const decision = lib.reminderDecision(settings, w.draftPunkData, now, w.dpStreak);
             if (!decision.send) {
                 if (decision.reason === 'wrote-today') {
                     await settingsRef(u.id).set({ lastReminderDate: decision.local.date }, { merge: true });
