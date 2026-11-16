@@ -18,7 +18,13 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteField, FieldPath }
 export const VAPID_KEY = '';
 
 const LS_TOKEN = 'dpPushToken';
+const LS_OFFERED = 'dpNotifyOfferedAt';
 const DEFAULT_TIME = '19:00';
+// Quiet hours are 22:00-08:00 (enforced by the Cloud Functions too), so the
+// reminder can only be set between these times.
+const EARLIEST_TIME = '08:00';
+const LATEST_TIME = '21:45';
+const OFFER_AGAIN_AFTER = 30 * 86400000;   // "Not now" = ask again in 30 days
 
 let _app = null, _getUser = () => null;
 
@@ -124,7 +130,9 @@ export async function getSettings() {
 export async function saveSettings({ reminderEnabled, time, socialEnabled }) {
     const user = _getUser();
     if (!user) return;
-    const t = /^\d{2}:\d{2}$/.test(time || '') ? time : DEFAULT_TIME;
+    let t = /^\d{2}:\d{2}$/.test(time || '') ? time : DEFAULT_TIME;
+    if (t < EARLIEST_TIME) t = EARLIEST_TIME;
+    if (t > LATEST_TIME) t = LATEST_TIME;
     await setDoc(settingsRef(user.uid), {
         reminder: { enabled: !!reminderEnabled, time: t, tz: localTz() },
         social:   { enabled: !!socialEnabled }
@@ -191,17 +199,22 @@ export async function renderNotificationSettings(container) {
         </label>
         <div style="display:flex;align-items:center;gap:10px;margin:0 0 4px 26px;">
             <span style="font-size:0.65rem;opacity:0.6;letter-spacing:1px;">AT</span>
-            <input type="time" id="dpRemTime" value="${esc(s.reminder.time)}" step="900" style="width:auto;margin:0;padding:6px 8px;">
+            <input type="time" id="dpRemTime" value="${esc(s.reminder.time)}" min="${EARLIEST_TIME}" max="${LATEST_TIME}" step="900" style="width:auto;margin:0;padding:6px 8px;">
         </div>
         <p style="${small}margin-left:26px;">Only sent if you haven’t written that day. If you’re on a streak, it tells you what’s at stake.</p>
         <label style="display:flex;align-items:center;gap:10px;font-size:0.72rem;letter-spacing:1px;margin-bottom:14px;cursor:pointer;">
             <input type="checkbox" id="dpSocialOn" ${s.social.enabled ? 'checked' : ''} style="width:18px;height:18px;min-width:18px;flex:0 0 18px;margin:0;padding:0;accent-color:var(--neon,#0ff);">
             MESSAGES, FRIENDS &amp; SHARES
         </label>
-        <p style="${small}">On for this device${others ? ` and ${others} other${others > 1 ? 's' : ''}` : ''}. Settings apply to all your devices.</p>
+        <p style="${small}">Nothing is sent between 10pm and 8am. On for this device${others ? ` and ${others} other${others > 1 ? 's' : ''}` : ''}; settings apply to all your devices.</p>
         <button id="dpNotifyOff" style="width:100%;background:#333;">TURN OFF ON THIS DEVICE</button>${err}`;
 
     const msg = container.querySelector('#dpNotifyMsg');
+    const timeEl = container.querySelector('#dpRemTime');
+    timeEl.addEventListener('change', () => {
+        if (timeEl.value && timeEl.value < EARLIEST_TIME) timeEl.value = EARLIEST_TIME;
+        if (timeEl.value && timeEl.value > LATEST_TIME) timeEl.value = LATEST_TIME;
+    });
     const save = () => saveSettings({
         reminderEnabled: container.querySelector('#dpRemOn').checked,
         time:            container.querySelector('#dpRemTime').value,
@@ -212,5 +225,56 @@ export async function renderNotificationSettings(container) {
     container.querySelector('#dpNotifyOff').onclick = async () => {
         await disableOnThisDevice();
         renderNotificationSettings(container);
+    };
+}
+
+// ── One-tap offer ────────────────────────────────────────────────────────────
+// Shown once, after a writer has just saved words (the moment a daily nudge
+// makes sense), as a small bar at the bottom: one tap turns everything on with
+// the defaults (reminder at 7pm if they haven't written; message alerts; quiet
+// overnight). "Not now" or ignoring it means it won't ask again for 30 days.
+// Not shown where it can't work (iPhone/iPad outside the Home Screen app,
+// blocked notifications) or once it's already on.
+let _offeredThisVisit = false;
+export async function maybeOfferNotifications() {
+    if (_offeredThisVisit || !_getUser()) return;
+    const last = parseInt(localStorage.getItem(LS_OFFERED) || '0');
+    if (last && Date.now() - last < OFFER_AGAIN_AFTER) return;
+    if (await pushState() !== 'available') return;
+    _offeredThisVisit = true;
+
+    // Wait for the sync / streak / level-up toasts to finish first
+    for (let i = 0; i < 40 && document.querySelector('.write-toast, .combat-toast'); i++) {
+        await new Promise(r => setTimeout(r, 750));
+    }
+    localStorage.setItem(LS_OFFERED, String(Date.now()));
+
+    const bar = document.createElement('div');
+    bar.id = 'dpNotifyOffer';
+    bar.style.cssText = `position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1000;
+        width:380px;max-width:92vw;box-sizing:border-box;background:var(--panel,#161616);
+        border:1px solid var(--neon,#0ff);padding:14px 16px;font-family:'Courier New',monospace;
+        color:var(--text,#fff);display:flex;align-items:center;gap:12px;`;
+    bar.innerHTML = `
+        <div style="flex:1;min-width:0;">
+            <div style="font-size:0.75rem;font-weight:900;letter-spacing:2px;">\uD83D\uDD14 DAILY NUDGE?</div>
+            <div id="dpOfferSub" style="font-size:0.62rem;opacity:0.6;letter-spacing:1px;margin-top:4px;line-height:1.4;">A reminder if you haven\u2019t written by 7pm, plus message alerts.</div>
+        </div>
+        <button id="dpOfferYes" style="margin:0;padding:8px 12px;font-size:0.7rem;white-space:nowrap;">TURN ON</button>
+        <button id="dpOfferNo" aria-label="Not now" style="margin:0;padding:8px 10px;font-size:0.9rem;background:transparent;border:none;color:var(--text,#fff);opacity:0.7;box-shadow:none;">\u2715</button>`;
+    document.body.appendChild(bar);
+    const close = () => bar.remove();
+    bar.querySelector('#dpOfferNo').onclick = close;
+    bar.querySelector('#dpOfferYes').onclick = () => {
+        const yes = bar.querySelector('#dpOfferYes');
+        yes.disabled = true;
+        enableOnThisDevice().then(() => {
+            yes.remove();
+            bar.querySelector('#dpOfferSub').textContent = 'On. Change it any time in Account.';
+            setTimeout(close, 3500);
+        }).catch(e => {
+            yes.disabled = false;
+            bar.querySelector('#dpOfferSub').textContent = e.message || 'Couldn\u2019t turn notifications on.';
+        });
     };
 }

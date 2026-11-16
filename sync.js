@@ -94,6 +94,15 @@ function loadPush() {
     if (!_pushModule) _pushModule = import('./push.js').catch(err => { console.warn('Notifications unavailable:', err); return null; });
     return _pushModule;
 }
+// Called by the Write page and dashboard after words are saved
+window.dpOfferNotifications = function() {
+    if (!currentUser) return;
+    loadPush().then(m => {
+        if (!m) return;
+        m.initPush(app, () => auth.currentUser);
+        m.maybeOfferNotifications().catch(() => {});
+    });
+};
 
 let currentUser = undefined; // undefined = auth not yet resolved; null = resolved, not signed in
 let syncTimeout = null;

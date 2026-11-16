@@ -11,7 +11,9 @@ The notifications need **no rules change**. They only use `users/{uid}/private/n
 
 ## What the functions do
 
-- **`dailyWritingReminder`** runs every 15 minutes. It sends a writer one reminder a day, at the time they chose in their own time zone, only if they haven't written that day. If a streak would end at midnight, the message says so.
+- **`dailyWritingReminder`** runs every 15 minutes. It sends a writer one reminder a day, at the time they chose in their own time zone (7pm by default, settable from 8am to 9:45pm), only if they haven't written that day. If a streak would end at midnight, the message says so.
+- **Quiet hours:** nothing is ever sent between 10pm and 8am in the writer's own time zone. Social alerts that happen overnight aren't sent; the in-app badges still show them.
+- **Turning it on:** after a writer saves words, a small one-tap "Daily nudge?" bar appears once. Tapping it switches everything on with the defaults, and the settings live in Account. "Not now" (or ignoring it) means it isn't offered again for 30 days. It never appears where it can't work: iPhone/iPad outside the Home Screen app, blocked notifications, or already on.
 - **`notifyDirectMessage` / `notifyGroupMessage` / `notifyFriendRequest` / `notifyChapterShare`** run when one of those is created and notify the recipient(s). They never include message text or chapter titles, because notifications can appear on a lock screen.
 - **Data written:** only `lastReminderDate`, plus removing device tokens that Firebase reports as dead. Projects, chapters and word counts are never touched.
 

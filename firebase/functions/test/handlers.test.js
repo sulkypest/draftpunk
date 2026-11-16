@@ -99,28 +99,45 @@ test('dead device tokens are removed, live ones kept', async () => {
 });
 
 test('direct message notifies the recipient only, without the message text', async () => {
-    reset();
-    user('a'); user('b');
-    await fns.notifyDirectMessage.run({ data: { data: () => ({ from: 'a', to: 'b', fromUsername: 'alice', body: 'my secret chapter idea' }) }, params: {} });
-    assert.deepStrictEqual(sent.map(s => s.token), ['t-b']);
-    assert.ok(!JSON.stringify(sent).includes('secret'));
+    await withNow('2026-11-16T12:00:00Z', async () => {
+        reset();
+        user('a'); user('b');
+        await fns.notifyDirectMessage.run({ data: { data: () => ({ from: 'a', to: 'b', fromUsername: 'alice', body: 'my secret chapter idea' }) }, params: {} });
+        assert.deepStrictEqual(sent.map(s => s.token), ['t-b']);
+        assert.ok(!JSON.stringify(sent).includes('secret'));
+    });
 });
 
 test('group message notifies other members who have social alerts on', async () => {
-    reset();
-    user('a'); user('b'); user('c', { social: { enabled: false } }); user('d');
-    store.set('groups/g1', { name: 'Night Owls', members: ['a', 'b', 'c', 'd', 'e'] });
-    await fns.notifyGroupMessage.run({ data: { data: () => ({ from: 'a', fromUsername: 'alice', body: 'hi' }) }, params: { groupId: 'g1' } });
-    assert.deepStrictEqual(sent.map(s => s.token).sort(), ['t-b', 't-d']);
-    assert.strictEqual(sent[0].data.title, 'NIGHT OWLS');
-    assert.strictEqual(writes.length, 0);
+    await withNow('2026-11-16T12:00:00Z', async () => {
+        reset();
+        user('a'); user('b'); user('c', { social: { enabled: false } }); user('d');
+        store.set('groups/g1', { name: 'Night Owls', members: ['a', 'b', 'c', 'd', 'e'] });
+        await fns.notifyGroupMessage.run({ data: { data: () => ({ from: 'a', fromUsername: 'alice', body: 'hi' }) }, params: { groupId: 'g1' } });
+        assert.deepStrictEqual(sent.map(s => s.token).sort(), ['t-b', 't-d']);
+        assert.strictEqual(sent[0].data.title, 'NIGHT OWLS');
+        assert.strictEqual(writes.length, 0);
+    });
 });
 
 test('friend request and chapter share notify the right people', async () => {
+    await withNow('2026-11-16T12:00:00Z', async () => {
+        reset();
+        user('a'); user('b'); user('c');
+        await fns.notifyFriendRequest.run({ data: { data: () => ({ from: 'a', to: 'b', fromUsername: 'alice' }) }, params: {} });
+        await fns.notifyChapterShare.run({ data: { data: () => ({ ownerId: 'a', ownerUsername: 'alice', sharedWith: ['b', 'c', 'a'] }) }, params: {} });
+        const titles = sent.map(s => s.token + ':' + s.data.title).sort();
+        assert.deepStrictEqual(titles, ['t-b:CHAPTER SHARED', 't-b:FRIEND REQUEST', 't-c:CHAPTER SHARED']);
+    });
+});
+
+test('social alerts are not sent during the recipient\u2019s quiet hours', async () => {
     reset();
-    user('a'); user('b'); user('c');
-    await fns.notifyFriendRequest.run({ data: { data: () => ({ from: 'a', to: 'b', fromUsername: 'alice' }) }, params: {} });
-    await fns.notifyChapterShare.run({ data: { data: () => ({ ownerId: 'a', ownerUsername: 'alice', sharedWith: ['b', 'c', 'a'] }) }, params: {} });
-    const titles = sent.map(s => s.token + ':' + s.data.title).sort();
-    assert.deepStrictEqual(titles, ['t-b:CHAPTER SHARED', 't-b:FRIEND REQUEST', 't-c:CHAPTER SHARED']);
+    user('a'); user('b'); user('ny', { reminder: { enabled: true, time: '19:00', tz: 'America/New_York' } });
+    await withNow('2026-11-16T23:30:00Z', async () => {
+        await fns.notifyDirectMessage.run({ data: { data: () => ({ from: 'a', to: 'b', fromUsername: 'alice' }) }, params: {} });
+        await fns.notifyDirectMessage.run({ data: { data: () => ({ from: 'a', to: 'ny', fromUsername: 'alice' }) }, params: {} });
+    });
+    // 23:30 London: b is in quiet hours; 18:30 New York: ny is not
+    assert.deepStrictEqual(sent.map(s => s.token), ['t-ny']);
 });

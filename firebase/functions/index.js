@@ -84,8 +84,8 @@ async function sendToUser(uid, settings, msg) {
 
 // ── Daily writing reminder ───────────────────────────────────────────────────
 // Every 15 minutes: for each writer with reminders on, if it's their chosen
-// local time (within the hour after it), they haven't written today, and they
-// haven't been reminded today, send one reminder.
+// local time (within the hour after it, and never after 22:00), they haven't
+// written today, and they haven't been reminded today, send one reminder.
 exports.dailyWritingReminder = onSchedule({ schedule: 'every 15 minutes', timeZone: 'Etc/UTC' }, async () => {
     const now = new Date();
     // The number of writers is small; read each one's settings directly.
@@ -122,6 +122,9 @@ async function notifySocial(uid, kind, info) {
     if (!snap.exists) return;
     const settings = snap.data();
     if (!settings.social || settings.social.enabled === false) return;
+    // Quiet hours (22:00-08:00 in the writer's time zone): skip. The app's
+    // own badges still show anything that arrived overnight.
+    if (lib.inQuietHours(settings.reminder && settings.reminder.tz)) return;
     const msg = lib.socialMessage(kind, info);
     if (msg) await sendToUser(uid, settings, msg);
 }

@@ -294,6 +294,8 @@ window.addWords = function() {
 
     save(); updateUI(); updateGraph();
     document.getElementById('wordIn').value = '';
+    // Offer daily reminders (once; only where they can work)
+    if (window.dpOfferNotifications) window.dpOfferNotifications();
 };
 
 // ── Correct word count ────────────────────────────────────────────────────────

@@ -74,3 +74,23 @@ test('only genuine dead-token errors remove a device', () => {
     assert.ok(!lib.isDeadTokenError('messaging/invalid-argument'));
     assert.ok(!lib.isDeadTokenError('messaging/internal-error'));
 });
+
+test('quiet hours: 22:00-08:00 local, reminder times clamped to 08:00-21:45', () => {
+    assert.ok(lib.inQuietHours('Europe/London', at('2026-11-16T22:00:00Z')));
+    assert.ok(lib.inQuietHours('Europe/London', at('2026-11-16T07:59:00Z')));
+    assert.ok(!lib.inQuietHours('Europe/London', at('2026-11-16T08:00:00Z')));
+    assert.ok(!lib.inQuietHours('Europe/London', at('2026-11-16T21:59:00Z')));
+    // 23:00 in London is 18:00 in New York: not quiet there
+    assert.ok(!lib.inQuietHours('America/New_York', at('2026-11-16T23:00:00Z')));
+    assert.strictEqual(lib.parseTime('03:00'), 8 * 60);
+    assert.strictEqual(lib.parseTime('23:30'), 21 * 60 + 45);
+    assert.strictEqual(lib.parseTime('19:00'), 19 * 60);
+});
+
+test('a late reminder never goes out at or after 22:00', () => {
+    const s = settings({ reminder: { enabled: true, time: '21:45', tz: 'Europe/London' } });
+    assert.strictEqual(lib.reminderDecision(s, dp({}), at('2026-11-16T21:50:00Z')).send, true);
+    assert.strictEqual(lib.reminderDecision(s, dp({}), at('2026-11-16T22:00:00Z')).reason, 'window-passed');
+    const late = settings({ reminder: { enabled: true, time: '23:59', tz: 'Europe/London' } });
+    assert.strictEqual(lib.reminderDecision(late, dp({}), at('2026-11-16T23:59:00Z')).send, false);
+});

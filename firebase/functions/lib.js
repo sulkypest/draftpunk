@@ -7,6 +7,12 @@ const DEFAULT_REMINDER_TIME = '19:00';
 // How long after the chosen time a reminder may still go out. Stops a reminder
 // firing hours late if someone moves their time to earlier in the day.
 const REMINDER_WINDOW_MIN = 60;
+// Quiet hours, in each writer's own time zone: nothing is sent from 22:00 to
+// 08:00. Reminder times are limited to 08:00-21:45 to match.
+const QUIET_START = 22 * 60;
+const QUIET_END   = 8 * 60;
+const EARLIEST_REMINDER = QUIET_END;
+const LATEST_REMINDER   = QUIET_START - 15;
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -32,8 +38,13 @@ function localParts(tz, now = new Date()) {
 function parseTime(hhmm) {
     const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || ''));
     if (!m) return parseTime(DEFAULT_REMINDER_TIME);
-    const h = Math.min(23, +m[1]), mi = Math.min(59, +m[2]);
-    return h * 60 + mi;
+    const t = Math.min(23, +m[1]) * 60 + Math.min(59, +m[2]);
+    return Math.max(EARLIEST_REMINDER, Math.min(LATEST_REMINDER, t));
+}
+
+function inQuietHours(tz, now = new Date()) {
+    const { minutes } = localParts(tz || 'Europe/London', now);
+    return minutes >= QUIET_START || minutes < QUIET_END;
 }
 
 // What the writer's saved projects say about today.
@@ -61,7 +72,7 @@ function reminderDecision(settings, draftPunkData, now = new Date()) {
     if (settings.lastReminderDate === local.date) return { send: false, reason: 'already-sent', local };
     const due = parseTime(r.time);
     if (local.minutes < due) return { send: false, reason: 'not-yet', local };
-    if (local.minutes > due + REMINDER_WINDOW_MIN) return { send: false, reason: 'window-passed', local };
+    if (local.minutes >= Math.min(due + REMINDER_WINDOW_MIN, QUIET_START)) return { send: false, reason: 'window-passed', local };
     const status = writingStatus(draftPunkData, local.date, local.yesterday);
     if (status.wroteToday) return { send: false, reason: 'wrote-today', local, status };
     return { send: true, reason: 'due', local, status };
@@ -112,7 +123,7 @@ function isDeadTokenError(code) {
 }
 
 module.exports = {
-    DEFAULT_REMINDER_TIME, REMINDER_WINDOW_MIN,
-    localParts, parseTime, writingStatus, reminderDecision, reminderMessage,
+    DEFAULT_REMINDER_TIME, REMINDER_WINDOW_MIN, QUIET_START, QUIET_END,
+    localParts, parseTime, inQuietHours, writingStatus, reminderDecision, reminderMessage,
     socialMessage, groupRecipients, isDeadTokenError
 };
