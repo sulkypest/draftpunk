@@ -1,0 +1,14 @@
+{
+  "name": "draftpunk-functions",
+  "private": true,
+  "description": "Draft Punk notifications: daily writing reminder and social alerts",
+  "main": "index.js",
+  "engines": { "node": "20" },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.1.0"
+  }
+}

@@ -87,6 +87,14 @@ function _dpCurrentCount(u, field) {
     return (u.updatedAt || 0) >= b.start ? val : 0;
 }
 
+// Notifications live in push.js, loaded on demand so that if it ever fails to
+// load, syncing carries on unaffected.
+let _pushModule = null;
+function loadPush() {
+    if (!_pushModule) _pushModule = import('./push.js').catch(err => { console.warn('Notifications unavailable:', err); return null; });
+    return _pushModule;
+}
+
 let currentUser = undefined; // undefined = auth not yet resolved; null = resolved, not signed in
 let syncTimeout = null;
 
@@ -390,6 +398,7 @@ async function handleSignedIn(user) {
         localStorage.removeItem('dpLastUpdated');
     }
     localStorage.setItem('dpUserId', user.uid);
+    loadPush().then(m => { if (m) m.initPush(app, () => auth.currentUser); });
 
     let hasUsername = false;
     try {
@@ -487,6 +496,8 @@ window.signOutUser = async function() {
         syncTimeout = null;
         try { await pushToCloud(currentUser); } catch (e) { console.warn('Pre-signout push failed', e); }
     }
+    // Stop this device getting the signed-out writer's notifications
+    try { const m = await loadPush(); if (m) await m.forgetThisDevice(); } catch (e) { /* not set up */ }
     await signOut(auth);
     // Clear all local data so the next user (or same user on next sign-in)
     // starts clean — prevents stale data flashing before auth resolves.
@@ -536,6 +547,8 @@ async function showAccountOverlay() {
 
             <button onclick="signOutUser()" style="width:100%;margin-bottom:6px;">⊖ SIGN OUT</button>
 
+            <div id="dpNotifySection"></div>
+
             <div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 16px;"></div>
             <div style="font-size:0.6rem;opacity:0.4;letter-spacing:2px;margin-bottom:12px;">DANGER ZONE</div>
 
@@ -563,6 +576,11 @@ async function showAccountOverlay() {
     `;
 
     overlay.style.display = 'flex';
+    loadPush().then(m => {
+        if (!m) return;
+        m.initPush(app, () => auth.currentUser);
+        m.renderNotificationSettings(document.getElementById('dpNotifySection')).catch(() => {});
+    });
 
     window._dpResetCloudData = async function() {
         if (!confirm('Reset all cloud data? Your local data will be preserved but your cloud backup will be wiped.')) return;
