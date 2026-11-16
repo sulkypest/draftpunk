@@ -3,7 +3,7 @@
   "private": true,
   "description": "Draft Punk notifications: daily writing reminder and social alerts",
   "main": "index.js",
-  "engines": { "node": "20" },
+  "engines": { "node": "22" },
   "scripts": {
     "test": "node --test test/*.test.js"
   },
