@@ -15,7 +15,7 @@ import { getMessaging, getToken, deleteToken, isSupported }
 import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteField, FieldPath }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-export const VAPID_KEY = '';
+export const VAPID_KEY = 'BLud6xWJk0UR7gCkX9NZLDNIpzfc3zdyMsMqsfZ73Tp0NJyP1U0rNjxa9IdmqD3qjq6wytwuMPD2LM4xL6SQA_8';
 
 const LS_TOKEN = 'dpPushToken';
 const LS_OFFERED = 'dpNotifyOfferedAt';
