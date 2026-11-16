@@ -229,6 +229,8 @@ function syncChaptersToTracker(ids) {
     ev.buddies.forEach(f => queueToast(`buddies/${f}`, 'NEW BUDDY!', 'CHECK YOUR COLLECTION'));
     if (ev.minion)  queueToast(null, `${ev.minion.emoji} FOE VANQUISHED`, ev.minion.name.toUpperCase());
     if (ev.levelUp) queueToast(`shields/${Math.min(5, Math.ceil(ev.levelUp.level / 5))}.png`, `LEVEL ${ev.levelUp.level}!`, ev.levelUp.rank.toUpperCase());
+    // Offer daily reminders (once; only where they can work)
+    if (window.dpOfferNotifications) window.dpOfferNotifications();
 }
 
 let _toastQueue = [], _toastBusy = false;

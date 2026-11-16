@@ -1,4 +1,4 @@
-const CACHE = 'draftpunk-v114';
+const CACHE = 'draftpunk-v117';
 
 const PRECACHE = [
     './',
@@ -7,6 +7,7 @@ const PRECACHE = [
     './script.js',
     './sidebar.js',
     './period-notice.js',
+    './push.js',
     './data.js',
     './DRAFTPUNK.png',
     './partner.png',
@@ -105,4 +106,41 @@ self.addEventListener('fetch', event => {
             }).catch(() => caches.match(event.request))
         );
     }
+});
+
+// ── Notifications ────────────────────────────────────────────────────────────
+// Sent by the "draftpunk" Cloud Functions as data-only FCM messages. Every push
+// must show a notification (Safari and Chrome both require it).
+self.addEventListener('push', event => {
+    let payload = {};
+    try { payload = event.data ? event.data.json() : {}; } catch (e) { payload = {}; }
+    const d = payload.data || payload.notification || payload || {};
+    const title = d.title || 'DRAFT PUNK';
+    const options = {
+        body: d.body || '',
+        icon: './icon-192.png',
+        badge: './icon-192.png',
+        data: { url: d.url || 'write.html' }
+    };
+    // Same tag replaces the previous one (e.g. a busy group chat shows one
+    // notification, not twenty)
+    if (d.tag) { options.tag = d.tag; options.renotify = true; }
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    const target = new URL((event.notification.data && event.notification.data.url) || 'write.html', self.registration.scope).href;
+    event.waitUntil((async () => {
+        const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const w of wins) {
+            if (w.url.split('#')[0] === target.split('#')[0] && 'focus' in w) {
+                if (w.url !== target && 'navigate' in w) { try { await w.navigate(target); } catch (e) {} }
+                return w.focus();
+            }
+        }
+        // Never navigate another open page away (it could be mid-writing):
+        // open the target in a new window instead.
+        return self.clients.openWindow(target);
+    })());
 });
