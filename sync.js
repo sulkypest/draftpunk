@@ -40,6 +40,53 @@ if (RECAPTCHA_KEY !== 'YOUR_RECAPTCHA_V3_SITE_KEY') {
 
 const DATA_KEYS = ['draftPunkData', 'beatNotesData', 'charactersData', 'wordRunnerData', 'notesData'];
 
+// ── Period boundaries for the public week/month/year counts ──────────────────
+// Each writer's counters reset at their own local midnight (Monday for the
+// week). A writer's stored counts are only cleared when they next open the
+// app, so a profile can still hold last week's total after the week is over.
+// To keep group and leaderboard comparisons fair, each push records when its
+// counts expire (in the writer's own local time), and readers show 0 once that
+// moment has passed.
+function _dpWeekKey() {
+    const d = new Date();
+    const day = d.getDay() || 7;
+    d.setDate(d.getDate() + 4 - day);
+    const yr = new Date(d.getFullYear(), 0, 1);
+    return d.getFullYear() + '-W' + Math.ceil(((d - yr) / 86400000 + 1) / 7);
+}
+function _dpMonthKey() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+function _dpYearKey()  { return '' + new Date().getFullYear(); }
+function _dpWeekStart() {               // this Monday, 00:00 local
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - ((d.getDay() || 7) - 1));
+    return d;
+}
+function _dpPeriodBounds() {
+    const now = new Date();
+    const weekStart  = _dpWeekStart();
+    const weekEnd    = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 7);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const yearStart  = new Date(now.getFullYear(), 0, 1);
+    const yearEnd    = new Date(now.getFullYear() + 1, 0, 1);
+    return {
+        wordsThisWeek:  { start: weekStart.getTime(),  end: weekEnd.getTime(),  endField: 'weekEndsAt'  },
+        wordsThisMonth: { start: monthStart.getTime(), end: monthEnd.getTime(), endField: 'monthEndsAt' },
+        wordsThisYear:  { start: yearStart.getTime(),  end: yearEnd.getTime(),  endField: 'yearEndsAt'  },
+    };
+}
+// The count to show for someone else's profile: 0 if it belongs to a period
+// that has already ended. Profiles saved before this change have no end
+// marker, so fall back to "last saved before this period began" (viewer's clock).
+function _dpCurrentCount(u, field) {
+    const b = _dpPeriodBounds()[field];
+    const val = u[field] || 0;
+    if (!b) return val;                                  // totalWords: never resets
+    const endsAt = u[b.endField];
+    if (typeof endsAt === 'number' && endsAt > 0) return Date.now() < endsAt ? val : 0;
+    return (u.updatedAt || 0) >= b.start ? val : 0;
+}
+
 let currentUser = undefined; // undefined = auth not yet resolved; null = resolved, not signed in
 let syncTimeout = null;
 
@@ -64,9 +111,17 @@ async function pushToCloud(user) {
     const dpData   = payload.draftPunkData || {};
     const projects = Object.values(dpData.projects || {});
     payload.totalWords     = projects.reduce((s, p) => s + (p.total          || 0), 0);
-    payload.wordsThisWeek  = projects.reduce((s, p) => s + (p.wordsThisWeek  || 0), 0);
-    payload.wordsThisMonth = projects.reduce((s, p) => s + (p.wordsThisMonth || 0), 0);
-    payload.wordsThisYear  = projects.reduce((s, p) => s + (p.wordsThisYear  || 0), 0);
+    // Only count a project's period words if they belong to the current period
+    // (a project that hasn't been opened since the week rolled over still holds
+    // last week's figure locally until its own reset runs).
+    const wk = _dpWeekKey(), mo = _dpMonthKey(), yr = _dpYearKey();
+    payload.wordsThisWeek  = projects.reduce((s, p) => s + (p.lastWeekReset  === wk ? (p.wordsThisWeek  || 0) : 0), 0);
+    payload.wordsThisMonth = projects.reduce((s, p) => s + (p.lastMonthReset === mo ? (p.wordsThisMonth || 0) : 0), 0);
+    payload.wordsThisYear  = projects.reduce((s, p) => s + (p.lastYearReset  === yr ? (p.wordsThisYear  || 0) : 0), 0);
+    const bounds = _dpPeriodBounds();
+    payload.weekEndsAt     = bounds.wordsThisWeek.end;
+    payload.monthEndsAt    = bounds.wordsThisMonth.end;
+    payload.yearEndsAt     = bounds.wordsThisYear.end;
     payload.displayName    = user.displayName || '';
     payload.photoURL       = user.photoURL    || '';
     await setDoc(doc(db, 'users', user.uid), payload, { merge: true });
@@ -622,16 +677,12 @@ window.getLeaderboard = async function(field = 'totalWords') {
         // aren't limited to users who happen to have high total words.
         const q    = query(collection(db, 'users'), orderBy(field, 'desc'), limit(50));
         const snap = await getDocs(q);
-        const now  = Date.now();
-        // Max age for period fields — data older than this is stale (counter not yet reset)
-        const maxAge = {
-            wordsThisWeek:  8  * 86400000,
-            wordsThisMonth: 32 * 86400000,
-            wordsThisYear:  370 * 86400000,
-        }[field] || Infinity;
+        // Counts from a period that has already ended show as 0 (and drop off),
+        // even if that writer hasn't opened the app since to reset them.
         return snap.docs
-            .map(d => ({ uid: d.id, ...d.data() }))
-            .filter(u => u.username && (u[field] || 0) > 0 && (now - (u.updatedAt || 0)) < maxAge)
+            .map(d => { const u = { uid: d.id, ...d.data() }; u[field] = _dpCurrentCount(u, field); return u; })
+            .filter(u => u.username && (u[field] || 0) > 0)
+            .sort((a, b) => (b[field] || 0) - (a[field] || 0))
             .slice(0, 25);
     } catch (err) {
         console.error('Leaderboard error:', err);
@@ -1078,8 +1129,10 @@ window.getGroupStats = async function(group) {
             const s = await getDoc(doc(db, 'users', uid));
             const d = s.exists() ? s.data() : {};
             return { uid, username: d.username || (group.memberNames || {})[uid] || '?',
-                     totalWords: d.totalWords || 0, wordsThisWeek: d.wordsThisWeek || 0,
-                     wordsThisMonth: d.wordsThisMonth || 0, wordsThisYear: d.wordsThisYear || 0,
+                     totalWords: d.totalWords || 0,
+                     wordsThisWeek:  _dpCurrentCount(d, 'wordsThisWeek'),
+                     wordsThisMonth: _dpCurrentCount(d, 'wordsThisMonth'),
+                     wordsThisYear:  _dpCurrentCount(d, 'wordsThisYear'),
                      updatedAt: d.updatedAt || 0 };
         } catch (e) { return { uid, username: (group.memberNames || {})[uid] || '?', totalWords: 0, wordsThisWeek: 0, wordsThisMonth: 0, wordsThisYear: 0 }; }
     }));
