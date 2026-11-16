@@ -427,9 +427,10 @@ async function handleSignedIn(user) {
 }
 
 async function continueAfterAuth(user) {
-    let needsReload = false;
+    let needsReload = false, synced = false;
     try {
         needsReload = await pullFromCloud(user);
+        synced = true;
     } catch (e) {
         console.warn('pullFromCloud failed, using local data:', e);
         setSyncStatus('error');
@@ -438,6 +439,9 @@ async function continueAfterAuth(user) {
     if (needsReload && !window.location.pathname.includes('write.html')) {
         location.reload();
     } else {
+        // One-off November 2026 monthly-count repair — only once this device
+        // is in step with the cloud, so it can't overwrite newer data.
+        if (synced) runNovemberRepair();
         const dpData    = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
         const hasActive = dpData.activeProjectId &&
                           dpData.projects &&
@@ -453,6 +457,18 @@ async function continueAfterAuth(user) {
             console.warn('Non-critical post-auth check failed:', e);
         }
     }
+}
+
+function runNovemberRepair() {
+    const now = new Date();
+    if (now.getFullYear() !== 2026 || now.getMonth() !== 10) return;
+    import('./repair-nov2026.js').then(({ repairNovember2026 }) => {
+        let dp;
+        try { dp = JSON.parse(localStorage.getItem('draftPunkData') || 'null'); } catch (e) { return; }
+        if (!dp || !repairNovember2026(dp, new Date())) return;
+        localStorage.setItem('draftPunkData', JSON.stringify(dp));   // saves + syncs as normal
+        document.dispatchEvent(new CustomEvent('dpMonthlyRepaired'));
+    }).catch(err => console.warn('November repair skipped:', err));
 }
 
 // ── Auth state changes ────────────────────────────────────────────────────────

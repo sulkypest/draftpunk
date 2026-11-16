@@ -119,6 +119,21 @@ const GENRE_STYLES = {
     cyberpunk: "#f0f", crimeNoir: "#708090", romance: "#ff69b4", thriller: "#ffa500", western: "#cd7f32"
 };
 
+document.addEventListener('dpMonthlyRepaired', () => {
+    const fresh = loadDpData();
+    Object.keys((fresh && fresh.projects) || {}).forEach(id => {
+        const mem = dpData.projects && dpData.projects[id];
+        if (!mem) return;
+        mem.wordsThisMonth = fresh.projects[id].wordsThisMonth;
+        mem.lastMonthReset = fresh.projects[id].lastMonthReset;
+    });
+    if (state && fresh.projects && fresh.projects[activeId]) {
+        state.wordsThisMonth = fresh.projects[activeId].wordsThisMonth;
+        state.lastMonthReset = fresh.projects[activeId].lastMonthReset;
+    }
+    if (typeof updateUI === 'function') updateUI();
+});
+
 function save() {
     if (activeId) {
         if (!dpData.projects) dpData.projects = {};
