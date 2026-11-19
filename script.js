@@ -278,9 +278,11 @@ window.addWords = function() {
     });
 
     const sprite = document.getElementById('bossSprite');
-    sprite.classList.remove('hit-shake');
-    void sprite.offsetWidth;
-    sprite.classList.add('hit-shake');
+    if (sprite) {
+        sprite.classList.remove('hit-shake');
+        void sprite.offsetWidth;
+        sprite.classList.add('hit-shake');
+    }
     if (window.SFX) SFX.bossHit();
 
     // 1–3% chance of floating damage number
@@ -312,7 +314,8 @@ window.addWords = function() {
     }
 
     save(); updateUI(); updateGraph();
-    document.getElementById('wordIn').value = '';
+    const wordInBox = document.getElementById('wordIn');
+    if (wordInBox) wordInBox.value = '';
     if (sev) {
         if (window.dpStreakRefresh) window.dpStreakRefresh();
         if (sev.frozeDays.length) showCombatToast('\u2744\uFE0F STREAK SAVED', `${sev.frozeDays.length > 1 ? sev.frozeDays.length + ' FREEZES' : 'A FREEZE'} COVERED THE MISSED DAY${sev.frozeDays.length > 1 ? 'S' : ''}`, null);
@@ -443,7 +446,7 @@ function updateGraph() {
 
 // ── UI ────────────────────────────────────────────────────────────────────────
 function updateUI() {
-    const progress = (state.total / state.goal) * 100;
+    const progress = state.goal > 0 ? (state.total / state.goal) * 100 : 0;
     const curIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
     const curB = BOSS_BEATS[curIdx] || BOSS_BEATS[0];
     const nxtB = BOSS_BEATS[curIdx + 1] || { pct: 100, name: 'The End' };
@@ -454,7 +457,6 @@ function updateUI() {
     document.getElementById('wcMain').innerText = state.total.toLocaleString();
     document.getElementById('wipDisplay').innerText = state.title;
     document.getElementById('lvlName').innerText = `STAGE ${curIdx + 1} — ${curB.name.toUpperCase()}`;
-    document.getElementById('bossName').innerText = nxtB.name.toUpperCase();
     document.getElementById('bossHPBar').style.width = hp + '%';
     document.getElementById('hpBar').style.width = Math.min(100, progress) + '%';
     document.getElementById('hpText').innerText = state.total.toLocaleString() + ' / ' + state.goal.toLocaleString();
@@ -466,18 +468,119 @@ function updateUI() {
         `<img src="buddies/${i}" class="buddy-relic" onclick="showBuddyZoom('buddies/${i}')">`
     ).join('');
 
-    const sprite = document.getElementById('bossSprite');
-    const scaleFactor = 0.3 + (hp / 100) * 0.7;
-    sprite.style.transform = `scale(${scaleFactor})`;
-    sprite.src = window.getBossImgSrc(curIdx + 2);
-    sprite.onerror = () => sprite.style.visibility = 'hidden';
-    sprite.onload  = () => sprite.style.visibility = 'visible';
+    renderStageMap(progress, curIdx);
 
     // Show project count indicator if more than one project
     const projects = Object.keys(dpData.projects || {});
     const projCount = document.getElementById('projectCountLabel');
     if (projCount) projCount.textContent = projects.length > 1 ? projects.length + ' PROJECTS' : '';
 
+}
+
+// ── Stage map ─────────────────────────────────────────────────────────────────
+// Shows the current stage (last boss beaten → next boss) with its minions,
+// where the writer is, and a small strip of the bosses already defeated.
+// Display only: reads state, never changes or saves it.
+const SM_X = '<svg class="sm-x" aria-hidden="true" viewBox="0 0 100 100" fill="none" stroke-linecap="square"><path class="sm-x-under" d="M14 14L86 86M86 14L14 86"/><path class="sm-x-over" d="M14 14L86 86M86 14L14 86"/></svg>';
+function smPos(f) { return `calc(var(--sm-pad) + (100% - 2 * var(--sm-pad)) * ${Math.max(0, Math.min(1, f)).toFixed(4)})`; }
+function renderStageMap(progress, curIdx) {
+    const track = document.getElementById('smTrack');
+    if (!track) return;
+    const goal  = state.goal > 0 ? state.goal : 0;
+    const words = pct => goal ? Math.ceil((pct / 100) * goal - 1e-6) : 0;
+    const fmt   = n => n.toLocaleString();
+    const done  = pct => progress >= pct;
+
+    // The stage shown: from the last boss beaten to the next one. Once the
+    // final boss is beaten, keep showing the last stage, all cleared.
+    let leftIdx = curIdx, rightIdx = curIdx + 1;
+    if (rightIdx >= BOSS_BEATS.length) { leftIdx = BOSS_BEATS.length - 2; rightIdx = BOSS_BEATS.length - 1; }
+    const p0 = leftIdx >= 0 ? BOSS_BEATS[leftIdx].pct : 0;
+    const p1 = BOSS_BEATS[rightIdx].pct;
+    // Nodes are evenly spaced (so they never crowd on a small screen); the
+    // writer moves between them in proportion to the words.
+    const stops = [p0].concat(MINIONS.filter(m => m.pct > p0 && m.pct < p1).map(m => m.pct), [p1]);
+    const frac = pct => {
+        const n = stops.length - 1;
+        if (pct <= stops[0]) return 0;
+        for (let k = 0; k < n; k++) {
+            if (pct <= stops[k + 1]) return (k + (pct - stops[k]) / ((stops[k + 1] - stops[k]) || 1)) / n;
+        }
+        return 1;
+    };
+    const you  = frac(Math.min(progress, p1));
+
+    let html = '';
+    html += `<div class="sm-line sm-line-done" style="left:var(--sm-pad);width:calc((100% - 2 * var(--sm-pad)) * ${Math.max(0, Math.min(1, you)).toFixed(4)})"></div>`;
+    html += `<div class="sm-line sm-line-todo" style="left:${smPos(you)};right:var(--sm-pad)"></div>`;
+
+    // Left end: the boss beaten to open this stage (or the start line)
+    if (leftIdx >= 0) {
+        html += `<div class="sm-node sm-boss-node sm-defeated-node" style="left:${smPos(0)}"><img src="stagemap/boss${leftIdx + 1}.png" alt="${BOSS_BEATS[leftIdx].name}, defeated">${SM_X}</div>`;
+        html += `<div class="sm-tag sm-tag-boss" style="left:${smPos(0)}">${BOSS_BEATS[leftIdx].name.toUpperCase()}<br><span>${fmt(words(p0))}</span></div>`;
+    } else {
+        html += `<div class="sm-node sm-start" style="left:${smPos(0)}"></div>`;
+        html += `<div class="sm-tag sm-tag-boss" style="left:${smPos(0)}">START<br><span>0</span></div>`;
+    }
+
+    // Minions in this stage
+    let nextMinion = null;
+    MINIONS.forEach((m, i) => {
+        if (!(m.pct > p0 && m.pct < p1)) return;
+        const beaten = done(m.pct);
+        const isNext = !beaten && !nextMinion;
+        if (isNext) nextMinion = { m: m, i: i };
+        html += `<div class="sm-node sm-minion${beaten ? ' sm-defeated-node' : ''}${isNext ? ' sm-is-next' : ''}" style="left:${smPos(frac(m.pct))}"><img src="stagemap/minion${i + 1}.png" alt="${m.name}${beaten ? ', defeated' : ''}">${beaten ? SM_X : ''}</div>`;
+        html += `<div class="sm-tag sm-tag-minion" style="left:${smPos(frac(m.pct))}">${fmt(words(m.pct))}</div>`;
+    });
+
+    // Right end: the boss that closes this stage
+    const rightBeaten = done(p1);
+    if (rightBeaten) {
+        html += `<div class="sm-node sm-boss-node sm-defeated-node" style="left:${smPos(1)}"><img src="stagemap/boss${rightIdx + 1}.png" alt="${BOSS_BEATS[rightIdx].name}, defeated">${SM_X}</div>`;
+    } else {
+        html += `<button type="button" class="sm-node sm-boss-node sm-boss-next" style="left:${smPos(1)}" onclick="showBossZoom()" aria-label="${BOSS_BEATS[rightIdx].name}: boss info"><img id="bossSprite" src="stagemap/boss${rightIdx + 1}.png" alt=""></button>`;
+    }
+    html += `<div class="sm-tag sm-tag-boss sm-tag-next" style="left:${smPos(1)}">${BOSS_BEATS[rightIdx].name.toUpperCase()}<br><span>${fmt(words(p1))}</span></div>`;
+
+    // The writer
+    if (!rightBeaten) {
+        html += `<div class="sm-you-dot" style="left:${smPos(you)}"></div>`;
+        html += `<div class="sm-you" style="left:${smPos(you)}"><span>YOU</span><img src="stagemap/player.png" alt=""></div>`;
+    }
+    track.innerHTML = html;
+
+    document.getElementById('smRange').textContent = `${p0}% → ${p1}%`;
+
+    // Next encounter
+    const nextBox = document.getElementById('smNext');
+    if (rightBeaten) {
+        nextBox.style.display = 'none';
+    } else {
+        nextBox.style.display = '';
+        const toGo = nextMinion ? words(nextMinion.m.pct) - state.total : words(p1) - state.total;
+        document.getElementById('smNextSprite').src = nextMinion ? `stagemap/minion${nextMinion.i + 1}.png` : `stagemap/boss${rightIdx + 1}.png`;
+        document.getElementById('smNextName').textContent = (nextMinion ? nextMinion.m.name : BOSS_BEATS[rightIdx].name).toUpperCase();
+        document.getElementById('smNextToGo').textContent = fmt(Math.max(0, toGo));
+    }
+    document.getElementById('smBossToGo').textContent = rightBeaten ? 'DRAFT COMPLETE' : `${fmt(Math.max(0, words(p1) - state.total))} TO GO`;
+    document.getElementById('bossName').innerText = 'BOSS: ' + BOSS_BEATS[rightIdx].name.toUpperCase();
+
+    // Defeated bosses, small
+    const beatenCount = BOSS_BEATS.filter(b => done(b.pct)).length;
+    const strip = document.getElementById('smDefeated');
+    strip.style.display = beatenCount ? '' : 'none';
+    document.getElementById('smDefeatedLabel').textContent = `DEFEATED ${beatenCount}/${BOSS_BEATS.length}`;
+    document.getElementById('smDefeatedList').innerHTML = BOSS_BEATS.slice(0, beatenCount).map((b, i) =>
+        `<span class="sm-mini" title="${b.name}"><img src="stagemap/boss${i + 1}.png" alt="${b.name}">${SM_X}</span>`
+    ).join('');
+
+    // Threshold ticks on the total progress bar
+    const ticks = document.getElementById('progressTicks');
+    if (ticks && !ticks.childElementCount) {
+        ticks.innerHTML = BOSS_BEATS.map(b => `<i class="sm-tick sm-tick-boss" style="left:${b.pct}%"></i>`).join('')
+                        + MINIONS.map(m => `<i class="sm-tick" style="left:${m.pct}%"></i>`).join('');
+    }
 }
 
 // ── Overlays ──────────────────────────────────────────────────────────────────

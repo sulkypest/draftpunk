@@ -110,15 +110,28 @@
             <h1 id="wipDisplay">PROJECT</h1>
             <h2 id="lvlName">LEVEL</h2>
 
-            <div class="boss-zone">
-                <img id="bossSprite" class="boss-sprite" src="bosses/1.png" onclick="showBossZoom()" title="Click for info">
-                <div style="flex:1;">
-                    <div id="bossName">BOSS</div>
-                    <div class="bar-container" style="height:10px; margin-bottom:0; border-color: #333;">
+            <section class="stage-map" aria-label="Stage map">
+                <div class="sm-head"><span>STAGE MAP</span><span id="smRange"></span></div>
+                <div class="sm-track" id="smTrack"></div>
+                <div class="sm-next" id="smNext">
+                    <img id="smNextSprite" src="" alt="">
+                    <div class="sm-next-text">
+                        <div class="sm-label">NEXT ENCOUNTER</div>
+                        <div class="sm-next-name" id="smNextName"></div>
+                    </div>
+                    <div class="sm-next-togo"><div id="smNextToGo"></div><div class="sm-label">WORDS TO GO</div></div>
+                </div>
+                <div class="sm-boss">
+                    <div class="sm-boss-row"><span id="bossName">BOSS</span><span id="smBossToGo"></span></div>
+                    <div class="bar-container sm-boss-bar">
                         <div id="bossHPBar" class="bar-fill" style="background:red; width:100%;"></div>
                     </div>
                 </div>
-            </div>
+                <div class="sm-defeated" id="smDefeated">
+                    <span class="sm-label" id="smDefeatedLabel">DEFEATED</span>
+                    <div class="sm-defeated-list" id="smDefeatedList"></div>
+                </div>
+            </section>
 
             <button class="intel-btn" onclick="toggleIntel()">MICROBEAT TIPS ▾</button>
             <div id="intelContainer" class="hidden">
@@ -138,8 +151,10 @@
             <span class="bar-label">TOTAL PROGRESS</span>
             <div class="bar-container">
                 <div id="hpBar" class="bar-fill"></div>
+                <div class="sm-ticks" id="progressTicks" aria-hidden="true"></div>
             </div>
             <div id="hpText">0 / 0</div>
+            <div class="sm-legend" aria-hidden="true"><span><i class="sm-key sm-key-boss"></i>BOSS</span><span><i class="sm-key"></i>MINION</span></div>
 
             <div class="input-zone">
                 <input type="number" id="wordIn" placeholder="WORDS">
