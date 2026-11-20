@@ -546,7 +546,7 @@ function renderStageMap(progress, curIdx) {
     // The writer
     if (!rightBeaten) {
         html += `<div class="sm-you-dot" style="left:${smPos(you)}"></div>`;
-        html += `<div class="sm-you" style="left:${smPos(you)}"><span>YOU</span><img src="stagemap/player.png" alt=""></div>`;
+        html += `<div class="sm-you" style="left:${smPos(you)}"><span class="sm-you-tag">YOU</span><span class="sm-you-stem"></span></div>`;
     }
     track.innerHTML = html;
 

@@ -1140,16 +1140,6 @@ body {
 }
 .write-ch-pos:hover { border-color: var(--neon); color: var(--neon); }
 
-.write-tb-sync {
-    margin-left: auto;
-    color: var(--neon);
-    border-color: var(--neon);
-    font-size: 0.65rem;
-    letter-spacing: 1px;
-    opacity: 0.7;
-}
-.write-tb-sync:hover { opacity: 1; }
-.write-tb-sync.synced { color: var(--text-dim); border-color: var(--border); opacity: 0.4; }
 
 .write-ch-del:hover {
     border-color: #ff4444 !important;
@@ -1244,7 +1234,7 @@ body {
     margin-left: 4px;
     border-left: 1px solid var(--border);
 }
-.write-tb-row-view .write-tb-sync { margin-left: auto; }
+.write-tb-row-view .write-tb-history { margin-left: auto; }
 
 @container (max-width: 560px) {
     .write-toolbar {
@@ -1261,8 +1251,6 @@ body {
         border-top: 1px solid var(--border);
         justify-content: space-between;
     }
-    /* SYNC goes to the left of the strip so it never sits under Clear formatting */
-    .write-tb-row-view .write-tb-sync { order: -1; margin-left: 0; }
 }
 /* Very small phones: tighten spacing so editing tools stay on one line */
 @container (max-width: 300px) {
@@ -2107,14 +2095,23 @@ body.write-focus .write-chapter.write-focus-target .write-toolbar { position: st
     background: var(--neon);
     box-shadow: 0 0 8px var(--neon);
 }
+/* "YOU" marker: a solid tag on a thin stem down to the dot on the line */
 .sm-you {
-    position: absolute; top: 34px;
+    position: absolute; top: 50px;
     transform: translateX(-50%);
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    font-size: 0.65rem; font-weight: 900; letter-spacing: 1px; color: var(--neon);
+    display: flex; flex-direction: column; align-items: center;
     pointer-events: none;
+    z-index: 2;
 }
-.sm-you img { height: 46px; width: auto; display: block; }
+.sm-you-tag {
+    background: var(--neon);
+    color: var(--bg);
+    font-size: 0.65rem; font-weight: 900; letter-spacing: 1px;
+    line-height: 1;
+    padding: 4px 7px 4px 8px;
+    white-space: nowrap;
+}
+.sm-you-stem { width: 2px; height: 50px; background: var(--neon); }
 .sm-next {
     margin: 0 12px;
     border: 1px solid var(--border-mid);
