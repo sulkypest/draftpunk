@@ -2095,14 +2095,23 @@ body.write-focus .write-chapter.write-focus-target .write-toolbar { position: st
     background: var(--neon);
     box-shadow: 0 0 8px var(--neon);
 }
+/* "YOU" marker: a solid tag on a thin stem down to the dot on the line */
 .sm-you {
-    position: absolute; top: 34px;
+    position: absolute; top: 50px;
     transform: translateX(-50%);
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    font-size: 0.65rem; font-weight: 900; letter-spacing: 1px; color: var(--neon);
+    display: flex; flex-direction: column; align-items: center;
     pointer-events: none;
+    z-index: 2;
 }
-.sm-you img { height: 46px; width: auto; display: block; }
+.sm-you-tag {
+    background: var(--neon);
+    color: var(--bg);
+    font-size: 0.65rem; font-weight: 900; letter-spacing: 1px;
+    line-height: 1;
+    padding: 4px 7px 4px 8px;
+    white-space: nowrap;
+}
+.sm-you-stem { width: 2px; height: 50px; background: var(--neon); }
 .sm-next {
     margin: 0 12px;
     border: 1px solid var(--border-mid);
