@@ -94,8 +94,11 @@ window.addChapter = function() {
 window.deleteChapter = function(id) {
     const ch = writingData.chapters.find(c => c.id === id);
     if (!ch) return;
-    if (!confirm('Delete "' + ch.title + '"? This cannot be undone.')) return;
-    if (window.DPVersions) window.DPVersions.saveDeleted(id, ch.content || '', activeProjectId);
+    const canRestore = !!window.DPVersions;
+    if (!confirm('Delete "' + ch.title + '"?' + (canRestore
+        ? '\n\nYou can bring it back from RECENTLY DELETED at the bottom of this page.'
+        : ' This cannot be undone.'))) return;
+    if (window.DPVersions) window.DPVersions.saveDeleted(id, ch.content || '', activeProjectId, ch.title);
     writingData.chapters = writingData.chapters.filter(c => c.id !== id);
     writingData.chapters.forEach((c, i) => c.order = i);
     saveMeta();
@@ -316,6 +319,9 @@ function renderAll() {
                         onclick="focusChapter('${ch.id}'); event.stopPropagation()" title="Focus mode">⛶</button>
                     <button class="write-ch-btn" onmousedown="event.preventDefault()"
                         onclick="shareChapter('${ch.id}'); event.stopPropagation()" title="Share chapter">⤴</button>
+                    <button class="write-ch-btn write-ch-more" onmousedown="event.preventDefault()"
+                        onclick="openChapterMenu('${ch.id}', this); event.stopPropagation()"
+                        title="Chapter options" aria-label="Chapter options" aria-haspopup="menu">⋯</button>
                 </div>
                 <div class="write-chapter-body">
                     <div class="write-toolbar">
@@ -735,6 +741,121 @@ window.syncAndSave = function() {
         return;
     }
     syncChaptersToTracker(writingData.chapters.map(c => c.id));
+};
+
+// ── Chapter options menu (phones) ────────────────────────────────────────────
+// On narrow screens the header's small buttons fold into one ⋯ menu, so the
+// title has room and Delete sits apart from the move controls.
+window.openChapterMenu = function(id, btn) {
+    closeChapterMenu();
+    const idx = writingData.chapters.findIndex(c => c.id === id);
+    if (idx < 0) return;
+    const last = writingData.chapters.length - 1;
+    const m = document.createElement('div');
+    m.id = 'chMenu';
+    m.className = 'ch-menu';
+    m.setAttribute('role', 'menu');
+    const item = (label, fn, opts) => `<button role="menuitem" class="ch-menu-item${opts && opts.danger ? ' ch-menu-danger' : ''}"` +
+        `${opts && opts.disabled ? ' disabled' : ''} onclick="closeChapterMenu(); ${fn}">${label}</button>`;
+    m.innerHTML =
+        item('⛶ FOCUS MODE', `focusChapter('${id}')`) +
+        item('⤴ SHARE', `shareChapter('${id}')`) +
+        '<div class="ch-menu-sep"></div>' +
+        item('↑ MOVE UP', `moveChapter('${id}', -1)`, { disabled: idx === 0 }) +
+        item('↓ MOVE DOWN', `moveChapter('${id}', 1)`, { disabled: idx === last }) +
+        item('# MOVE TO POSITION…', `promptMoveChapter('${id}')`, { disabled: last === 0 }) +
+        '<div class="ch-menu-sep"></div>' +
+        item('✕ DELETE CHAPTER', `deleteChapter('${id}')`, { danger: true });
+    document.body.appendChild(m);
+    const r = btn.getBoundingClientRect();
+    const top = Math.min(r.bottom + 4, window.innerHeight - m.offsetHeight - 8);
+    m.style.top  = Math.max(8, top) + 'px';
+    m.style.left = Math.max(8, Math.min(r.right - m.offsetWidth, window.innerWidth - m.offsetWidth - 8)) + 'px';
+    setTimeout(() => {
+        document.addEventListener('pointerdown', _chMenuOutside, true);
+        window.addEventListener('scroll', closeChapterMenu, { once: true, passive: true });
+    }, 0);
+};
+function _chMenuOutside(e) {
+    const m = document.getElementById('chMenu');
+    if (m && !m.contains(e.target)) closeChapterMenu();
+}
+window.closeChapterMenu = function() {
+    const m = document.getElementById('chMenu');
+    if (m) m.remove();
+    document.removeEventListener('pointerdown', _chMenuOutside, true);
+};
+
+// ── Recently deleted chapters ────────────────────────────────────────────────
+// Deleting a chapter keeps a copy of its text in version history. This lists
+// those copies for the current project and puts a chapter back at the end.
+// A restored chapter's words count as already on the tracker, so they are
+// never added twice.
+let _deletedList = [];
+
+window.openRecentlyDeleted = async function() {
+    const ov   = document.getElementById('deletedOverlay');
+    const list = document.getElementById('deletedList');
+    if (!ov || !list) return;
+    list.innerHTML = '<p class="deleted-empty">LOOKING…</p>';
+    ov.style.display = 'flex';
+    _deletedList = window.DPVersions
+        ? await window.DPVersions.listDeleted(activeProjectId, writingData.chapters.map(c => c.id))
+        : [];
+    if (!_deletedList.length) {
+        list.innerHTML = '<p class="deleted-empty">NO DELETED CHAPTERS IN THIS PROJECT.</p>';
+        return;
+    }
+    list.innerHTML = _deletedList.map((v, i) => `
+        <div class="deleted-row">
+            <div class="deleted-info">
+                <div class="deleted-title">${escapeHtml(v.title || 'Untitled chapter')}</div>
+                <div class="deleted-meta">${(v.words || 0).toLocaleString()} WDS · DELETED ${escapeHtml(deletedWhen(v.t))}</div>
+            </div>
+            <button class="deleted-restore" onclick="restoreDeletedChapter(${i})">RESTORE</button>
+        </div>`).join('');
+};
+
+window.closeRecentlyDeleted = function() {
+    const ov = document.getElementById('deletedOverlay');
+    if (ov) ov.style.display = 'none';
+};
+
+function deletedWhen(t) {
+    const d = new Date(t);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }).toUpperCase() + ' ' +
+           d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+window.restoreDeletedChapter = function(i) {
+    const v = _deletedList[i];
+    if (!v || writingData.chapters.some(c => c.id === v.chapterId)) { closeRecentlyDeleted(); return; }
+    const content = sanitizeHtml(v.html || '');
+    const words   = countWords(content);
+    const ch = {
+        id:          v.chapterId,              // same id, so its version history comes back too
+        title:       v.title || 'Restored chapter',
+        order:       writingData.chapters.length,
+        wordCount:   words,
+        syncedWords: words,                    // already counted before it was deleted
+        content:     content,
+        updatedAt:   Date.now()
+    };
+    writingData.chapters.push(ch);
+    const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+    const proj   = dpData.projects && dpData.projects[activeProjectId];
+    if (proj) {
+        proj.writeWords = writingData.chapters.reduce((s, c) => s + (c.syncedWords || 0), 0);
+        localStorage.setItem('draftPunkData', JSON.stringify(dpData));
+    }
+    saveMeta();
+    pushChapter(ch);
+    renderAll();
+    updateFooter();
+    closeRecentlyDeleted();
+    const el = document.getElementById('chap_' + ch.id);
+    if (el) { el.classList.add('open'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    showWriteToast(null, '✓ CHAPTER RESTORED', ch.title.toUpperCase());
 };
 
 // ── Write screen toast notifications ─────────────────────────────────────────

@@ -17,9 +17,9 @@
 
     <nav class="app-nav">
         <div class="nav-dropdown">
-            <button class="nav-dropdown-btn active" onclick="toggleDraftMenu()">DRAFT PUNK</button>
+            <button class="nav-dropdown-btn active" onclick="toggleDraftMenu()">DRAFT PUNK ▾</button>
             <div class="nav-dropdown-menu" id="draftMenu">
-                <a href="index.html?dashboard" class="nav-dropdown-item">DRAFT PUNK</a>
+                <a href="index.html?dashboard" class="nav-dropdown-item">DASHBOARD</a>
                 <a href="wordrunner.html" class="nav-dropdown-item">WORDRUNNER</a>
                 <a href="groups.html" class="nav-dropdown-item">WRITING GROUPS</a>
                 <a href="messages.html" class="nav-dropdown-item">MESSAGES</a>
@@ -27,7 +27,7 @@
         </div>
         <a href="write.html" class="nav-center-btn active">WRITE</a>
         <div class="nav-dropdown" style="margin-left:auto;">
-            <button class="nav-dropdown-btn" onclick="toggleNotesMenu()">WRITE</button>
+            <button class="nav-dropdown-btn" onclick="toggleNotesMenu()">STORY ▾</button>
             <div class="nav-dropdown-menu" id="notesMenu">
                 <a href="notes.html" class="nav-dropdown-item">NOTES</a>
                 <a href="beat-notes.html" class="nav-dropdown-item">BEATS</a>
@@ -81,8 +81,18 @@
                 <a href="record.html" class="write-record-link">✎ WRITING RECORD</a>
                 <button onclick="exportStory()" style="width:100%;margin-top:8px;background:#333;">⬇ EXPORT STORY</button>
                 <button onclick="triggerImportStory()" style="width:100%;margin-top:8px;background:#333;">⬆ IMPORT STORY</button>
+                <button class="write-deleted-link" onclick="openRecentlyDeleted()">↺ RECENTLY DELETED</button>
                 <input type="file" id="importStoryFile" accept=".rtf,.txt,.html,.htm" style="display:none" onchange="importStory(event)">
             </div>
+        </div>
+    </div>
+
+    <div id="deletedOverlay" class="overlay" style="display:none;" onclick="if(event.target===this)closeRecentlyDeleted()">
+        <div class="congrats-box" style="max-width:420px;width:90%;max-height:80vh;overflow-y:auto;">
+            <h2 style="color:var(--neon);margin-bottom:6px;">RECENTLY DELETED</h2>
+            <p style="font-size:0.65rem;opacity:0.5;letter-spacing:1px;margin-bottom:14px;line-height:1.5;">RESTORED CHAPTERS GO BACK AT THE END OF YOUR STORY.</p>
+            <div id="deletedList"></div>
+            <button onclick="closeRecentlyDeleted()" style="width:100%;margin-top:14px;background:#333;">CLOSE</button>
         </div>
     </div>
 

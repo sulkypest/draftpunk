@@ -25,9 +25,9 @@
 
     <nav class="app-nav">
         <div class="nav-dropdown">
-            <button class="nav-dropdown-btn active" onclick="toggleDraftMenu()">DRAFT PUNK</button>
+            <button class="nav-dropdown-btn active" onclick="toggleDraftMenu()">DRAFT PUNK ▾</button>
             <div class="nav-dropdown-menu" id="draftMenu">
-                <a href="index.html?dashboard" class="nav-dropdown-item" style="color:var(--neon);">DRAFT PUNK</a>
+                <a href="index.html?dashboard" class="nav-dropdown-item" style="color:var(--neon);">DASHBOARD</a>
                 <a href="wordrunner.html" class="nav-dropdown-item">WORDRUNNER</a>
                 <a href="groups.html" class="nav-dropdown-item">WRITING GROUPS</a>
                 <a href="messages.html" class="nav-dropdown-item">MESSAGES</a>
@@ -35,7 +35,7 @@
         </div>
         <a href="write.html" class="nav-center-btn">WRITE</a>
         <div class="nav-dropdown" style="margin-left:auto;">
-            <button class="nav-dropdown-btn" onclick="toggleNotesMenu()">WRITE</button>
+            <button class="nav-dropdown-btn" onclick="toggleNotesMenu()">STORY ▾</button>
             <div class="nav-dropdown-menu" id="notesMenu">
                 <a href="notes.html" class="nav-dropdown-item">NOTES</a>
                 <a href="beat-notes.html" class="nav-dropdown-item">BEATS</a>
@@ -85,9 +85,10 @@
     <div id="setup" class="setup-screen" style="display:none;">
         <h1>DRAFT PUNK</h1>
         <img src="DRAFTPUNK.png" id="appLogo" alt="Draft Punk Logo">
-        <button class="install-btn hidden" onclick="installApp()">+ ADD TO HOME SCREEN</button>
         <div class="input-group">
-            <input type="text" id="titleIn" placeholder="PROJECT TITLE">
+            <label class="field"><span class="field-label">PROJECT TITLE</span>
+            <input type="text" id="titleIn" placeholder="E.G. MY NOVEL"></label>
+            <label class="field"><span class="field-label">GENRE</span>
             <select id="genreIn">
                 <option value="urbanFantasy">URBAN FANTASY</option>
                 <option value="sciFi">SCI-FI</option>
@@ -98,11 +99,14 @@
                 <option value="romance">ROMANCE</option>
                 <option value="thriller">THRILLER</option>
                 <option value="western">WESTERN</option>
-            </select>
-            <input type="number" id="goalIn" placeholder="WORD GOAL">
-            <input type="date" id="deadlineIn">
+            </select></label>
+            <label class="field"><span class="field-label">WORD GOAL</span>
+            <input type="number" id="goalIn" placeholder="80000" inputmode="numeric"></label>
+            <label class="field"><span class="field-label">DEADLINE <i>(OPTIONAL)</i></span>
+            <input type="date" id="deadlineIn"></label>
             <button onclick="start()">START</button>
         </div>
+        <button class="install-btn hidden" onclick="installApp()" style="margin-top:14px;">+ ADD TO HOME SCREEN</button>
     </div>
 
     <div id="mainDashboard" class="main-layout hidden">
@@ -231,7 +235,9 @@
         <div class="congrats-box" style="max-width:360px;width:90%;">
             <h2 style="color:var(--neon);margin-bottom:20px;">EDIT PROJECT</h2>
             <div class="input-group">
-                <input type="text" id="editTitle" placeholder="PROJECT TITLE">
+                <label class="field"><span class="field-label">PROJECT TITLE</span>
+                <input type="text" id="editTitle" placeholder="E.G. MY NOVEL"></label>
+                <label class="field"><span class="field-label">GENRE</span>
                 <select id="editGenre">
                     <option value="urbanFantasy">URBAN FANTASY</option>
                     <option value="sciFi">SCI-FI</option>
@@ -242,9 +248,11 @@
                     <option value="romance">ROMANCE</option>
                     <option value="thriller">THRILLER</option>
                     <option value="western">WESTERN</option>
-                </select>
-                <input type="number" id="editGoal" placeholder="WORD GOAL">
-                <input type="date" id="editDeadline">
+                </select></label>
+                <label class="field"><span class="field-label">WORD GOAL</span>
+                <input type="number" id="editGoal" placeholder="80000" inputmode="numeric"></label>
+                <label class="field"><span class="field-label">DEADLINE <i>(OPTIONAL)</i></span>
+                <input type="date" id="editDeadline"></label>
                 <div style="display:flex;gap:10px;">
                     <button onclick="saveProjectSettings()" style="flex:1;">SAVE</button>
                     <button onclick="closeProjectSettings()" style="flex:1;background:#333;">CANCEL</button>
