@@ -143,8 +143,6 @@ window.promptMoveChapter = function(id) {
     renderAll();
 };
 
-window.syncChapter = function(id) { syncChaptersToTracker([id]); };
-
 // ── Counted-words ledger ──────────────────────────────────────────────────────
 // Each chapter's syncedWords is how many of its words are already on the
 // tracker. Both SYNC routes (per chapter, and the footer button for all
@@ -293,7 +291,6 @@ function renderAll() {
     if (!container) return;
 
     container.innerHTML = writingData.chapters.map(ch => {
-        const synced = unsyncedWords(ch) === 0;
         return `
             <div class="write-chapter" id="chap_${ch.id}">
                 <div class="write-chapter-header" onclick="toggleChapter('${ch.id}')">
@@ -346,8 +343,6 @@ function renderAll() {
                             </div>
                             <button class="write-tb-btn write-tb-history" onpointerdown="event.preventDefault()"
                                 onclick="openVersionHistory('${ch.id}')" title="Version history">⟲ HISTORY</button>
-                            <button class="write-tb-btn write-tb-sync${synced ? ' synced' : ''}" onpointerdown="event.preventDefault()"
-                                onclick="syncChapter('${ch.id}')" title="Sync this chapter to tracker">⊕ SYNC</button>
                         </div>
                     </div>
                     <div class="write-area"
@@ -714,22 +709,31 @@ function updateFooter() {
     const totalEl = document.getElementById('writeTotalWords');
     if (totalEl) totalEl.textContent = 'TOTAL: ' + total.toLocaleString() + ' WORDS';
 
+    // One button saves to the cloud and adds any new words to the tracker,
+    // so it stays available even when there are no new words to add.
     const btn = document.getElementById('syncWordsBtn');
     if (btn) {
-        if (delta > 0) {
-            btn.textContent   = 'SYNC ' + delta.toLocaleString() + ' NEW WORDS TO TRACKER';
-            btn.disabled      = false;
-            btn.style.opacity = '';
-        } else {
-            btn.textContent   = 'ALL WORDS SYNCED';
-            btn.disabled      = true;
-            btn.style.opacity = '0.4';
-        }
+        btn.textContent = 'SYNC AND SAVE';
+        btn.title       = delta > 0
+            ? delta.toLocaleString() + ' new words to add to your tracker'
+            : 'All words are on your tracker';
     }
 }
 
 // ── Sync to tracker ───────────────────────────────────────────────────────────
 window.syncToTracker = function() {
+    syncChaptersToTracker(writingData.chapters.map(c => c.id));
+};
+
+// Footer button: save every chapter now, then add any new words to the
+// tracker (the tracker step still asks first, as before).
+window.syncAndSave = function() {
+    saveAllNow();
+    const fresh = writingData.chapters.reduce((s, c) => s + unsyncedWords(c), 0);
+    if (fresh <= 0) {
+        showWriteToast(null, '✓ SAVED', 'ALL WORDS ARE ON YOUR TRACKER');
+        return;
+    }
     syncChaptersToTracker(writingData.chapters.map(c => c.id));
 };
 
