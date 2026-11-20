@@ -62,6 +62,9 @@
         setText('mobXpText', xpNow.toLocaleString() + ' XP');
         setText('mobWords', total.toLocaleString());
         setText('mobDays',  daysLeft);
+
+        // Level badge on the top-bar logo (phones and tablets)
+        setText('navLvlBadge', writerLevel);
     };
 
     function buildHTML() {
@@ -116,14 +119,9 @@
             </div>`;
         document.body.appendChild(right);
 
-        // ── Mobile floating trigger ──────────────────────────────────────────
-        const trigger = document.createElement('button');
-        trigger.id        = 'mobSideTrigger';
-        trigger.innerHTML = '&#9776;';
-        trigger.onclick   = function () {
-            document.getElementById('mobSideOverlay').classList.add('open');
-        };
-        document.body.appendChild(trigger);
+        // Phones and tablets open the stats panel from the top-bar logo (see
+        // below), rather than a floating button that sat over the page.
+        const STATS_MQ = window.matchMedia('(max-width: 899px)');
 
 
         // ── Mobile slide-in overlay ──────────────────────────────────────────
@@ -180,7 +178,15 @@
                 const logoLink = document.createElement('a');
                 logoLink.href      = 'index.html';
                 logoLink.className = 'nav-logo-circle';
-                logoLink.innerHTML = `<img src="DRAFTPUNK.png" alt="Draft Punk">`;
+                logoLink.innerHTML = `<img src="DRAFTPUNK.png" alt="Draft Punk"><span id="navLvlBadge" class="nav-lvl-badge" aria-hidden="true">1</span>`;
+                logoLink.addEventListener('click', function (e) {
+                    if (!STATS_MQ.matches) return;          // desktop: the logo goes home
+                    e.preventDefault();
+                    document.getElementById('mobSideOverlay').classList.add('open');
+                });
+                const setLabel = () => logoLink.setAttribute('aria-label', STATS_MQ.matches ? 'Your level and stats' : 'Draft Punk home');
+                setLabel();
+                if (STATS_MQ.addEventListener) STATS_MQ.addEventListener('change', setLabel);
                 nav.appendChild(logoLink);
             }
 const writeBtn = nav.querySelector('.nav-center-btn');
@@ -194,6 +200,20 @@ const writeBtn = nav.querySelector('.nav-center-btn');
                 writeLink.textContent = 'WRITE';
                 notesMenu.insertBefore(writeLink, notesMenu.firstChild);
             }
+        }
+
+        // Backup status line at the top of the ··· menu (kept up to date by sync.js)
+        const dataMenu = document.getElementById('dataMenu');
+        if (dataMenu && !document.getElementById('syncStatusLine')) {
+            const line = document.createElement('div');
+            line.id = 'syncStatusLine';
+            line.className = 'sync-status-line';
+            line.innerHTML = '<span class="sync-status-dot"></span><span class="sync-status-text">SAVED ON THIS DEVICE</span>';
+            dataMenu.insertBefore(line, dataMenu.firstChild);
+            const sep = document.createElement('div');
+            sep.style.cssText = 'border-top:1px solid var(--border);margin:2px 0;';
+            dataMenu.insertBefore(sep, line.nextSibling);
+            if (window.dpSetSyncStatus) window.dpSetSyncStatus(window._dpSyncState);
         }
 
         window.updateSidebar();

@@ -109,6 +109,7 @@
             t: t, html: html || '', words: wordsIn(html), reason: reason,
             name: opts.name || null, removed: opts.removed || 0
         };
+        if (opts.title) v.title = opts.title;   // deleted chapters keep their title
         s.lastSaveAt = t;
         const savedLocally = await idbPut(v);
         let savedToCloud = false;
@@ -198,7 +199,34 @@
 
         saveNamed(id, html, name) { return save(id, html, 'named', { name: name || 'Saved version', force: true }); },
         saveBeforeRestore(id, html) { return save(id, html, 'before-restore', { force: true, mustStore: true }); },
-        saveDeleted(id, html, projectId) { return save(id, html, 'chapter-deleted', { force: true, projectId }); },
+        saveDeleted(id, html, projectId, title) { return save(id, html, 'chapter-deleted', { force: true, projectId, title }); },
+
+        // Chapters of this project that were deleted and aren't in the chapter
+        // list now: the newest "when the chapter was deleted" copy of each,
+        // from this device and (when signed in) the cloud. Read-only.
+        async listDeleted(projectId, currentIds) {
+            const skip = new Set(currentIds || []);
+            const found = {};
+            const add = v => {
+                if (!v || v.reason !== 'chapter-deleted' || v.projectId !== projectId || skip.has(v.chapterId)) return;
+                if (!found[v.chapterId] || found[v.chapterId].t < v.t) found[v.chapterId] = v;
+            };
+            const db = await openDb();
+            if (db) {
+                await new Promise(res => {
+                    try {
+                        const req = db.transaction(STORE, 'readonly').objectStore(STORE).openCursor();
+                        req.onsuccess = () => { const c = req.result; if (!c) return res(); add(c.value); c.continue(); };
+                        req.onerror = () => res();
+                    } catch (e) { res(); }
+                });
+            }
+            if (window.listCloudDeletedChapters) {
+                try { (await window.listCloudDeletedChapters([...skip])).forEach(add); }
+                catch (e) { console.warn('Cloud deleted chapters not loaded:', e); }
+            }
+            return Object.values(found).sort((a, b) => b.t - a.t);
+        },
 
         // All versions of a chapter: this device's plus any from the cloud
         async list(id) {

@@ -701,13 +701,31 @@ function updateNavUI(user) {
 }
 
 // ── Sync status dot ───────────────────────────────────────────────────────────
+// The dot next to ··· and the matching line at the top of that menu (added by
+// sidebar.js) say where the writer's work is backed up.
+const SYNC_STATES = {
+    synced:  { bg: 'var(--neon)',  ring: false, text: 'BACKED UP TO THE CLOUD' },
+    pending: { bg: '#ffa500',      ring: false, text: 'SAVING TO THE CLOUD…' },
+    error:   { bg: '#ff4444',      ring: false, text: 'CLOUD BACKUP FAILED — SAVED ON THIS DEVICE' },
+    none:    { bg: 'transparent',  ring: true,  text: 'NOT SIGNED IN — SAVED ON THIS DEVICE ONLY' }
+};
 function setSyncStatus(state) {
+    window._dpSyncState = state;
+    const st  = SYNC_STATES[state] || SYNC_STATES.none;
     const dot = document.getElementById('syncDot');
-    if (!dot) return;
-    if (state === 'synced')  { dot.style.background = 'var(--neon)'; dot.title = 'Synced'; }
-    if (state === 'pending') { dot.style.background = '#ffa500';     dot.title = 'Syncing…'; }
-    if (!state)              { dot.style.background = 'transparent'; dot.title = ''; }
+    if (dot) {
+        dot.style.background = st.bg;
+        dot.style.boxShadow  = st.ring ? 'inset 0 0 0 1px var(--text-dim)' : 'none';
+        dot.title = st.text.charAt(0) + st.text.slice(1).toLowerCase();
+    }
+    const line = document.getElementById('syncStatusLine');
+    if (line) {
+        line.querySelector('.sync-status-dot').style.background = st.bg;
+        line.querySelector('.sync-status-dot').style.boxShadow  = st.ring ? 'inset 0 0 0 1px var(--text-dim)' : 'none';
+        line.querySelector('.sync-status-text').textContent = st.text;
+    }
 }
+window.dpSetSyncStatus = setSyncStatus;
 
 // ── Social functions (used by groups.js) ──────────────────────────────────────
 
@@ -1032,6 +1050,22 @@ window.listCloudVersions = async function(chapterId) {
     if (!currentUser) return [];
     const snap = await getDocs(collection(db, 'users', currentUser.uid, 'writing', chapterId, 'versions'));
     return snap.docs.map(d => d.data());
+};
+// Deleted chapters' last copies, for "Recently deleted" on the Write page.
+// Read-only: looks only at chapters listed in the version index that aren't
+// current chapters, and only at their "chapter-deleted" versions.
+window.listCloudDeletedChapters = async function(currentIds) {
+    if (!currentUser) return [];
+    const skip = new Set(currentIds || []);
+    const idx = await getDoc(doc(db, 'users', currentUser.uid, 'private', 'versionIndex'));
+    const ids = ((idx.exists() && idx.data().chapterIds) || []).filter(c => !skip.has(c));
+    const out = [];
+    for (const cid of ids) {
+        const snap = await getDocs(query(collection(db, 'users', currentUser.uid, 'writing', cid, 'versions'),
+            where('reason', '==', 'chapter-deleted')));
+        snap.docs.forEach(d => out.push(d.data()));
+    }
+    return out;
 };
 window.deleteCloudVersion = async function(chapterId, versionId) {
     if (!currentUser) return;
