@@ -6,13 +6,7 @@
    ranked by fading it.
    ────────────────────────────────────────────────────────────────────────── */
 
-@font-face { font-family: 'Courier Prime'; src: url('fonts/courier-prime-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Courier Prime'; src: url('fonts/courier-prime-latin-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: 'Courier Prime'; src: url('fonts/courier-prime-latin-700-normal.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Literata'; src: url('fonts/literata-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Literata'; src: url('fonts/literata-latin-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: 'Literata'; src: url('fonts/literata-latin-600-normal.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: 'Anton'; src: url('fonts/anton-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+/* Fonts: @font-face rules live in style.css (shared by the whole app) */
 
 /* Tokens — dark values by default, light when the app is in light mode */
 #authScreen.dp-landing {

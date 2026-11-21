@@ -378,8 +378,8 @@ async function renderRecoverySection(user) {
     if (!count) { el.innerHTML = ''; return; }
     el.innerHTML = `
         <div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 12px;"></div>
-        <div style="font-size:0.6rem;opacity:0.6;letter-spacing:2px;margin-bottom:8px;">RECOVERED COPIES (${count})</div>
-        <p style="font-size:0.62rem;opacity:0.5;letter-spacing:1px;margin:0 0 8px;line-height:1.5;">
+        <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px;">RECOVERED COPIES (${count})</div>
+        <p style="font-size:0.875rem;color:var(--text-dim);letter-spacing:1px;margin:0 0 8px;line-height:1.5;">
             When the same thing was edited on two devices, the newer edit was kept. These are the other versions.</p>
         <button id="dpRecoveryBtn" style="width:100%;margin-bottom:6px;background:#333;">⬇ DOWNLOAD RECOVERED COPIES</button>`;
     document.getElementById('dpRecoveryBtn').onclick = () => {
@@ -481,7 +481,7 @@ function showUsernamePrompt(onComplete) {
     overlay.innerHTML = `
         <div style="width:100%;max-width:340px;padding:0 10px;box-sizing:border-box;">
             <h2 style="color:var(--neon,#e8e8e8);margin:0 0 8px;letter-spacing:2px;font-size:1.1rem;">CHOOSE A USERNAME</h2>
-            <p style="font-size:0.72rem;opacity:0.5;letter-spacing:1px;margin:0 0 20px;line-height:1.6;">
+            <p style="font-size:0.875rem;color:var(--text-dim);letter-spacing:1px;margin:0 0 20px;line-height:1.6;">
                 This is how you'll appear on leaderboards and to friends.<br>
                 Letters, numbers and _ only. 3–20 characters.
             </p>
@@ -491,7 +491,7 @@ function showUsernamePrompt(onComplete) {
                        background:var(--panel,#161616);border:1px solid var(--border,#2a2a2a);
                        color:var(--text,#fff);padding:10px;text-transform:uppercase;letter-spacing:2px;"
                 oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9_]/g,'')">
-            <p id="dpUsernameError" style="color:#ff4500;font-size:0.72rem;height:1.2em;margin:0 0 10px;letter-spacing:1px;"></p>
+            <p id="dpUsernameError" style="color:#ff4500;font-size:0.75rem;height:1.2em;margin:0 0 10px;letter-spacing:1px;"></p>
             <button id="dpUsernameBtn" onclick="window._dpSubmitUsername()"
                 style="width:100%;box-sizing:border-box;
                        background:var(--neon,#e8e8e8);color:var(--bg,#0a0a0a);
@@ -775,8 +775,8 @@ async function showAccountOverlay() {
                     : `<div style="width:72px;height:72px;border-radius:50%;border:2px solid var(--neon,#0ff);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;">◎</div>`
                 }
                 <div style="font-size:1rem;font-weight:900;letter-spacing:2px;">${(user.displayName || 'USER').toUpperCase()}</div>
-                <div style="font-size:0.7rem;opacity:0.5;letter-spacing:1px;margin-top:4px;">@${username}</div>
-                <div style="font-size:0.7rem;opacity:0.4;letter-spacing:1px;margin-top:4px;">${totalWords} WORDS WRITTEN</div>
+                <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;margin-top:4px;">@${username}</div>
+                <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;margin-top:4px;">${totalWords} WORDS WRITTEN</div>
             </div>
 
             <button onclick="signOutUser()" style="width:100%;margin-bottom:6px;">⊖ SIGN OUT</button>
@@ -785,13 +785,13 @@ async function showAccountOverlay() {
             <div id="dpRecoverySection"></div>
 
             <div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 16px;"></div>
-            <div style="font-size:0.6rem;opacity:0.4;letter-spacing:2px;margin-bottom:12px;">DANGER ZONE</div>
+            <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:12px;">DANGER ZONE</div>
 
             <button id="dpResetBtn" onclick="window._dpResetCloudData()"
                 style="width:100%;margin-bottom:6px;background:#333;">
                 ⚠ RESET CLOUD DATA
             </button>
-            <p style="font-size:0.62rem;opacity:0.4;letter-spacing:1px;margin:0 0 14px;line-height:1.5;">
+            <p style="font-size:0.875rem;color:var(--text-dim);letter-spacing:1px;margin:0 0 14px;line-height:1.5;">
                 Wipes your cloud backup. Local data is preserved. Useful for testing a fresh sign-up.
             </p>
 
@@ -799,14 +799,14 @@ async function showAccountOverlay() {
                 style="width:100%;margin-bottom:6px;background:#ff4500;">
                 ✕ DELETE ACCOUNT
             </button>
-            <p style="font-size:0.62rem;opacity:0.4;letter-spacing:1px;margin:0 0 20px;line-height:1.5;">
+            <p style="font-size:0.875rem;color:var(--text-dim);letter-spacing:1px;margin:0 0 20px;line-height:1.5;">
                 Permanently deletes your account, username, and all cloud data.
             </p>
 
             <button onclick="document.getElementById('dpAccountOverlay').style.display='none'"
                 style="width:100%;background:#222;">CLOSE</button>
 
-            <p id="dpAccountError" style="color:#ff4500;font-size:0.7rem;margin:10px 0 0;text-align:center;min-height:1.2em;letter-spacing:1px;"></p>
+            <p id="dpAccountError" style="color:#ff4500;font-size:0.75rem;margin:10px 0 0;text-align:center;min-height:1.2em;letter-spacing:1px;"></p>
         </div>
     `;
 

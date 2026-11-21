@@ -19,13 +19,13 @@
         st.id = 'dpStreakCss';
         st.textContent = `
             .dp-streak-num { font-size:1.6rem;font-weight:900;line-height:1;margin:5px 0;color:var(--neon); }
-            .dp-streak-sub { font-size:0.6rem;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;line-height:1.4; }
+            .dp-streak-sub { font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;line-height:1.4; }
             .dp-streak-box { cursor:pointer; }
             .dp-streak-chip { display:flex;align-items:center;gap:10px;justify-content:space-between;cursor:pointer;
                 margin:0 0 10px;padding:8px 10px;border:1px solid var(--border,#2a2a2a);font-size:0.7rem;letter-spacing:1px; }
             .dp-streak-chip b { color:var(--neon);font-size:0.9rem; }
             .dp-streak-week { display:flex;gap:6px;justify-content:space-between;margin:14px 0; }
-            .dp-streak-day { flex:1;text-align:center;font-size:0.6rem;letter-spacing:1px;color:var(--text-dim); }
+            .dp-streak-day { flex:1;text-align:center;font-size:0.75rem;letter-spacing:1px;color:var(--text-dim); }
             .dp-streak-dot { height:30px;display:flex;align-items:center;justify-content:center;margin-top:4px;
                 border:1px solid var(--border,#2a2a2a);font-size:0.9rem; }
             .dp-streak-dot.written { background:var(--neon);color:#000;border-color:var(--neon); }
@@ -88,7 +88,7 @@
                 footer.insertBefore(chip, footer.firstChild);
             }
             chip.innerHTML = `<span><b>🔥 ${v.length}</b> DAY${v.length === 1 ? '' : 'S'}${freezeIcons(v)}</span>
-                <span style="opacity:0.6;font-size:0.6rem;text-align:right;">${subline(v)}</span>`;
+                <span style="color:var(--text-dim);font-size:0.75rem;text-align:right;">${subline(v)}</span>`;
         }
     }
 
@@ -107,8 +107,8 @@
                 <div class="dp-streak-sub" style="margin-top:6px;">${subline(v)} · BEST ${v.best}</div>
                 <div class="dp-streak-week">${days}</div>
                 <div style="border-top:1px solid var(--border,#2a2a2a);padding-top:12px;">
-                    <div style="font-size:0.7rem;letter-spacing:2px;margin-bottom:6px;">STREAK FREEZES &nbsp;${slots}</div>
-                    <p style="font-size:0.62rem;opacity:0.6;letter-spacing:1px;line-height:1.6;margin:0 0 16px;">
+                    <div style="font-size:0.75rem;letter-spacing:2px;margin-bottom:6px;">STREAK FREEZES &nbsp;${slots}</div>
+                    <p style="font-size:0.875rem;color:var(--text-dim);letter-spacing:1px;line-height:1.6;margin:0 0 16px;">
                         A freeze covers a day you miss, automatically. Earn one for every 5 days in a row,
                         or for writing over 1,500 words in a day. Hold up to 3.</p>
                 </div>
@@ -146,7 +146,7 @@
             box-sizing:border-box;background:var(--panel,#161616);border:1px solid var(--neon,#0ff);padding:12px 16px;
             font-family:'Courier New',monospace;color:var(--text,#fff);cursor:pointer;`;
         bar.innerHTML = `<div style="font-size:0.75rem;font-weight:900;letter-spacing:2px;">${title}</div>
-            <div style="font-size:0.62rem;opacity:0.65;letter-spacing:1px;margin-top:4px;line-height:1.4;">${sub}</div>`;
+            <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;margin-top:4px;line-height:1.4;">${sub}</div>`;
         bar.onclick = () => { bar.remove(); openPanel(); };
         document.body.appendChild(bar);
         setTimeout(() => { bar.style.transition = 'opacity .4s'; bar.style.opacity = '0'; setTimeout(() => bar.remove(), 450); }, 7000);

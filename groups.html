@@ -46,7 +46,7 @@
                 <div id="navUserInfo" style="display:none;">
                     <div class="nav-dropdown-item" style="display:flex;align-items:center;gap:8px;cursor:default;">
                         <img id="navAvatar" src="" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--neon);">
-                        <span id="navUserName" style="color:var(--neon);font-size:0.7rem;"></span>
+                        <span id="navUserName" style="color:var(--neon);font-size:0.75rem;"></span>
                     </div>
                     <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
                 </div>
@@ -64,7 +64,7 @@
 
             <!-- Sign-in gate -->
             <div id="groupsSignInGate" style="display:none;text-align:center;padding:40px 0;">
-                <p style="font-size:0.8rem;opacity:0.5;letter-spacing:1px;margin-bottom:20px;">SIGN IN TO ACCESS LEADERBOARDS AND FRIENDS</p>
+                <p style="font-size:0.8rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:20px;">SIGN IN TO ACCESS LEADERBOARDS AND FRIENDS</p>
                 <button onclick="signInWithGoogle()" style="width:100%;max-width:300px;">⊕ SIGN IN WITH GOOGLE</button>
             </div>
 
@@ -73,13 +73,13 @@
 
                 <!-- Pending friend requests -->
                 <div id="pendingRequestsSection" style="display:none;margin-bottom:30px;">
-                    <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">FRIEND REQUESTS</span>
+                    <span style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);">FRIEND REQUESTS</span>
                     <div id="pendingRequestsList" style="margin-top:10px;"></div>
                 </div>
 
                 <!-- Add friend -->
                 <div style="margin-bottom:30px;">
-                    <label for="friendUsernameInput" style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">ADD FRIEND BY USERNAME</label>
+                    <label for="friendUsernameInput" style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);">ADD FRIEND BY USERNAME</label>
                     <div style="display:flex;gap:8px;margin-top:8px;">
                         <input type="text" id="friendUsernameInput" placeholder="USERNAME"
                             style="flex:1;text-transform:uppercase;"
@@ -92,7 +92,7 @@
 
                 <!-- Friends leaderboard -->
                 <div style="margin-bottom:30px;">
-                    <label for="friendsSearch" style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">YOUR FRIENDS</label>
+                    <label for="friendsSearch" style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);">YOUR FRIENDS</label>
                     <input type="text" id="friendsSearch" placeholder="SEARCH FRIENDS"
                         style="width:100%;box-sizing:border-box;margin-top:8px;text-transform:uppercase;"
                         oninput="filterFriends(this.value)">
@@ -101,14 +101,14 @@
 
                 <!-- Shared with me -->
                 <div style="margin-bottom:30px;">
-                    <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">SHARED WITH ME</span>
+                    <span style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);">SHARED WITH ME</span>
                     <div id="sharedWithMeList" style="margin-top:10px;"></div>
                 </div>
 
                 <!-- My groups -->
                 <div style="margin-bottom:30px;">
                     <div class="grp-section-head">
-                        <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">MY GROUPS</span>
+                        <span style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);">MY GROUPS</span>
                         <button id="grpNewBtn" class="grp-new-btn" onclick="toggleNewGroup()">＋ NEW GROUP</button>
                     </div>
                     <div id="grpNewPanel" class="grp-new-panel" style="display:none;">
@@ -133,7 +133,7 @@
 
                 <!-- Global leaderboard -->
                 <div>
-                    <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">GLOBAL LEADERBOARD</span>
+                    <span style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);">GLOBAL LEADERBOARD</span>
                     <div style="display:flex;gap:4px;margin-top:8px;margin-bottom:8px;">
                         <button class="lb-period-btn lb-period-active" data-period="week"  onclick="setLeaderboardPeriod('week')" >THIS WEEK</button>
                         <button class="lb-period-btn"                  data-period="month" onclick="setLeaderboardPeriod('month')">THIS MONTH</button>
@@ -152,9 +152,9 @@
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px;">
                 <div>
                     <h2 id="shareViewTitle" style="color:var(--neon);margin:0 0 4px;"></h2>
-                    <div id="shareViewMeta" style="font-size:0.65rem;opacity:0.4;letter-spacing:1px;"></div>
+                    <div id="shareViewMeta" style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;"></div>
                 </div>
-                <button onclick="closeShareView()" style="background:#333;min-width:unset;width:auto;padding:4px 10px;font-size:0.7rem;white-space:nowrap;flex-shrink:0;">✕ CLOSE</button>
+                <button onclick="closeShareView()" style="background:#333;min-width:unset;width:auto;padding:4px 10px;font-size:0.75rem;white-space:nowrap;flex-shrink:0;">✕ CLOSE</button>
             </div>
             <div id="shareViewContent" style="flex:1;overflow-y:auto;margin-top:12px;font-size:0.9rem;line-height:1.8;text-align:left;border-top:1px solid var(--border);padding-top:12px;"></div>
         </div>

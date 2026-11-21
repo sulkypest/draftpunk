@@ -225,7 +225,7 @@ window.onload = function() {
                     <span class="accordion-title">${beat.name.toUpperCase()}</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:10px;">
-                    ${hasSections ? `<span style="font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;">${sectionCount} SECTION${sectionCount !== 1 ? 'S' : ''}</span>` : ''}
+                    ${hasSections ? `<span style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;">${sectionCount} SECTION${sectionCount !== 1 ? 'S' : ''}</span>` : ''}
                     <span id="beat-arrow-${i}">▶</span>
                 </div>
             </div>

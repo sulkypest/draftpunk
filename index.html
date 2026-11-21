@@ -55,7 +55,7 @@
                 <div id="navUserInfo" style="display:none;">
                     <div class="nav-dropdown-item" style="display:flex;align-items:center;gap:8px;cursor:default;">
                         <img id="navAvatar" src="" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--neon);">
-                        <span id="navUserName" style="color:var(--neon);font-size:0.7rem;"></span>
+                        <span id="navUserName" style="color:var(--neon);font-size:0.75rem;"></span>
                     </div>
                     <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
                 </div>
@@ -310,7 +310,7 @@
             </div>
 
             <div id="dashSignInPrompt" style="display:none;border:1px solid #333;padding:12px;margin-bottom:12px;text-align:center;">
-                <div style="font-size:0.7rem;opacity:0.5;letter-spacing:1px;margin-bottom:8px;">NOT SYNCING — DATA IS LOCAL ONLY</div>
+                <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px;">NOT SYNCING — DATA IS LOCAL ONLY</div>
                 <button onclick="signInWithGoogle()" style="width:100%;background:var(--neon);color:#000;font-weight:900;letter-spacing:2px;">⊕ SIGN IN TO SYNC</button>
             </div>
 
@@ -323,8 +323,8 @@
             </div>
             <button class="install-btn hidden" onclick="installApp()" style="margin-top:20px;">+ ADD TO HOME SCREEN</button>
             <div style="display:flex;gap:10px;margin-top:10px;">
-                <button onclick="showProjectSettings()" style="background:#333;flex:1;font-size:0.6rem;">EDIT PROJECT</button>
-                <button onclick="showProjectSwitcher()" style="background:#333;flex:1;font-size:0.6rem;">PROJECTS <span id="projectCountLabel" style="opacity:0.5;"></span></button>
+                <button onclick="showProjectSettings()" style="background:#333;flex:1;font-size:0.75rem;">EDIT PROJECT</button>
+                <button onclick="showProjectSwitcher()" style="background:#333;flex:1;font-size:0.75rem;">PROJECTS <span id="projectCountLabel" style="color:var(--text-dim);"></span></button>
             </div>
         </div>
 
@@ -341,7 +341,7 @@
                 <strong>Android:</strong> Tap the browser menu&nbsp;<span style="font-size: 1.3rem;">⋮</span><br>
                 then <strong>"Add to Home Screen"</strong>
             </p>
-            <div style="font-size: 0.7rem; opacity: 0.6;">TAP ANYWHERE TO CLOSE</div>
+            <div style="font-size:0.75rem; color:var(--text-dim);">TAP ANYWHERE TO CLOSE</div>
         </div>
     </div>
 
@@ -353,7 +353,7 @@
                 <div id="levelUpNumber" class="shield-num" style="font-size:3rem;">1</div>
             </div>
             <div id="levelUpRank" style="font-size:0.95rem;font-weight:900;letter-spacing:2px;color:var(--neon);margin:6px 0 2px;"></div>
-            <div style="font-size:0.65rem;color:var(--text-dim);margin-top:12px;letter-spacing:1px;">TAP TO CONTINUE</div>
+            <div style="font-size:0.75rem;color:var(--text-dim);margin-top:12px;letter-spacing:1px;">TAP TO CONTINUE</div>
         </div>
     </div>
 
@@ -362,7 +362,7 @@
             <h2 style="color:var(--neon);margin:0 0 6px;font-size:1rem;letter-spacing:2px;">BOSS BEAT DEFEATED!</h2>
             <img id="defeatedBossSprite" src="" style="width:110px;height:110px;image-rendering:pixelated;object-fit:contain;display:block;margin:8px auto;filter:drop-shadow(0 0 10px var(--neon));">
             <div id="bossBeatTitle" style="font-size:1.3rem;font-weight:900;color:#fff;margin:8px 0 4px;"></div>
-            <div style="font-size:0.65rem;opacity:0.5;letter-spacing:1px;">CLICK TO CONTINUE</div>
+            <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;">CLICK TO CONTINUE</div>
         </div>
     </div>
 
@@ -414,12 +414,12 @@
 
     <div id="bossZoomOverlay" class="overlay" onclick="closeBossZoom()">
         <div class="congrats-circle">
-            <div style="font-size:0.6rem;letter-spacing:3px;color:var(--text-dim);margin-bottom:6px;">BOSS INTEL</div>
+            <div style="font-size:0.75rem;letter-spacing:3px;color:var(--text-dim);margin-bottom:6px;">BOSS INTEL</div>
             <img id="bossZoomSprite" src="" style="width:130px;height:130px;image-rendering:pixelated;object-fit:contain;filter:drop-shadow(0 0 12px var(--neon));display:block;margin:0 auto;">
             <div id="bossZoomName" style="font-size:1rem;font-weight:900;color:var(--neon);margin:8px 0 4px;letter-spacing:2px;"></div>
-            <div id="bossZoomBeat" style="font-size:0.75rem;letter-spacing:1px;color:var(--neon);opacity:0.7;margin-bottom:6px;"></div>
-            <div id="bossZoomLore" style="font-size:0.75rem;line-height:1.5;opacity:0.85;"></div>
-            <div style="font-size:0.6rem;opacity:0.4;margin-top:10px;letter-spacing:1px;">CLICK TO CLOSE</div>
+            <div id="bossZoomBeat" style="font-size:0.75rem;letter-spacing:1px;color:var(--neon);color:var(--text-dim);margin-bottom:6px;"></div>
+            <div id="bossZoomLore" style="font-size:0.75rem;line-height:1.5;"></div>
+            <div style="font-size:0.75rem;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">CLICK TO CLOSE</div>
         </div>
     </div>
 
@@ -427,15 +427,15 @@
         <div class="congrats-circle">
             <img id="buddyZoomSprite" src="" style="width:140px;height:140px;image-rendering:pixelated;object-fit:contain;filter:drop-shadow(0 0 20px var(--neon));display:block;margin:0 auto;">
             <div id="buddyZoomName" style="font-size:1.2rem;font-weight:900;color:var(--neon);margin:10px 0 6px;letter-spacing:2px;"></div>
-            <div id="buddyZoomFact" style="font-size:0.75rem;line-height:1.5;opacity:0.85;"></div>
-            <div style="font-size:0.6rem;opacity:0.4;margin-top:10px;letter-spacing:1px;">CLICK TO CLOSE</div>
+            <div id="buddyZoomFact" style="font-size:0.75rem;line-height:1.5;"></div>
+            <div style="font-size:0.75rem;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">CLICK TO CLOSE</div>
         </div>
     </div>
 
     <div id="correctOverlay" class="overlay" style="display:none;">
         <div class="congrats-box" style="max-width:340px;width:90%;">
             <h2 style="color:var(--neon);margin-bottom:16px;">CORRECT WORD COUNT</h2>
-            <p style="font-size:0.75rem;opacity:0.6;margin-bottom:16px;letter-spacing:1px;">Set your actual total word count. Period stats (weekly/monthly/yearly) will be adjusted by the difference.</p>
+            <p style="font-size:0.875rem;color:var(--text-dim);margin-bottom:16px;letter-spacing:1px;">Set your actual total word count. Period stats (weekly/monthly/yearly) will be adjusted by the difference.</p>
             <input type="number" id="correctInput" placeholder="TOTAL WORDS" style="width:100%;box-sizing:border-box;margin-bottom:12px;">
             <div style="display:flex;gap:10px;">
                 <button onclick="applyCorrection()" style="flex:1;">APPLY</button>
@@ -448,7 +448,7 @@
         <div class="congrats-circle">
             <h2 style="color:var(--neon);margin:0 0 8px;letter-spacing:2px;">NEW BUDDY!</h2>
             <img id="newBuddySprite" src="" style="width:130px;height:130px;display:block;margin:8px auto;image-rendering:pixelated;filter:drop-shadow(0 0 15px var(--neon));">
-            <div style="font-size:0.7rem;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">TAP TO CONTINUE</div>
+            <div style="font-size:0.75rem;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">TAP TO CONTINUE</div>
         </div>
     </div>
 

@@ -646,7 +646,7 @@ window.showProjectSwitcher = function() {
     const ids       = Object.keys(projects);
 
     if (ids.length === 0) {
-        container.innerHTML = '<div style="opacity:0.5;font-size:0.8rem;padding:10px 0;">No projects found.</div>';
+        container.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;padding:10px 0;">No projects found.</div>';
     } else {
         container.innerHTML = ids.map(id => {
             const p       = projects[id];
@@ -655,12 +655,12 @@ window.showProjectSwitcher = function() {
                          border:1px solid ${isActive ? 'var(--neon)' : 'var(--border)'};box-sizing:border-box;">
                 <div style="flex:1;min-width:0;">
                     <div style="font-weight:900;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title || 'UNTITLED'}</div>
-                    <div style="font-size:0.7rem;opacity:0.5;">${(p.total || 0).toLocaleString()} / ${(p.goal || 0).toLocaleString()} WORDS</div>
+                    <div style="font-size:0.75rem;color:var(--text-dim);">${(p.total || 0).toLocaleString()} / ${(p.goal || 0).toLocaleString()} WORDS</div>
                 </div>
                 ${isActive
-                    ? '<span style="font-size:0.65rem;color:var(--neon);white-space:nowrap;">ACTIVE</span>'
-                    : `<button onclick="switchProject('${id}')" style="font-size:0.65rem;padding:5px 9px;white-space:nowrap;">SWITCH</button>
-                       <button onclick="deleteProject('${id}')" style="font-size:0.65rem;padding:5px 9px;background:#333;white-space:nowrap;">✕</button>`
+                    ? '<span style="font-size:0.75rem;color:var(--neon);white-space:nowrap;">ACTIVE</span>'
+                    : `<button onclick="switchProject('${id}')" style="font-size:0.75rem;padding:5px 9px;white-space:nowrap;">SWITCH</button>
+                       <button onclick="deleteProject('${id}')" style="font-size:0.75rem;padding:5px 9px;background:#333;white-space:nowrap;">✕</button>`
                 }
             </div>`;
         }).join('');

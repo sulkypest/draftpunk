@@ -52,7 +52,7 @@ function renderChar(char, idx) {
                     <span class="accordion-number">${idx + 1}</span>
                     <span class="accordion-title" id="char-title-${char.id}">${esc(char.name) || 'NEW CHARACTER'}</span>
                 </div>
-                <button onclick="deleteChar('${char.id}')" style="background:#333;font-size:0.6rem;padding:4px 8px;margin-right:10px;">DELETE</button>
+                <button onclick="deleteChar('${char.id}')" style="background:#333;font-size:0.75rem;padding:4px 8px;margin-right:10px;">DELETE</button>
                 <span id="char-arrow-${char.id}" style="cursor:pointer;" onclick="toggleChar('${char.id}')">▶</span>
             </div>
             <div class="accordion-body hidden" id="char-body-${char.id}">
@@ -71,7 +71,7 @@ function renderAll() {
     document.getElementById('charContainer').innerHTML =
         charData.chars.length
             ? charData.chars.map((c, i) => renderChar(c, i)).join('')
-            : '<div style="opacity:0.4;text-align:center;padding:30px;font-size:0.8rem;">NO CHARACTERS YET — HIT + ADD CHARACTER</div>';
+            : '<div style="color:var(--text-dim);text-align:center;padding:30px;font-size:0.8rem;">NO CHARACTERS YET — HIT + ADD CHARACTER</div>';
 }
 
 window.addChar = function() {

@@ -920,7 +920,7 @@ window.shareChapter = async function(id) {
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                 <span style="flex:1;font-size:0.8rem;letter-spacing:1px;">${s.groupId ? 'GROUP: ' + escapeAttr(s.groupName || '?') + ' (' + (s.sharedWith || []).length + ')' : escapeAttr(s.sharedWithUsernames && s.sharedWithUsernames[0] || '?')}</span>
                 <button data-id="${escapeAttr(s.id)}" onclick="revokeShare(this.dataset.id)"
-                    style="font-size:0.65rem;padding:4px 8px;background:#333;letter-spacing:1px;white-space:nowrap;">
+                    style="font-size:0.75rem;padding:4px 8px;background:#333;letter-spacing:1px;white-space:nowrap;">
                     ✕ REVOKE
                 </button>
             </div>`).join('');
