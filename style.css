@@ -606,7 +606,13 @@ a.nav-dropdown-item { text-decoration: none; display: block; }
     border-left: 3px solid var(--neon);
 }
 
-.input-zone { display: flex; gap: 10px; margin-bottom: 30px; }
+.input-zone { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+.input-zone input { min-width: 0; flex: 1 1 160px; }
+.input-zone button { min-height: 44px; }
+@media (max-width: 520px) {
+    .input-zone input { flex-basis: 100%; }
+    .input-zone button { flex: 1; }
+}
 
 input, select, textarea {
     background: var(--panel2);
@@ -645,11 +651,15 @@ button:disabled { background: var(--panel2); color: var(--disabled); cursor: def
 .buddy-container {
     display: flex;
     flex-direction: column;
-    padding: 15px;
+    padding: 16px;
     background: var(--panel2);
-    border: 1px dashed var(--border-mid);
+    border: 2px solid var(--neon);
     min-height: 80px;
     margin-top: 10px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: .1em;
+    font-size: 0.75rem;
 }
 
 
@@ -658,14 +668,17 @@ body {
 }
 
 .buddy-relic {
-    width: 40px;
-    height: 40px;
-    border: 1px solid var(--neon);
+    width: 52px;
+    height: 52px;
+    padding: 4px;
+    background: var(--panel);
+    border: 2px solid var(--neon);
     image-rendering: pixelated;
     object-fit: contain;
     cursor: pointer;
-    filter: drop-shadow(0 0 6px var(--neon));
+    box-sizing: border-box;
 }
+.buddy-relic:hover { background: var(--punk-green); }
 
 .setup-screen {
     background: var(--panel);
