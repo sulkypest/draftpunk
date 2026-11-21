@@ -171,6 +171,15 @@ async function saveRecoveries(user, recs, source) {
 // Pages keep their own copy of this data in memory. If a sync brings in
 // changes from another device while a page is open, the page's next save is
 // combined with what's stored instead of overwriting it (see setItem below).
+//
+// Only for data a page keeps in memory and saves from memory. Other saves
+// (e.g. the Write page) read what's stored just before saving, so they already
+// include anything a sync brought in and are written as they are.
+const PAGE_MEMORY_KEYS = {
+    'notes.html': ['notesData'], 'beat-notes.html': ['beatNotesData'], 'characters.html': ['charactersData'],
+    'wordrunner.html': ['wordRunnerData'], 'index.html': ['draftPunkData'], '': ['draftPunkData']
+};
+const pageMemoryKeys = PAGE_MEMORY_KEYS[location.pathname.split('/').pop()] || [];
 const pageSeen = {};
 DATA_KEYS.forEach(k => { pageSeen[k] = localStorage.getItem(k); });
 let mergedSinceLoad = false;
@@ -420,7 +429,7 @@ const _setItem = localStorage.setItem.bind(localStorage);
 localStorage.setItem = function(key, value) {
     if (DATA_KEYS.includes(key)) {
         const stored = localStorage.getItem(key);
-        if (mergedSinceLoad && window.DPDataMerge && stored !== pageSeen[key] && stored !== value) {
+        if (mergedSinceLoad && pageMemoryKeys.includes(key) && window.DPDataMerge && stored !== pageSeen[key] && stored !== value) {
             // A sync has brought in changes this page hasn't seen. Combine this
             // page's edit (made on top of what it last saw) with what's stored,
             // so the other device's changes aren't overwritten.
