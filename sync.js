@@ -875,7 +875,13 @@ window.pushWritingChapterToCloud = async function(chapter) {
     if (!currentUser) return;
     try {
         await setDoc(doc(db, 'users', currentUser.uid, 'writing', chapter.id), chapter, { merge: true });
-    } catch (err) { console.error('Writing push error:', err); }
+    } catch (err) {
+        console.error('Writing push error:', err);
+        // Re-throw so the Write page can show "SAVED LOCALLY — cloud sync
+        // failed" instead of "SAVED". The chapter is still safe in this
+        // browser; callers decide what to tell the writer.
+        throw err;
+    }
 };
 
 window.deleteWritingChapterFromCloud = async function(chapterId) {
@@ -893,8 +899,8 @@ window.pullWritingFromCloud = async function(projectId) {
             .map(d => ({ ...d.data(), id: d.id }))
             .filter(ch => ch.projectId === projectId)
             .sort((a, b) => (a.order || 0) - (b.order || 0));
-        return chapters.length ? chapters : null;
-    } catch (err) { console.error('Writing pull error:', err); return null; }
+        return chapters;              // [] = the cloud has no chapters for this project
+    } catch (err) { console.error('Writing pull error:', err); return null; }   // null = couldn't read the cloud
 };
 
 // ── Writing Record (evidence of how text was entered) ─────────────────────────

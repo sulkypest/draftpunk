@@ -1,4 +1,4 @@
-const CACHE = 'draftpunk-v122';
+const CACHE = 'draftpunk-v123';
 
 const PRECACHE = [
     './',
@@ -45,6 +45,7 @@ const PRECACHE = [
     './groups.js',
     './write.html',
     './write.js',
+    './chapter-merge.js',
     './messages.html',
     './messages.js',
     './privacy.html',

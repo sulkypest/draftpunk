@@ -199,6 +199,8 @@
 
         saveNamed(id, html, name) { return save(id, html, 'named', { name: name || 'Saved version', force: true }); },
         saveBeforeRestore(id, html) { return save(id, html, 'before-restore', { force: true, mustStore: true }); },
+        // This device's text, just before a newer copy from another device replaces it
+        saveBeforeSync(id, html, projectId) { const st0 = st(id); if (!st0.projectId) st0.projectId = projectId; return save(id, html, 'before-sync', { projectId }); },
         saveDeleted(id, html, projectId, title) { return save(id, html, 'chapter-deleted', { force: true, projectId, title }); },
 
         // Chapters of this project that were deleted and aren't in the chapter
@@ -266,6 +268,7 @@
             case 'named':           return v.name || 'Saved version';
             case 'big-delete':      return `Before ${Number(v.removed || 0).toLocaleString()} words were deleted`;
             case 'before-restore':  return 'Before a restore';
+            case 'before-sync':     return 'This device, before a newer copy synced in';
             case 'session-start':   return 'Start of a writing session';
             case 'session-end':     return 'End of a writing session';
             case 'interval':        return 'Autosave during writing';
