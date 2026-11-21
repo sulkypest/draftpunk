@@ -110,7 +110,7 @@
             </div>
             <div class="side-box">
                 <div class="sb-label">WORDS</div>
-                <div id="sbWords" style="font-size:1.4rem;font-weight:900;line-height:1;margin:5px 0;color:var(--neon);">0</div>
+                <div id="sbWords" style="font-size:1.95rem;font-weight:700;line-height:1;margin:6px 0 2px;color:var(--neon);">0</div>
             </div>
             <div class="side-box">
                 <div class="sb-label">DEADLINE</div>

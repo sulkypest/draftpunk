@@ -399,10 +399,9 @@ a.nav-dropdown-item { text-decoration: none; display: block; }
 .side-container { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; gap: 15px; }
 .side-box {
     background: var(--panel);
-    border: 1px solid var(--border);
-    padding: 15px;
+    border: 2px solid var(--neon);
+    padding: 14px 12px;
     text-align: center;
-    border-top: 3px solid var(--neon);
 }
 
 .app {
@@ -573,7 +572,7 @@ a.nav-dropdown-item { text-decoration: none; display: block; }
 
 .bar-fill {
     height: 100%;
-    background: var(--neon);
+    background: var(--punk-green);      /* progress is earned: brand green */
     width: 0%;
     transition: 0.5s;
 }
@@ -1003,10 +1002,13 @@ body {
 .sb-fixed-right { right: 0; }
 
 .sb-label {
+    font-family: var(--font-mono);
     font-size: 0.75rem;
-    letter-spacing: 1px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
     color: var(--text-dim);
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 
 /* ── Mobile floating triggers ────────────────────────────────────────────── */
