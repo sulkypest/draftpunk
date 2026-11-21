@@ -867,7 +867,13 @@ function buildSignInOverlay() {
         }, 1000);
     }
     async function sendCode(email) {
-        await callFn('requestSignInCode', { email });
+        try {
+            await callFn('requestSignInCode', { email });
+        } catch (err) {
+            // 'not-found' here means the function itself isn't deployed
+            if (err && err.code === 'functions/not-found') throw { code: 'functions/unavailable' };
+            throw err;
+        }
         codeEmail = email;
         $('dpSignInCode').value = '';
         showStep('code');
