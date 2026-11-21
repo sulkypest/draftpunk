@@ -58,6 +58,17 @@ body.light-mode {
 body:not(.sb-ready) > *:not(#splashScreen):not(style):not(script) {
     visibility: hidden;
 }
+/* index.html's first screen, chosen in its <head> before anything is drawn.
+   script.js removes these classes once its own routing has run. */
+html.dp-open-landing #authScreen { display: flex; }
+html.dp-open-landing .app-nav,
+html.dp-open-landing #globalSideLeft,
+html.dp-open-landing #globalSideRight,
+html.dp-open-landing #splashScreen,
+html.dp-open-splash .app-nav,
+html.dp-open-splash #globalSideLeft,
+html.dp-open-splash #globalSideRight { display: none; }
+html.dp-open-splash #splashScreen { opacity: 1; }
 
 body {
     background: var(--bg);
