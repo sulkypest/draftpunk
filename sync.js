@@ -2,7 +2,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, deleteUser }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-    getFirestore, doc, setDoc, getDoc, deleteDoc, writeBatch,
+    getFirestore, doc, setDoc, getDoc, deleteDoc, writeBatch, deleteField,
     collection, query, orderBy, limit, where, getDocs, arrayUnion, arrayRemove, onSnapshot
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { initializeAppCheck, ReCaptchaV3Provider }
@@ -107,25 +107,170 @@ window.dpOfferNotifications = function() {
 let currentUser = undefined; // undefined = auth not yet resolved; null = resolved, not signed in
 let syncTimeout = null;
 
-// ── Push local data up to Firestore ──────────────────────────────────────────
-async function pushToCloud(user) {
-    // Stamp the cloud copy with the SAME timestamp the local copy carries, so
-    // after a push the two compare as equal. (Previously this used Date.now(),
-    // which made the cloud look newer than local after every push — the next
-    // load would then pull a stale cloud copy over fresh local changes, e.g.
-    // wiping a project created just before the push could run.)
-    let stamp = parseInt(localStorage.getItem('dpLastUpdated') || '0');
-    if (!stamp) {
-        stamp = Date.now();
-        _setItem('dpLastUpdated', String(stamp));
+// ── Sync: combine this device's data with the cloud's ───────────────────────
+// Projects, notes, beat notes, characters, Word Runner and the streak are
+// synced together. Every sync reads the cloud copy first and combines it with
+// this device's copy (data-merge.js), using the copy both last agreed on (the
+// "sync base", kept on this device) to tell which side changed what. So a
+// change made on another device is never overwritten by this one, and the
+// other way round. If the same item was changed on both, the newer version is
+// used and the other is kept as a recovered copy (Account → Recovered copies).
+
+const BASE_KEY = 'dpSyncBase';
+function readBase(uid) {
+    try { const b = JSON.parse(localStorage.getItem(BASE_KEY) || 'null'); return (b && b.uid === uid && b.data) ? b : null; }
+    catch (e) { return null; }
+}
+function writeBase(uid, stamp, data) {
+    try { _setItem(BASE_KEY, JSON.stringify({ uid, stamp, data })); }
+    catch (e) {
+        // Storage full: drop the base. The next sync then combines without it,
+        // which never deletes anything (a deletion may come back once).
+        try { localStorage.removeItem(BASE_KEY); } catch (e2) {}
+        console.warn('Sync base not saved (storage full):', e);
     }
-    const payload = { updatedAt: stamp };
+}
+function readLocalData() {
+    const data = {};
     DATA_KEYS.forEach(k => {
         const raw = localStorage.getItem(k);
-        payload[k] = raw ? JSON.parse(raw) : null;
+        try { data[k] = raw ? JSON.parse(raw) : null; } catch (e) { data[k] = null; }
     });
+    return data;
+}
+const hasAnyData = d => !!d && DATA_KEYS.some(k => d[k] != null);
+
+// The cloud copy: the owner-only record, or (for writers who have never had
+// one) the old copy in the profile. Returns null if the cloud holds no data.
+// Throws if the owner-only record can't be read: syncing then waits rather
+// than combining with something that might be out of date.
+async function readCloud(user) {
+    const pubSnap  = await getDoc(doc(db, 'users', user.uid));
+    const privSnap = await getDoc(doc(db, 'users', user.uid, 'private', 'data'));
+    const pub  = pubSnap.exists()  ? pubSnap.data()  : null;
+    const priv = privSnap.exists() ? privSnap.data() : null;
+    if (priv && hasAnyData(priv) && (!pub || !hasAnyData(pub) || (priv.updatedAt || 0) >= (pub.updatedAt || 0))) return priv;
+    if (pub && hasAnyData(pub)) return pub;
+    return null;
+}
+
+// Keep a recovered copy of anything that had to give way to a newer version.
+async function saveRecoveries(user, recs, source) {
+    if (!recs.length) return;
+    const entry = { createdAt: Date.now(), source, items: recs };
+    try {
+        const list = JSON.parse(localStorage.getItem('dpRecovered') || '[]');
+        list.push(entry);
+        _setItem('dpRecovered', JSON.stringify(list.slice(-30)));
+    } catch (e) { console.warn('Recovered copy not kept on this device:', e); }
+    try {
+        await setDoc(doc(db, 'users', user.uid, 'private', 'recovery-' + entry.createdAt + '-' + Math.random().toString(36).slice(2, 6)), entry);
+    } catch (e) { console.warn('Recovered copy not saved to the cloud:', e); }
+}
+
+// Pages keep their own copy of this data in memory. If a sync brings in
+// changes from another device while a page is open, the page's next save is
+// combined with what's stored instead of overwriting it (see setItem below).
+//
+// Only for data a page keeps in memory and saves from memory. Other saves
+// (e.g. the Write page) read what's stored just before saving, so they already
+// include anything a sync brought in and are written as they are.
+const PAGE_MEMORY_KEYS = {
+    'notes.html': ['notesData'], 'beat-notes.html': ['beatNotesData'], 'characters.html': ['charactersData'],
+    'wordrunner.html': ['wordRunnerData'], 'index.html': ['draftPunkData'], '': ['draftPunkData']
+};
+const pageMemoryKeys = PAGE_MEMORY_KEYS[location.pathname.split('/').pop()] || [];
+const pageSeen = {};
+DATA_KEYS.forEach(k => { pageSeen[k] = localStorage.getItem(k); });
+let mergedSinceLoad = false;
+
+// The one place this device and the cloud are combined. Returns true if this
+// device's data changed (some pages then reload to show it).
+async function syncNow(user) {
+    // Without the merge code nothing is synced at all (never a blind overwrite)
+    if (!window.DPDataMerge) throw new Error('Sync paused: data-merge.js not loaded');
+    const cloud     = await readCloud(user);
+    const local     = readLocalData();
+    const base      = readBase(user.uid);
+    const localTime = parseInt(localStorage.getItem('dpLastUpdated') || '0');
+
+    if (!cloud) {                                    // nothing in the cloud yet
+        const stamp = Date.now();
+        await writeCloud(user, local, stamp);
+        _setItem('dpLastUpdated', String(stamp));
+        writeBase(user.uid, stamp, local);
+        return false;
+    }
+
+    const cloudTime = cloud.updatedAt || 0;
+    const cloudData = {};
+    DATA_KEYS.forEach(k => { cloudData[k] = cloud[k] === undefined ? null : cloud[k]; });
+
+    let result = local;
+    if (!hasAnyData(local)) {
+        // SAFETY: a device with no data at all (new device, cleared browser,
+        // just signed in) takes the cloud copy as it is. An empty device is
+        // never treated as "deleted everything".
+        result = cloudData;
+    } else if (!(base && base.stamp === cloudTime)) {       // the cloud changed since this device last synced
+        result = {};
+        const recs = [];
+        DATA_KEYS.forEach(k => {
+            const m = window.DPDataMerge.merge(k, base ? base.data[k] : undefined, local[k], cloudData[k], localTime > cloudTime);
+            result[k] = m.value === undefined ? null : m.value;
+            recs.push(...m.recoveries);
+        });
+        await saveRecoveries(user, recs, 'sync');
+    }
+
+    const eq = window.DPDataMerge.eq;
+    const localChanged = DATA_KEYS.filter(k => !eq(result[k], local[k]));
+    const cloudChanged = DATA_KEYS.some(k => !eq(result[k], cloudData[k]));
+
+    if (localChanged.length) {
+        clearTimeout(syncTimeout);
+        syncTimeout = null;
+        localChanged.forEach(k => _setItem(k, JSON.stringify(result[k])));
+        mergedSinceLoad = true;
+        document.dispatchEvent(new CustomEvent('dpDataMerged', { detail: { keys: localChanged } }));
+    }
+    if (cloudChanged) {
+        const stamp = Date.now();
+        await writeCloud(user, result, stamp);
+        _setItem('dpLastUpdated', String(stamp));
+        writeBase(user.uid, stamp, result);
+    } else {
+        _setItem('dpLastUpdated', String(cloudTime));
+        writeBase(user.uid, cloudTime, result);
+        // Already in step: still run the once-a-visit check of the owner-only
+        // record (it counts towards removing the old public copy, PR #9).
+        const expected = { updatedAt: cloudTime };
+        DATA_KEYS.forEach(k => { expected[k] = result[k]; });
+        try { await verifyPrivateCopy(user, expected); }
+        catch (err) { console.warn('Private copy check failed (nothing removed):', err); }
+    }
+    setSyncStatus('synced');
+    return localChanged.length > 0;
+}
+
+async function pushToCloud(user) { await syncNow(user); }
+
+async function writeCloud(user, data, stamp) {
+    // PRIVACY MIGRATION, STEP 3: projects, notes, beat notes, characters, Word
+    // Runner and the streak are saved ONLY to the owner-only record. It's saved
+    // first; if it fails, nothing else is written and the sync dot shows the
+    // error (the work is still safe on this device).
+    const privatePayload = { updatedAt: stamp };
+    DATA_KEYS.forEach(k => { privatePayload[k] = data[k] === undefined ? null : data[k]; });
+    await setDoc(doc(db, 'users', user.uid, 'private', 'data'), privatePayload, { merge: true });
+
+    // The public profile now carries only what the leaderboard, groups and
+    // friends need: word totals, period counts, name and photo. It no longer
+    // carries updatedAt, so a cleared profile can never look newer than the
+    // owner-only copy (to this code or to an older cached copy of the app).
+    const payload = {};
     // Compute totals across all projects for leaderboard fields
-    const dpData   = payload.draftPunkData || {};
+    const dpData   = data.draftPunkData || {};
     const projects = Object.values(dpData.projects || {});
     payload.totalWords     = projects.reduce((s, p) => s + (p.total          || 0), 0);
     // Only count a project's period words if they belong to the current period
@@ -143,27 +288,22 @@ async function pushToCloud(user) {
     payload.photoURL       = user.photoURL    || '';
     await setDoc(doc(db, 'users', user.uid), payload, { merge: true });
 
-    // PRIVACY MIGRATION, STEP 2 (copy only): also keep an identical copy of the
-    // private material, with the same timestamp, in an owner-only record. The
-    // profile copy above is unchanged and still complete. If this copy can't be
-    // saved, nothing else is affected.
-    const privatePayload = { updatedAt: stamp };
-    DATA_KEYS.forEach(k => { privatePayload[k] = payload[k]; });
+    // Once per visit: read the owner-only record back, and only if it matches
+    // exactly what was just saved, count towards removing the old public copy.
     try {
-        await setDoc(doc(db, 'users', user.uid, 'private', 'data'), privatePayload, { merge: true });
         await verifyPrivateCopy(user, privatePayload);
     } catch (err) {
-        console.warn('Private copy not saved (profile copy is fine):', err);
+        console.warn('Private copy check failed (nothing removed):', err);
     }
-    setSyncStatus('synced');
 }
 
 // Once per visit, read the private copy back and check it matches exactly what
-// was just saved. If it does, stamp the profile with privateCopyVerifiedAt so
-// it's visible in the Firestore console which writers are safely migrated
-// (needed before the old copy can ever be removed). Only that one field is
-// written — updatedAt and everything else in the profile are untouched.
+// was just saved. The public copy is removed only when this check has passed
+// on two visits at least a day apart (cleanupFirstCheckAt, then
+// publicCopyClearedAt, both visible in the Firestore console). If the check
+// fails or can't run, nothing is removed and it's tried again next visit.
 let privateCopyVerified = false;
+const CLEANUP_WAIT_MS = 24 * 60 * 60 * 1000;   // a day between the two checks
 // JSON with object keys sorted, so the comparison doesn't depend on the order
 // Firestore happens to return fields in
 function canonical(v) {
@@ -179,49 +319,88 @@ async function verifyPrivateCopy(user, expected) {
     const same = (saved.updatedAt === expected.updatedAt) &&
         DATA_KEYS.every(k => canonical(saved[k] ?? null) === canonical(expected[k] ?? null));
     if (!same) { console.warn('Private copy did not match; not marking as verified.'); return; }
-    await setDoc(doc(db, 'users', user.uid), { privateCopyVerifiedAt: Date.now() }, { merge: true });
     privateCopyVerified = true;
+    // PRIVACY MIGRATION, STEP 3 (clean-up), deliberately slow: the old public
+    // copy is removed only after the owner-only record has passed this exact
+    // check on two separate visits at least a day apart. The first passing
+    // visit only records the time; nothing is removed until a later visit,
+    // 24 hours or more afterwards, passes the same check again.
+    const now = Date.now();
+    const pubSnap = await getDoc(doc(db, 'users', user.uid));
+    const pub = pubSnap.exists() ? pubSnap.data() : {};
+    if (pub.publicCopyClearedAt) return;                          // already done
+    const first = pub.cleanupFirstCheckAt || 0;
+    if (!first) {
+        await setDoc(doc(db, 'users', user.uid), { privateCopyVerifiedAt: now, cleanupFirstCheckAt: now }, { merge: true });
+        return;
+    }
+    if (now - first < CLEANUP_WAIT_MS) {
+        await setDoc(doc(db, 'users', user.uid), { privateCopyVerifiedAt: now }, { merge: true });
+        return;
+    }
+    // Second passing check, a day or more after the first: remove the six
+    // private fields (and updatedAt) from the public profile, which any
+    // signed-in user can read. Username, friends, word totals and everything
+    // else in the profile are untouched.
+    const clear = { privateCopyVerifiedAt: now, publicCopyClearedAt: now, updatedAt: deleteField() };
+    DATA_KEYS.forEach(k => { clear[k] = deleteField(); });
+    await setDoc(doc(db, 'users', user.uid), clear, { merge: true });
+}
+
+// ── Recovered copies (Account panel) ────────────────────────────────────────
+// Shown only when there is something: versions of notes, characters etc. that
+// gave way when the same thing was edited on two devices. Downloaded as plain text.
+const RECOVERY_LABELS = { draftPunkData: 'Project data', notesData: 'Notes', beatNotesData: 'Beat notes',
+                          charactersData: 'Characters', wordRunnerData: 'Word Runner', dpStreak: 'Streak' };
+async function listRecoveries(user) {
+    const found = {};
+    try { JSON.parse(localStorage.getItem('dpRecovered') || '[]').forEach(e => { found[e.createdAt + ':' + JSON.stringify(e.items).length] = e; }); } catch (e) {}
+    try {
+        const snap = await getDocs(collection(db, 'users', user.uid, 'private'));
+        snap.docs.filter(d => d.id.startsWith('recovery-')).forEach(d => { const e = d.data(); found[e.createdAt + ':' + JSON.stringify(e.items).length] = e; });
+    } catch (e) { console.warn('Cloud recovered copies not read:', e); }
+    return Object.values(found).sort((a, b) => a.createdAt - b.createdAt);
+}
+function recoveriesAsText(entries) {
+    const lines = ['DRAFT PUNK — RECOVERED COPIES', 'When the same thing was edited on two devices, the newer edit was kept. These are the other versions.', ''];
+    entries.forEach(e => (e.items || []).forEach(i => {
+        const where = [RECOVERY_LABELS[i.key] || i.key].concat((i.path || []).slice(1)).join(' › ');
+        const val = typeof i.other === 'string' ? i.other : JSON.stringify(i.other, null, 2);
+        lines.push('── ' + new Date(e.createdAt).toLocaleString() + ' · ' + where, val, '');
+    }));
+    return lines.join('\n');
+}
+async function renderRecoverySection(user) {
+    const el = document.getElementById('dpRecoverySection');
+    if (!el) return;
+    const entries = await listRecoveries(user);
+    const count = entries.reduce((s, e) => s + (e.items || []).length, 0);
+    if (!count) { el.innerHTML = ''; return; }
+    el.innerHTML = `
+        <div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 12px;"></div>
+        <div style="font-size:0.6rem;opacity:0.6;letter-spacing:2px;margin-bottom:8px;">RECOVERED COPIES (${count})</div>
+        <p style="font-size:0.62rem;opacity:0.5;letter-spacing:1px;margin:0 0 8px;line-height:1.5;">
+            When the same thing was edited on two devices, the newer edit was kept. These are the other versions.</p>
+        <button id="dpRecoveryBtn" style="width:100%;margin-bottom:6px;background:#333;">⬇ DOWNLOAD RECOVERED COPIES</button>`;
+    document.getElementById('dpRecoveryBtn').onclick = () => {
+        const blob = new Blob([recoveriesAsText(entries)], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'draft-punk-recovered-copies.txt';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    };
 }
 
 // ── Pull cloud data down; returns true if page needs a reload ─────────────────
 async function pullFromCloud(user) {
-    const snap = await getDoc(doc(db, 'users', user.uid));
-    if (!snap.exists()) {
-        await pushToCloud(user);
-        return false;
-    }
-    // Use whichever cloud copy is newer: the profile copy, or the owner-only
-    // private copy (step 2 of the privacy migration). When they're equal, or the
-    // private copy is missing or can't be read, the profile copy is used,
-    // exactly as before.
-    let cloud = snap.data();
     try {
-        const privSnap = await getDoc(doc(db, 'users', user.uid, 'private', 'data'));
-        if (privSnap.exists()) {
-            const priv = privSnap.data();
-            if ((priv.updatedAt || 0) > (cloud.updatedAt || 0)) cloud = priv;
-        }
+        return await syncNow(user);
     } catch (err) {
-        console.warn('Private copy not read (using profile copy):', err);
-    }
-    const localTime = parseInt(localStorage.getItem('dpLastUpdated') || '0');
-    const cloudTime = cloud.updatedAt || 0;
-
-    if (cloudTime > localTime) {
-        // Cancel any pending push and use the raw _setItem to bypass the
-        // localStorage override — otherwise each key set triggers schedulePush,
-        // which pushes to Firestore with updatedAt=now, making the cloud newer
-        // again on the next load and causing an infinite reload loop.
-        clearTimeout(syncTimeout);
-        syncTimeout = null;
-        DATA_KEYS.forEach(k => {
-            if (cloud[k] != null) _setItem(k, JSON.stringify(cloud[k]));
-        });
-        // Record the cloud's stamp (not "now") so local and cloud now match.
-        _setItem('dpLastUpdated', String(cloudTime));
-        return true;
-    } else {
-        await pushToCloud(user);
+        // The cloud couldn't be read or written. This device keeps its data and
+        // tries again on the next change or visit; nothing is overwritten.
+        console.warn('Sync failed (work is safe on this device):', err);
+        setSyncStatus('error');
         return false;
     }
 }
@@ -232,7 +411,10 @@ function schedulePush() {
     localStorage.setItem('dpLastUpdated', Date.now().toString());
     setSyncStatus('pending');
     clearTimeout(syncTimeout);
-    syncTimeout = setTimeout(() => pushToCloud(currentUser), 2500);
+    syncTimeout = setTimeout(() => pushToCloud(currentUser).catch(err => {
+        console.warn('Cloud backup failed (saved on this device):', err);
+        setSyncStatus('error');
+    }), 2500);
 }
 window.schedulePush = schedulePush;
 
@@ -245,7 +427,30 @@ window.addEventListener('beforeunload', () => {
 
 const _setItem = localStorage.setItem.bind(localStorage);
 localStorage.setItem = function(key, value) {
-    _setItem(key, value);
+    if (DATA_KEYS.includes(key)) {
+        const stored = localStorage.getItem(key);
+        if (mergedSinceLoad && pageMemoryKeys.includes(key) && window.DPDataMerge && stored !== pageSeen[key] && stored !== value) {
+            // A sync has brought in changes this page hasn't seen. Combine this
+            // page's edit (made on top of what it last saw) with what's stored,
+            // so the other device's changes aren't overwritten.
+            try {
+                const parse = v => (v == null ? null : JSON.parse(v));
+                const m = window.DPDataMerge.merge(key, parse(pageSeen[key]), parse(value), parse(stored), true);
+                pageSeen[key] = value;
+                _setItem(key, JSON.stringify(m.value));
+                if (m.recoveries.length && currentUser) saveRecoveries(currentUser, m.recoveries, 'page').catch(() => {});
+            } catch (e) {
+                console.warn('Could not combine page save; saving as-is:', e);
+                pageSeen[key] = value;
+                _setItem(key, value);
+            }
+        } else {
+            pageSeen[key] = value;
+            _setItem(key, value);
+        }
+    } else {
+        _setItem(key, value);
+    }
     if (!DATA_KEYS.includes(key)) return;
     if (currentUser) {
         schedulePush();
@@ -403,8 +608,10 @@ async function handleSignedIn(user) {
     // If a different user was previously stored locally, wipe their data first
     const storedUid = localStorage.getItem('dpUserId');
     if (storedUid && storedUid !== user.uid) {
-        DATA_KEYS.forEach(k => localStorage.removeItem(k));
+        DATA_KEYS.forEach(k => { localStorage.removeItem(k); pageSeen[k] = null; });
         localStorage.removeItem('dpLastUpdated');
+        localStorage.removeItem(BASE_KEY);
+        localStorage.removeItem('dpRecovered');
     }
     localStorage.setItem('dpUserId', user.uid);
     loadPush().then(m => { if (m) m.initPush(app, () => auth.currentUser); });
@@ -528,6 +735,8 @@ window.signOutUser = async function() {
     // starts clean — prevents stale data flashing before auth resolves.
     DATA_KEYS.forEach(k => localStorage.removeItem(k));
     localStorage.removeItem('dpLastUpdated');
+    localStorage.removeItem(BASE_KEY);          // must go with the data (see syncNow)
+    localStorage.removeItem('dpRecovered');
     localStorage.removeItem('authDecisionMade');
     localStorage.removeItem('dpUserId');
     localStorage.setItem('justSignedOut', '1');
@@ -573,6 +782,7 @@ async function showAccountOverlay() {
             <button onclick="signOutUser()" style="width:100%;margin-bottom:6px;">⊖ SIGN OUT</button>
 
             <div id="dpNotifySection"></div>
+            <div id="dpRecoverySection"></div>
 
             <div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 16px;"></div>
             <div style="font-size:0.6rem;opacity:0.4;letter-spacing:2px;margin-bottom:12px;">DANGER ZONE</div>
@@ -601,6 +811,7 @@ async function showAccountOverlay() {
     `;
 
     overlay.style.display = 'flex';
+    renderRecoverySection(user).catch(err => console.warn('Recovered copies not listed:', err));
     loadPush().then(m => {
         if (!m) return;
         m.initPush(app, () => auth.currentUser);
@@ -875,7 +1086,13 @@ window.pushWritingChapterToCloud = async function(chapter) {
     if (!currentUser) return;
     try {
         await setDoc(doc(db, 'users', currentUser.uid, 'writing', chapter.id), chapter, { merge: true });
-    } catch (err) { console.error('Writing push error:', err); }
+    } catch (err) {
+        console.error('Writing push error:', err);
+        // Re-throw so the Write page can show "SAVED LOCALLY — cloud sync
+        // failed" instead of "SAVED". The chapter is still safe in this
+        // browser; callers decide what to tell the writer.
+        throw err;
+    }
 };
 
 window.deleteWritingChapterFromCloud = async function(chapterId) {
@@ -893,8 +1110,8 @@ window.pullWritingFromCloud = async function(projectId) {
             .map(d => ({ ...d.data(), id: d.id }))
             .filter(ch => ch.projectId === projectId)
             .sort((a, b) => (a.order || 0) - (b.order || 0));
-        return chapters.length ? chapters : null;
-    } catch (err) { console.error('Writing pull error:', err); return null; }
+        return chapters;              // [] = the cloud has no chapters for this project
+    } catch (err) { console.error('Writing pull error:', err); return null; }   // null = couldn't read the cloud
 };
 
 // ── Writing Record (evidence of how text was entered) ─────────────────────────
