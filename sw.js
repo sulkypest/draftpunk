@@ -46,6 +46,7 @@ const PRECACHE = [
     './groups.js',
     './write.html',
     './write.js',
+    './chapter-merge.js',
     './messages.html',
     './messages.js',
     './privacy.html',
