@@ -173,11 +173,12 @@ async function pushToCloud(user) {
 }
 
 // Once per visit, read the private copy back and check it matches exactly what
-// was just saved. Only if it does: stamp the profile with privateCopyVerifiedAt
-// and publicCopyClearedAt (visible in the Firestore console), and remove the
-// old public copy of the private fields. If the check fails or can't run,
-// nothing is removed and it's tried again next visit.
+// was just saved. The public copy is removed only when this check has passed
+// on two visits at least a day apart (cleanupFirstCheckAt, then
+// publicCopyClearedAt, both visible in the Firestore console). If the check
+// fails or can't run, nothing is removed and it's tried again next visit.
 let privateCopyVerified = false;
+const CLEANUP_WAIT_MS = 24 * 60 * 60 * 1000;   // a day between the two checks
 // JSON with object keys sorted, so the comparison doesn't depend on the order
 // Firestore happens to return fields in
 function canonical(v) {
@@ -193,15 +194,32 @@ async function verifyPrivateCopy(user, expected) {
     const same = (saved.updatedAt === expected.updatedAt) &&
         DATA_KEYS.every(k => canonical(saved[k] ?? null) === canonical(expected[k] ?? null));
     if (!same) { console.warn('Private copy did not match; not marking as verified.'); return; }
-    // PRIVACY MIGRATION, STEP 3 (clean-up): the owner-only record has just
-    // been read back and matches exactly, so remove the old copies of the
-    // private material from the public profile, which any signed-in user can
-    // read. Only those six fields are removed; the username, friends, word
-    // totals and everything else in the profile are untouched.
-    const clear = { privateCopyVerifiedAt: Date.now(), publicCopyClearedAt: Date.now(), updatedAt: deleteField() };
+    privateCopyVerified = true;
+    // PRIVACY MIGRATION, STEP 3 (clean-up), deliberately slow: the old public
+    // copy is removed only after the owner-only record has passed this exact
+    // check on two separate visits at least a day apart. The first passing
+    // visit only records the time; nothing is removed until a later visit,
+    // 24 hours or more afterwards, passes the same check again.
+    const now = Date.now();
+    const pubSnap = await getDoc(doc(db, 'users', user.uid));
+    const pub = pubSnap.exists() ? pubSnap.data() : {};
+    if (pub.publicCopyClearedAt) return;                          // already done
+    const first = pub.cleanupFirstCheckAt || 0;
+    if (!first) {
+        await setDoc(doc(db, 'users', user.uid), { privateCopyVerifiedAt: now, cleanupFirstCheckAt: now }, { merge: true });
+        return;
+    }
+    if (now - first < CLEANUP_WAIT_MS) {
+        await setDoc(doc(db, 'users', user.uid), { privateCopyVerifiedAt: now }, { merge: true });
+        return;
+    }
+    // Second passing check, a day or more after the first: remove the six
+    // private fields (and updatedAt) from the public profile, which any
+    // signed-in user can read. Username, friends, word totals and everything
+    // else in the profile are untouched.
+    const clear = { privateCopyVerifiedAt: now, publicCopyClearedAt: now, updatedAt: deleteField() };
     DATA_KEYS.forEach(k => { clear[k] = deleteField(); });
     await setDoc(doc(db, 'users', user.uid), clear, { merge: true });
-    privateCopyVerified = true;
 }
 
 // ── Pull cloud data down; returns true if page needs a reload ─────────────────
