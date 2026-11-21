@@ -42,7 +42,7 @@
                 <button class="nav-dropdown-item" onclick="exportData(); toggleDataMenu()">⬇ BACKUP</button>
                 <button class="nav-dropdown-item" onclick="triggerImport(); toggleDataMenu()">⬆ RESTORE</button>
                 <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
-                <button id="navSignIn" class="nav-dropdown-item" onclick="signInWithGoogle(); toggleDataMenu()" style="color:var(--neon);">⊕ SIGN IN WITH GOOGLE</button>
+                <button id="navSignIn" class="nav-dropdown-item" onclick="dpOpenSignIn(); toggleDataMenu()" style="color:var(--neon);">⊕ SIGN IN</button>
                 <div id="navUserInfo" style="display:none;">
                     <div class="nav-dropdown-item" style="display:flex;align-items:center;gap:8px;cursor:default;">
                         <img id="navAvatar" src="" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--neon);">
@@ -65,7 +65,7 @@
             <!-- Sign-in gate -->
             <div id="messagesGate" style="text-align:center;padding:40px 0;">
                 <p style="font-size:0.8rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:20px;">SIGN IN TO USE MESSAGES</p>
-                <button onclick="signInWithGoogle()" style="width:100%;max-width:300px;">⊕ SIGN IN WITH GOOGLE</button>
+                <button onclick="dpOpenSignIn()" style="width:100%;max-width:300px;">⊕ SIGN IN</button>
             </div>
 
             <!-- Main content -->

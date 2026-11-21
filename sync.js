@@ -1,5 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, deleteUser }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, deleteUser,
+    signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
+    sendEmailVerification, signInWithCustomToken }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
     getFirestore, doc, setDoc, getDoc, deleteDoc, writeBatch, deleteField,
@@ -718,6 +720,260 @@ window.signInWithGoogle = async function() {
         console.error('Sign-in error:', err.message);
         alert('Sign-in failed: ' + err.message);
     }
+};
+
+// ── Sign-in panel: Google, an emailed code, or email + password ─────────────
+// Every route ends in onAuthStateChanged → handleSignedIn, exactly as Google
+// sign-in always has, so syncing and merging are unchanged. Codes are sent and
+// checked by Cloud Functions (requestSignInCode / verifySignInCode), which sign
+// a writer into the account that already uses their address, if there is one.
+let functionsApi = null;
+async function callFn(name, data) {
+    if (!functionsApi) {
+        const m = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js');
+        functionsApi = { m, fns: m.getFunctions(app, 'us-central1') };
+    }
+    const res = await functionsApi.m.httpsCallable(functionsApi.fns, name)(data);
+    return res.data;
+}
+
+function signInMessage(err) {
+    const code = (err && err.code) || '';
+    const why = (err && err.details && err.details.reason) || '';
+    // Cloud Function errors (codes)
+    if (code === 'functions/invalid-argument' && why === 'wrong') {
+        const left = err.details.left;
+        return `That code isn’t right. ${left} ${left === 1 ? 'try' : 'tries'} left.`;
+    }
+    if (code === 'functions/invalid-argument' && why === 'format') return 'The code is the 6 numbers in the email.';
+    if (code === 'functions/invalid-argument') return 'That doesn’t look like an email address.';
+    if (code === 'functions/not-found') return 'That code has expired or been used. Send a new one.';
+    if (code === 'functions/permission-denied') return 'Too many wrong tries for that code. Send a new one.';
+    if (code === 'functions/resource-exhausted' && why === 'cooldown') return `A code was sent a moment ago. You can ask for another in ${err.details.waitSeconds} seconds.`;
+    if (code === 'functions/resource-exhausted' && why === 'hourly') return 'Too many codes for this address in the last hour. Try again later, or use Google.';
+    if (code === 'functions/resource-exhausted') return 'Codes can’t be sent right now. Please use Google or a password, or try again later.';
+    if (code === 'functions/failed-precondition') return 'This account has been switched off. Contact Draft Punk for help.';
+    if (code === 'functions/unavailable' || code === 'functions/internal') return 'The code couldn’t be sent. Try again in a minute.';
+    switch (code) {
+        case 'auth/invalid-email':
+            return 'That doesn’t look like an email address.';
+        case 'auth/missing-password':
+            return 'Type your password, or choose “Email me a code” instead.';
+        case 'auth/weak-password':
+            return 'Choose a password of at least 6 characters.';
+        case 'auth/email-already-in-use':
+            return 'There’s already an account with this email. Choose “Email me a code” to sign into it, or use the Google button if that’s how you usually sign in.';
+        case 'auth/invalid-credential':
+        case 'auth/wrong-password':
+        case 'auth/user-not-found':
+            return 'That email and password don’t match. Choose “Email me a code” to sign in without a password, or use the Google button.';
+        case 'auth/too-many-requests':
+            return 'Too many tries. Wait a few minutes, or choose “Email me a code”.';
+        case 'auth/network-request-failed':
+        case 'functions/deadline-exceeded':
+            return 'No connection. Check you’re online and try again.';
+        case 'auth/operation-not-allowed':
+            return 'This sign-in option isn’t switched on yet.';
+        case 'auth/popup-closed-by-user':
+        case 'auth/cancelled-popup-request':
+            return '';
+        default:
+            return 'Sign-in didn’t work: ' + ((err && err.message) || 'unknown error');
+    }
+}
+
+function buildSignInOverlay() {
+    let ov = document.getElementById('dpSignInOverlay');
+    if (ov) return ov;
+    ov = document.createElement('div');
+    ov.id = 'dpSignInOverlay';
+    ov.className = 'overlay dp-signin-overlay';
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.setAttribute('aria-labelledby', 'dpSignInTitle');
+    ov.innerHTML = `
+        <div class="congrats-box dp-signin">
+            <button type="button" class="dp-signin-close" aria-label="Close" data-act="close">✕</button>
+            <h2 id="dpSignInTitle">Sign in</h2>
+            <p class="dp-signin-sub" id="dpSignInSub"></p>
+            <div id="dpSignInMain">
+                <button type="button" class="dp-signin-google" data-act="google">Continue with Google</button>
+                <div class="dp-signin-or"><span>or use your email</span></div>
+                <form id="dpSignInEmailForm" novalidate>
+                    <label class="field"><span class="field-label">Email</span>
+                    <input type="email" id="dpSignInEmail" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"></label>
+                    <button type="submit" class="btn-primary dp-signin-wide">Email me a code</button>
+                </form>
+                <button type="button" class="dp-signin-link" data-act="show-password" id="dpSignInPwToggle">Use a password instead</button>
+                <form id="dpSignInPwForm" novalidate style="display:none;">
+                    <label class="field"><span class="field-label">Password</span>
+                    <input type="password" id="dpSignInPassword" autocomplete="current-password"></label>
+                    <div class="dp-signin-row">
+                        <button type="submit" class="btn-secondary">Sign in</button>
+                        <button type="button" class="btn-secondary" data-act="create">Create account</button>
+                    </div>
+                    <button type="button" class="dp-signin-link" data-act="reset">Forgot password?</button>
+                </form>
+            </div>
+            <div id="dpSignInCodeStep" style="display:none;">
+                <form id="dpSignInCodeForm" novalidate>
+                    <label class="field"><span class="field-label">6-digit code</span>
+                    <input type="text" id="dpSignInCode" class="dp-signin-code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" pattern="[0-9 ]*"></label>
+                    <button type="submit" class="btn-primary dp-signin-wide">Sign in</button>
+                </form>
+                <div class="dp-signin-links">
+                    <button type="button" class="dp-signin-link" data-act="resend" id="dpSignInResend">Send a new code</button>
+                    <button type="button" class="dp-signin-link" data-act="back">Use a different email</button>
+                </div>
+            </div>
+            <p class="dp-signin-status" id="dpSignInStatus" role="status" aria-live="polite"></p>
+        </div>`;
+    document.body.appendChild(ov);
+
+    const $ = id => document.getElementById(id);
+    const status = (msg, kind) => {
+        const el = $('dpSignInStatus');
+        el.textContent = msg || '';
+        el.className = 'dp-signin-status' + (kind ? ' is-' + kind : '');
+    };
+    let resendTimer = null;
+    const busy = on => ov.querySelectorAll('button, input').forEach(b => {
+        if (b.dataset.act === 'close') return;
+        if (b.id === 'dpSignInResend' && resendTimer) return;   // the countdown owns it
+        b.disabled = on;
+    });
+    const emailVal = () => $('dpSignInEmail').value.trim();
+    const passVal  = () => $('dpSignInPassword').value;
+    let codeEmail = '';
+
+    function showStep(step) {
+        $('dpSignInMain').style.display     = step === 'main' ? '' : 'none';
+        $('dpSignInCodeStep').style.display = step === 'code' ? '' : 'none';
+        $('dpSignInSub').textContent = step === 'code'
+            ? `We’ve emailed a 6-digit code to ${codeEmail}. It works for 10 minutes.`
+            : 'Your writing syncs to every device you sign in on.';
+        setTimeout(() => $(step === 'code' ? 'dpSignInCode' : 'dpSignInEmail')?.focus(), 30);
+    }
+    function startResendCountdown(seconds) {
+        const btn = $('dpSignInResend');
+        clearInterval(resendTimer);
+        let left = seconds;
+        btn.disabled = true;
+        btn.textContent = `Send a new code (${left}s)`;
+        resendTimer = setInterval(() => {
+            left--;
+            if (left <= 0) { clearInterval(resendTimer); resendTimer = null; btn.disabled = false; btn.textContent = 'Send a new code'; }
+            else btn.textContent = `Send a new code (${left}s)`;
+        }, 1000);
+    }
+    async function sendCode(email) {
+        try {
+            await callFn('requestSignInCode', { email });
+        } catch (err) {
+            // 'not-found' here means the function itself isn't deployed
+            if (err && err.code === 'functions/not-found') throw { code: 'functions/unavailable' };
+            throw err;
+        }
+        codeEmail = email;
+        $('dpSignInCode').value = '';
+        showStep('code');
+        startResendCountdown(60);
+    }
+
+    async function run(fn) {
+        status('');
+        busy(true);
+        try { await fn(); }
+        catch (err) {
+            console.warn('Sign-in:', err && err.code);
+            if (err && err.code === 'functions/resource-exhausted' && err.details && err.details.reason === 'cooldown') {
+                startResendCountdown(err.details.waitSeconds || 60);
+            }
+            status(signInMessage(err), 'error');
+        }
+        finally { busy(false); }
+    }
+
+    ov.addEventListener('click', e => {
+        if (e.target === ov) { window.dpCloseSignIn(); return; }
+        const act = e.target.closest('[data-act]')?.dataset.act;
+        if (!act) return;
+        if (act === 'close') window.dpCloseSignIn();
+        else if (act === 'google') run(async () => {
+            await signInWithPopup(auth, provider);
+            window.dpCloseSignIn();
+        });
+        else if (act === 'show-password') {
+            $('dpSignInPwForm').style.display = '';
+            $('dpSignInPwToggle').style.display = 'none';
+            $('dpSignInPassword').focus();
+        }
+        else if (act === 'create') run(async () => {
+            if (!emailVal()) throw { code: 'auth/invalid-email' };
+            const cred = await createUserWithEmailAndPassword(auth, emailVal(), passVal());
+            // Best effort: a verified address keeps its password if the same
+            // email is later used with Google.
+            try { await sendEmailVerification(cred.user); } catch (e) { /* not essential */ }
+            window.dpCloseSignIn();
+        });
+        else if (act === 'reset') run(async () => {
+            if (!emailVal()) throw { code: 'auth/invalid-email' };
+            await sendPasswordResetEmail(auth, emailVal());
+            status('If there’s an account for ' + emailVal() + ', a reset link is on its way. Check your inbox.', 'ok');
+        });
+        else if (act === 'resend') run(async () => {
+            await sendCode(codeEmail);
+            status('New code sent. Only the newest code works.', 'ok');
+        });
+        else if (act === 'back') { status(''); showStep('main'); }
+    });
+    $('dpSignInEmailForm').addEventListener('submit', e => {
+        e.preventDefault();
+        run(async () => {
+            if (!emailVal()) throw { code: 'auth/invalid-email' };
+            await sendCode(emailVal());
+        });
+    });
+    $('dpSignInPwForm').addEventListener('submit', e => {
+        e.preventDefault();
+        run(async () => {
+            if (!emailVal()) throw { code: 'auth/invalid-email' };
+            await signInWithEmailAndPassword(auth, emailVal(), passVal());
+            window.dpCloseSignIn();
+        });
+    });
+    $('dpSignInCodeForm').addEventListener('submit', e => {
+        e.preventDefault();
+        run(async () => {
+            const code = $('dpSignInCode').value.replace(/\s+/g, '');
+            if (!/^\d{6}$/.test(code)) throw { code: 'functions/invalid-argument', details: { reason: 'format' } };
+            const { token } = await callFn('verifySignInCode', { email: codeEmail, code });
+            await signInWithCustomToken(auth, token);
+            window.dpCloseSignIn();
+        });
+    });
+    // Submit as soon as six digits are typed or pasted
+    $('dpSignInCode').addEventListener('input', e => {
+        const digits = e.target.value.replace(/\D/g, '');
+        if (digits.length === 6) $('dpSignInCodeForm').requestSubmit();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && ov.style.display === 'flex') window.dpCloseSignIn();
+    });
+    ov._status = status;
+    ov._showStep = showStep;
+    return ov;
+}
+
+window.dpOpenSignIn = function() {
+    const ov = buildSignInOverlay();
+    ov._status('');
+    ov._showStep('main');
+    ov.style.display = 'flex';
+};
+window.dpCloseSignIn = function() {
+    const ov = document.getElementById('dpSignInOverlay');
+    if (ov) ov.style.display = 'none';
 };
 
 window.signOutUser = async function() {

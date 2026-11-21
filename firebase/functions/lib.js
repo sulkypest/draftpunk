@@ -146,8 +146,116 @@ function isDeadTokenError(code) {
         || code === 'messaging/invalid-registration-token';
 }
 
+// ── Email sign-in codes ──────────────────────────────────────────────────────
+const crypto = require('crypto');
+
+const CODE_LENGTH       = 6;
+const CODE_TTL_MS       = 10 * 60 * 1000;   // a code works for 10 minutes
+const CODE_MAX_ATTEMPTS = 5;                // wrong guesses before a code dies
+const RESEND_GAP_MS     = 60 * 1000;        // at least a minute between codes
+const CODES_PER_HOUR    = 5;                // per email address
+const QUOTA_WARN_AT     = 70;               // Resend free plan: 100 emails a day
+
+function normaliseEmail(email) {
+    return String(email || '').trim().toLowerCase();
+}
+function isValidEmail(email) {
+    return typeof email === 'string' && email.length <= 254 && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+}
+// Pending codes are stored under a hash of the address, never the address
+function emailKey(email) {
+    return crypto.createHash('sha256').update('dp-signin:' + normaliseEmail(email)).digest('hex');
+}
+function newCode() {
+    return String(crypto.randomInt(0, 10 ** CODE_LENGTH)).padStart(CODE_LENGTH, '0');
+}
+function hashCode(salt, code) {
+    return crypto.createHash('sha256').update(salt + ':' + String(code)).digest('hex');
+}
+function codesMatch(state, code) {
+    if (!state || !state.salt || !state.codeHash) return false;
+    const a = Buffer.from(hashCode(state.salt, String(code || '').trim()), 'hex');
+    const b = Buffer.from(state.codeHash, 'hex');
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// May this address be sent a new code now? state is the stored record (or null).
+function codeRequestDecision(state, nowMs) {
+    if (state && state.lastSentAt && nowMs - state.lastSentAt < RESEND_GAP_MS) {
+        return { ok: false, reason: 'cooldown', waitSeconds: Math.ceil((RESEND_GAP_MS - (nowMs - state.lastSentAt)) / 1000) };
+    }
+    const recent = ((state && state.sentTimes) || []).filter(t => nowMs - t < 60 * 60 * 1000);
+    if (recent.length >= CODES_PER_HOUR) return { ok: false, reason: 'hourly' };
+    return { ok: true, sentTimes: recent.concat(nowMs) };
+}
+
+// Check a typed code against the stored record.
+//   { result: 'ok' } | { result: 'expired' } | { result: 'locked' } | { result: 'wrong', left }
+function codeCheckDecision(state, code, nowMs) {
+    if (!state || !state.codeHash) return { result: 'expired' };
+    if (nowMs > state.expiresAt) return { result: 'expired' };
+    if ((state.attempts || 0) >= CODE_MAX_ATTEMPTS) return { result: 'locked' };
+    if (codesMatch(state, code)) return { result: 'ok' };
+    const left = CODE_MAX_ATTEMPTS - (state.attempts || 0) - 1;
+    return left > 0 ? { result: 'wrong', left } : { result: 'locked' };
+}
+
+function utcDayKey(now = new Date()) {
+    return now.toISOString().slice(0, 10);
+}
+
+// After an email is sent: should the 'nearly at the limit' alert go out?
+function quotaWarningDue(day, warnAt = QUOTA_WARN_AT) {
+    return !!day && !day.warned && Math.max(day.sent || 0, day.quotaUsed || 0) >= warnAt;
+}
+
+function signInEmail(code) {
+    const subject = `Your Draft Punk sign-in code: ${code}`;
+    const text = `Your Draft Punk sign-in code is ${code}\n\n` +
+        `Type it into Draft Punk to sign in. It works for 10 minutes.\n\n` +
+        `If you didn't ask for this, you can ignore this email. Nobody can sign in without the code.`;
+    const html = `<div style="font-family:Courier New,monospace;color:#0d0d0d;max-width:420px">` +
+        `<p style="font-size:16px">Your Draft Punk sign-in code is</p>` +
+        `<p style="font-size:32px;font-weight:700;letter-spacing:6px;margin:8px 0 16px">${code}</p>` +
+        `<p style="font-size:14px">Type it into Draft Punk to sign in. It works for 10 minutes.</p>` +
+        `<p style="font-size:13px;color:#57544f">If you didn't ask for this, you can ignore this email. Nobody can sign in without the code.</p></div>`;
+    return { subject, text, html };
+}
+
+// How an account signs in, for the weekly summary
+function accountKind(user) {
+    const ids = ((user && user.providerData) || []).map(p => p.providerId);
+    if (ids.includes('google.com')) return 'google';
+    if (ids.includes('password')) return 'password';
+    return 'code';
+}
+
+// users: [{ creationTime, providerData }], days: { 'YYYY-MM-DD': { sent, quotaUsed } }
+function weeklySummary(users, days, now = new Date()) {
+    const weekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+    const fresh = users.filter(u => new Date(u.creationTime).getTime() >= weekAgo);
+    const kinds = { google: 0, code: 0, password: 0 };
+    fresh.forEach(u => { kinds[accountKind(u)]++; });
+    let codes = 0, busiest = null;
+    Object.entries(days || {}).forEach(([key, d]) => {
+        const n = Math.max((d && d.sent) || 0, (d && d.quotaUsed) || 0);
+        codes += n;
+        if (!busiest || n > busiest.n) busiest = { key, n };
+    });
+    const weekday = k => new Date(k + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' });
+    const body = `${fresh.length} new writer${fresh.length === 1 ? '' : 's'} (${kinds.google} Google, ${kinds.code} email code, ${kinds.password} password). ` +
+        `${users.length} in total. Sign-in emails: ${codes}` +
+        (busiest && busiest.n ? `, busiest ${busiest.n} on ${weekday(busiest.key)}` : '') +
+        `. Free limit is 100 a day.`;
+    return { title: 'DRAFT PUNK · WEEK IN NUMBERS', body, newWriters: fresh.length, kinds, total: users.length, codes, busiest };
+}
+
 module.exports = {
     DEFAULT_REMINDER_TIME, REMINDER_WINDOW_MIN, QUIET_START, QUIET_END,
     localParts, parseTime, inQuietHours, writingStatus, reminderDecision, reminderMessage,
-    socialMessage, groupRecipients, isDeadTokenError
+    socialMessage, groupRecipients, isDeadTokenError,
+    CODE_TTL_MS, CODE_MAX_ATTEMPTS, RESEND_GAP_MS, CODES_PER_HOUR, QUOTA_WARN_AT,
+    normaliseEmail, isValidEmail, emailKey, newCode, hashCode, codesMatch,
+    codeRequestDecision, codeCheckDecision, utcDayKey, quotaWarningDue, signInEmail,
+    accountKind, weeklySummary
 };
