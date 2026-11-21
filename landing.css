@@ -1,0 +1,183 @@
+/* ── Signed-out landing ─────────────────────────────────────────────────────
+   First pass of the Draft Punk design system (see the design-system artifact):
+   Courier Prime for the interface, Literata for reading, Anton for headlines;
+   colours from the logo. Everything here is scoped to #authScreen, so no other
+   page changes. Every text colour passes 4.5:1 in both themes; nothing is
+   ranked by fading it.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@font-face { font-family: 'Courier Prime'; src: url('fonts/courier-prime-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Courier Prime'; src: url('fonts/courier-prime-latin-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Courier Prime'; src: url('fonts/courier-prime-latin-700-normal.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Literata'; src: url('fonts/literata-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Literata'; src: url('fonts/literata-latin-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Literata'; src: url('fonts/literata-latin-600-normal.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Anton'; src: url('fonts/anton-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+
+/* Tokens — dark values by default, light when the app is in light mode */
+#authScreen.dp-landing {
+    --paper: #0d0d0d; --surface: #181818; --sunken: #000000;
+    --ink: #f2f2f2; --ink-muted: #a9a9a9; --rule: #343434; --rule-strong: #f2f2f2;
+    --punk-green: #a0f436; --on-green: #0d0d0d; --green-ink: #a0f436;
+    --punk-purple: #5e17eb; --action: #7440f5; --on-action: #ffffff; --purple-ink: #b49bff;
+    --focus: #a0f436;
+    --font-mono: 'Courier Prime', 'Courier New', ui-monospace, monospace;
+    --font-read: Literata, Georgia, 'Noto Serif', serif;
+    --font-display: Anton, Impact, 'Arial Narrow', sans-serif;
+
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-read);
+    padding: 0;
+    align-items: stretch;
+}
+body.light-mode #authScreen.dp-landing {
+    --paper: #f3f1ec; --surface: #ffffff; --sunken: #e7e4dd;
+    --ink: #141414; --ink-muted: #57544f; --rule: #cfcac1; --rule-strong: #141414;
+    --green-ink: #3a6a00; --action: #5e17eb; --purple-ink: #5e17eb; --focus: #5e17eb;
+}
+
+/* #authScreen is a fixed, scrolling flex column: stop its sections shrinking
+   into each other on short screens */
+#authScreen.dp-landing > * { flex-shrink: 0; }
+
+/* ── Type styles (design-system scale) ── */
+.dp-landing .lp-label {
+    font-family: var(--font-mono); font-size: 12px; font-weight: 700; line-height: 1.3;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); margin: 0 0 12px;
+}
+.dp-landing .lp-display-xl,
+.dp-landing .lp-display-m,
+.dp-landing .lp-display-s {
+    font-family: var(--font-display); font-weight: 400; letter-spacing: .01em; color: var(--ink);
+    text-transform: uppercase; margin: 0 0 20px;
+}
+.dp-landing .lp-display-xl { font-size: clamp(44px, 7.4vw, 76px); line-height: .95; }
+.dp-landing .lp-display-m  { font-size: clamp(31px, 4.2vw, 39px); line-height: 1.05; }
+.dp-landing .lp-display-s  { font-size: 31px; line-height: 1.1; }
+.dp-landing .lp-lead    { font-size: 20px; line-height: 1.5; color: var(--ink); margin: 0 0 28px; max-width: 30em; }
+.dp-landing .lp-reading { font-size: 18px; line-height: 1.65; color: var(--ink-muted); margin: 0; max-width: 34em; }
+.dp-landing .lp-body    { font-size: 16px; line-height: 1.55; color: var(--ink-muted); margin: 0 0 24px; }
+.dp-landing .lp-small   { font-size: 14px; line-height: 1.5; color: var(--ink-muted); margin: 16px 0 0; max-width: 34em; }
+.dp-landing .lp-small a { color: var(--purple-ink); text-underline-offset: 3px; }
+.dp-landing mark {                      /* highlighter: a band behind the letters, not the whole line box */
+    color: var(--on-green); padding: 0 .1em;
+    background: linear-gradient(var(--punk-green), var(--punk-green)) 0 60% / 100% 78% no-repeat;
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+
+/* ── Buttons: one filled primary, outlined secondary, nothing faded ── */
+.dp-landing .lp-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.dp-landing .lp-btn {
+    font-family: var(--font-mono); font-size: 14px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; min-height: 52px; padding: 0 24px; border-radius: 0;
+    width: auto; margin: 0; cursor: pointer;
+}
+.dp-landing .lp-btn-primary   { background: var(--action); color: var(--on-action); border: 2px solid var(--action); }
+.dp-landing .lp-btn-secondary { background: transparent; color: var(--ink); border: 2px solid var(--rule-strong); }
+.dp-landing .lp-btn-primary:hover   { filter: brightness(1.12); }
+.dp-landing .lp-btn-secondary:hover { background: var(--ink); color: var(--paper); }
+.dp-landing .lp-btn:focus-visible,
+.dp-landing a:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+/* ── Top strip ── */
+.dp-landing .lp-top {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; max-width: 1120px; margin: 0 auto; padding: 20px 24px 0; box-sizing: border-box;
+}
+.dp-landing .lp-top-logo { width: 40px; height: 40px; border: 2px solid var(--rule-strong); }
+.dp-landing .lp-top .lp-label { margin: 0; color: var(--ink); }
+
+/* ── Hero ── */
+.dp-landing .lp-hero {
+    width: 100%; max-width: 1120px; margin: 0 auto; box-sizing: border-box;
+    padding: 48px 24px 40px;
+    display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 48px; align-items: center;
+    min-height: calc(100svh - 140px);
+}
+.dp-landing .lp-hero-art { position: relative; height: 440px; }
+.dp-landing .lp-hero-art::before {           /* the purple slab the cards sit on */
+    content: ''; position: absolute; inset: 24px 0 24px 48px; background: var(--punk-purple);
+}
+.dp-landing .lp-card { margin: 0; background: var(--surface); border: 2px solid var(--rule-strong); padding: 8px 8px 0; }
+.dp-landing .lp-card img { display: block; width: 100%; height: auto; }
+.dp-landing .lp-card figcaption {
+    font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink); padding: 8px 0 10px;
+}
+.dp-landing .lp-hero-art .lp-card { position: absolute; width: 210px; }
+.dp-landing .lp-card-a { left: 8px;   top: 0;     transform: rotate(-5deg); z-index: 2; }
+.dp-landing .lp-card-b { right: 4px;  top: 56px;  transform: rotate(4deg); z-index: 3; }
+.dp-landing .lp-card-c { left: 24%;   bottom: 0;  transform: rotate(-1.5deg); z-index: 1; }
+.dp-landing .lp-more {
+    display: block; text-align: center; margin: 0 auto 8px; padding: 12px;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink); text-decoration: underline; text-underline-offset: 4px;
+}
+
+/* ── Sections ── */
+.dp-landing .lp-section {
+    width: 100%; max-width: 1120px; margin: 0 auto; box-sizing: border-box;
+    padding: 96px 24px; border-top: 1px solid var(--rule);
+    display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 64px; align-items: center;
+}
+.dp-landing .lp-section-flip { grid-template-columns: 300px minmax(0, 1fr); }
+.dp-landing .lp-section-flip .lp-copy { order: 2; }
+.dp-landing .lp-shot {
+    display: block; width: 300px; max-width: 100%; height: auto;
+    border: 2px solid var(--rule-strong); box-shadow: 10px 10px 0 var(--punk-green);
+}
+
+/* The purple band: the game, at full volume */
+.dp-landing .lp-band { background: var(--punk-purple); color: #ffffff; }
+.dp-landing .lp-band-inner {
+    max-width: 1120px; margin: 0 auto; box-sizing: border-box; padding: 96px 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: auto 1fr; gap: 40px 64px; align-items: start;
+}
+.dp-landing .lp-band .lp-label,
+.dp-landing .lp-band .lp-display-m { color: #ffffff; }
+.dp-landing .lp-band .lp-reading  { color: #ffffff; }          /* white on #5e17eb: 7.5:1 */
+.dp-landing .lp-band .lp-copy { grid-column: 1; }
+.dp-landing .lp-band .lp-shot-band { grid-column: 2; grid-row: 1 / span 2; box-shadow: 10px 10px 0 var(--punk-green); border-color: #0d0d0d; }
+.dp-landing .lp-boss-row { grid-column: 1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.dp-landing .lp-boss-row .lp-card { background: #ffffff; border-color: #0d0d0d; padding: 6px 6px 0; }
+.dp-landing .lp-boss-row .lp-card figcaption { color: #0d0d0d; font-size: 12px; letter-spacing: .06em; padding: 6px 0 8px; }
+.dp-landing .lp-boss-row .lp-card:nth-child(odd)  { transform: rotate(-2deg); }
+.dp-landing .lp-boss-row .lp-card:nth-child(even) { transform: rotate(2deg) translateY(10px); }
+
+/* Two tiles side by side */
+.dp-landing .lp-pair {
+    width: 100%; max-width: 1120px; margin: 0 auto; box-sizing: border-box; padding: 96px 24px 0;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+}
+.dp-landing .lp-tile { background: var(--surface); border: 2px solid var(--rule-strong); padding: 32px; }
+.dp-landing .lp-tile .lp-shot { margin: 8px auto 0; }
+
+.dp-landing .lp-closer {
+    width: 100%; max-width: 720px; margin: 0 auto; box-sizing: border-box;
+    padding: 96px 24px 72px; text-align: center; border-top: 1px solid var(--rule);
+}
+.dp-landing .lp-closer .lp-reading { margin: 0 auto 32px; }
+.dp-landing .lp-closer .lp-actions { justify-content: center; }
+.dp-landing .lp-closer .lp-small { margin: 24px auto 0; }
+
+/* ── Phones and narrow tablets ── */
+@media (max-width: 860px) {
+    .dp-landing .lp-hero { grid-template-columns: 1fr; gap: 40px; padding: 32px 20px 24px; min-height: 0; }
+    .dp-landing .lp-hero-art { height: 300px; max-width: 420px; width: 100%; margin: 0 auto; }
+    .dp-landing .lp-hero-art .lp-card { width: 150px; }
+    .dp-landing .lp-actions .lp-btn { width: 100%; }
+    .dp-landing .lp-section,
+    .dp-landing .lp-section-flip { grid-template-columns: 1fr; gap: 32px; padding: 64px 20px; justify-items: center; }
+    .dp-landing .lp-section-flip .lp-copy { order: 0; }
+    .dp-landing .lp-copy { width: 100%; }
+    .dp-landing .lp-band-inner { grid-template-columns: 1fr; padding: 64px 20px; justify-items: center; }
+    .dp-landing .lp-band .lp-copy, .dp-landing .lp-boss-row, .dp-landing .lp-band .lp-shot-band { grid-column: 1; grid-row: auto; }
+    .dp-landing .lp-boss-row { grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+    .dp-landing .lp-boss-row .lp-card:nth-child(n+4) { display: none; }
+    .dp-landing .lp-pair { grid-template-columns: 1fr; padding: 64px 20px 0; gap: 24px; }
+    .dp-landing .lp-tile { padding: 24px 20px; }
+    .dp-landing .lp-shot { width: min(300px, 80vw); }
+    .dp-landing .lp-closer { padding: 64px 20px 56px; }
+}
+@media (prefers-reduced-motion: reduce) { #authScreen.dp-landing { scroll-behavior: auto; } }

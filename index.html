@@ -6,6 +6,7 @@
     <title>DRAFT PUNK</title>
     <link rel="icon" href="DRAFTPUNK.png" type="image/png">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="landing.css">
     <script src="sentry.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
@@ -67,80 +68,95 @@
 
     <input type="file" id="importFileInput" accept=".json" onchange="importData(event)" style="display:none;">
 
-    <div id="authScreen">
-        <!-- Signed-out landing: sign-in first (returning writers need nothing
-             else), then what Draft Punk does, for visitors who are new. -->
-        <section class="landing-hero">
-            <h1>DRAFT PUNK</h1>
-            <img id="authLogo" src="DRAFTPUNK.png" alt="Draft Punk Logo">
-            <p class="landing-tagline">YOUR WRITING. TRACKED. ANYWHERE.</p>
-            <button onclick="signInWithGoogle()" style="width:100%;margin-bottom:10px;">⊕ SIGN IN WITH GOOGLE</button>
-            <button onclick="skipAuth()" class="install-btn" style="color:#555;border-color:#333;">CONTINUE WITHOUT SIGNING IN</button>
-            <p style="font-size:0.65rem;opacity:0.3;margin-top:16px;line-height:1.6;">Sign in to back up and sync across devices.</p>
-            <p style="font-size:0.6rem;opacity:0.25;margin-top:12px;line-height:1.8;">
-                By continuing you agree to our
-                <a href="terms.html" style="color:inherit;text-decoration:underline;">Terms of Service</a>
-                and
-                <a href="privacy.html" style="color:inherit;text-decoration:underline;">Privacy Policy</a>
-            </p>
-            <a class="landing-more" href="#landingFeatures">WHAT IS DRAFT PUNK? ↓</a>
+    <div id="authScreen" class="dp-landing">
+        <!-- Signed-out landing. Styles: landing.css (design system first pass:
+             Courier Prime / Literata / Anton, logo purple and green). Sign-in
+             stays in the first screen for returning writers. -->
+        <header class="lp-top">
+            <img src="DRAFTPUNK.png" alt="" class="lp-top-logo">
+            <span class="lp-label">Draft Punk</span>
+        </header>
+
+        <section class="lp-hero">
+            <div class="lp-hero-copy">
+                <div class="lp-label">For novelists</div>
+                <h1 class="lp-display-xl">Your writing. <mark>Tracked.</mark> Anywhere.</h1>
+                <p class="lp-lead">A novel-drafting app that turns writing into a game: every word you write moves you toward the next boss.</p>
+                <div class="lp-actions">
+                    <button class="lp-btn lp-btn-primary" onclick="signInWithGoogle()">Sign in with Google</button>
+                    <button class="lp-btn lp-btn-secondary" onclick="skipAuth()">Continue without signing in</button>
+                </div>
+                <p class="lp-small">Sign in to back up and sync across devices. By continuing you agree to our
+                    <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a>.</p>
+            </div>
+            <div class="lp-hero-art" aria-hidden="true">
+                <figure class="lp-card lp-card-a"><img src="landing/boss-3.webp" alt="" width="240" height="240"><figcaption>Boss · Setup</figcaption></figure>
+                <figure class="lp-card lp-card-b"><img src="landing/boss-9.webp" alt="" width="240" height="240"><figcaption>Boss · Midpoint</figcaption></figure>
+                <figure class="lp-card lp-card-c"><img src="landing/boss-11.webp" alt="" width="240" height="240"><figcaption>Boss · All Is Lost</figcaption></figure>
+            </div>
+        </section>
+        <a class="lp-more" href="#lpWrite">What is Draft Punk? ↓</a>
+
+        <section class="lp-section" id="lpWrite">
+            <div class="lp-copy">
+                <div class="lp-label">01 · Write</div>
+                <h2 class="lp-display-m">Draft your novel, <mark>chapter by chapter.</mark></h2>
+                <p class="lp-reading">A distraction-free editor with version history for every chapter. Export a standard manuscript as Word, PDF or RTF whenever you need it.</p>
+            </div>
+            <img class="lp-shot" src="landing/write.webp" alt="The Write page: a chapter open in the editor" loading="lazy" width="300" height="600">
         </section>
 
-        <div class="landing-features" id="landingFeatures">
-            <section class="landing-feature">
-                <div class="landing-copy">
-                    <div class="landing-label">01 · WRITE</div>
-                    <h2>Draft your novel, chapter by chapter.</h2>
-                    <p>A distraction-free editor with version history for every chapter. Export a standard manuscript as Word, PDF or RTF whenever you need it.</p>
+        <section class="lp-band">
+            <div class="lp-band-inner">
+                <div class="lp-copy lp-copy-wide">
+                    <div class="lp-label">02 · Track &amp; play</div>
+                    <h2 class="lp-display-m">Your draft is the game.</h2>
+                    <p class="lp-reading">Set a word goal and a deadline. Every word moves you along the map: a boss at each story beat, minions on the way, ranks as you level up. Daily streaks, streak freezes and reminders keep you going.</p>
                 </div>
-                <img class="landing-shot" src="landing/write.webp" alt="The Write page: a chapter open in the editor" loading="lazy" width="300" height="600">
-            </section>
-
-            <section class="landing-feature">
-                <div class="landing-copy">
-                    <div class="landing-label">02 · TRACK &amp; PLAY</div>
-                    <h2>Your draft is the game.</h2>
-                    <p>Set a word goal and a deadline. Every word moves you along the map: bosses at each story beat, minions on the way, ranks as you level up. Daily streaks, streak freezes and reminders keep you going.</p>
+                <div class="lp-boss-row" aria-label="Five of the fifteen story-beat bosses">
+                    <figure class="lp-card"><img src="landing/boss-3.webp" alt="Setup boss" loading="lazy" width="240" height="240"><figcaption>Setup</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-8.webp" alt="Fun and Games boss" loading="lazy" width="240" height="240"><figcaption>Fun and Games</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-9.webp" alt="Midpoint boss" loading="lazy" width="240" height="240"><figcaption>Midpoint</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-11.webp" alt="All Is Lost boss" loading="lazy" width="240" height="240"><figcaption>All Is Lost</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-14.webp" alt="Finale boss" loading="lazy" width="240" height="240"><figcaption>Finale</figcaption></figure>
                 </div>
-                <img class="landing-shot" src="landing/dashboard.webp" alt="The dashboard: a stage map with the next boss and words to go" loading="lazy" width="300" height="600">
-            </section>
+                <img class="lp-shot lp-shot-band" src="landing/dashboard.webp" alt="The dashboard: a stage map with the next boss and words to go" loading="lazy" width="300" height="600">
+            </div>
+        </section>
 
-            <section class="landing-feature">
-                <div class="landing-copy">
-                    <div class="landing-label">03 · SPRINT</div>
-                    <h2>Word Runner.</h2>
-                    <p>Timed writing sprints from 5 to 60 minutes. Finish one to rescue a buddy for your project.</p>
-                </div>
-                <img class="landing-shot" src="landing/wordrunner.webp" alt="Word Runner: choose a sprint length" loading="lazy" width="300" height="600">
-            </section>
+        <section class="lp-pair">
+            <article class="lp-tile">
+                <div class="lp-label">03 · Sprint</div>
+                <h2 class="lp-display-s">Word Runner</h2>
+                <p class="lp-body">Timed writing sprints from 5 to 60 minutes. Finish one to <mark>rescue a buddy</mark> for your project.</p>
+                <img class="lp-shot" src="landing/wordrunner.webp" alt="Word Runner: choose a sprint length" loading="lazy" width="300" height="600">
+            </article>
+            <article class="lp-tile">
+                <div class="lp-label">04 · Together</div>
+                <h2 class="lp-display-s">Write alongside friends</h2>
+                <p class="lp-body">Add writing friends, share chapters with them, and see who's written most on the <mark>weekly leaderboard</mark>.</p>
+                <img class="lp-shot" src="landing/groups.webp" alt="Writing groups: friends and their word counts" loading="lazy" width="300" height="600">
+            </article>
+        </section>
 
-            <section class="landing-feature">
-                <div class="landing-copy">
-                    <div class="landing-label">04 · TOGETHER</div>
-                    <h2>Write alongside friends.</h2>
-                    <p>Add writing friends, share chapters with them, and see who's written most on the weekly leaderboard.</p>
-                </div>
-                <img class="landing-shot" src="landing/groups.webp" alt="Writing groups: friends and their word counts" loading="lazy" width="300" height="600">
-            </section>
+        <section class="lp-section lp-section-flip">
+            <div class="lp-copy">
+                <div class="lp-label">05 · Writing Record</div>
+                <h2 class="lp-display-m">Show how your <mark>words arrived.</mark></h2>
+                <p class="lp-reading">Draft Punk records how text came into each chapter: typed, dictated, pasted or imported. Export the record, or share it with a read-only link.</p>
+            </div>
+            <img class="lp-shot" src="landing/record.webp" alt="The Writing Record: how much of the text was typed" loading="lazy" width="300" height="600">
+        </section>
 
-            <section class="landing-feature">
-                <div class="landing-copy">
-                    <div class="landing-label">05 · WRITING RECORD</div>
-                    <h2>Show how your words arrived.</h2>
-                    <p>Draft Punk records how text came into each chapter: typed, dictated, pasted or imported. Export the record, or share it with a read-only link.</p>
-                </div>
-                <img class="landing-shot" src="landing/record.webp" alt="The Writing Record: how much of the text was typed" loading="lazy" width="300" height="600">
-            </section>
-
-            <section class="landing-closer">
-                <p>Works in your browser on phone, tablet and computer, and adds to your home screen like an app. Your chapters are private to you, and you can export everything at any time.</p>
-                <button onclick="signInWithGoogle()" style="width:100%;margin-bottom:10px;">⊕ SIGN IN WITH GOOGLE</button>
-                <button onclick="skipAuth()" class="install-btn" style="color:#555;border-color:#333;">CONTINUE WITHOUT SIGNING IN</button>
-                <p class="landing-legal">
-                    <a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a>
-                </p>
-            </section>
-        </div>
+        <section class="lp-closer">
+            <h2 class="lp-display-m">Your writing. <mark>Tracked.</mark> Anywhere.</h2>
+            <p class="lp-reading">Works in your browser on phone, tablet and computer, and adds to your home screen like an app. Your chapters are private to you, and you can export everything at any time.</p>
+            <div class="lp-actions">
+                <button class="lp-btn lp-btn-primary" onclick="signInWithGoogle()">Sign in with Google</button>
+                <button class="lp-btn lp-btn-secondary" onclick="skipAuth()">Continue without signing in</button>
+            </div>
+            <p class="lp-small"><a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a></p>
+        </section>
     </div>
 
     <div id="setup" class="setup-screen" style="display:none;">
