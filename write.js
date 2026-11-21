@@ -1135,11 +1135,11 @@ function setSaveStatus(state) {
     } else if (state === 'saved') {
         // Guests have no cloud copy, so don't let "SAVED" imply a backup
         el.textContent = localStorage.getItem('dpUserId') ? 'SAVED' : 'SAVED ON THIS DEVICE';
-        el.style.color = '';
+        el.style.color = 'var(--green-ink)';
         saveStatusTimer = setTimeout(() => { el.textContent = ''; }, 2000);
     } else if (state === 'local-only') {
         el.textContent = 'SAVED LOCALLY — cloud sync failed';
-        el.style.color = 'var(--color-warning, #c0392b)';
+        el.style.color = 'var(--red-ink)';
     }
 }
 

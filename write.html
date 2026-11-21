@@ -70,14 +70,14 @@
 
             <div id="writeChapterList"></div>
 
-            <button onclick="addChapter()" style="width:100%;margin-top:10px;">+ ADD CHAPTER</button>
+            <button class="btn-secondary" onclick="addChapter()" style="width:100%;margin-top:10px;">+ ADD CHAPTER</button>
 
             <div class="write-footer">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
                     <span id="writeTotalWords" style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;flex:1;">TOTAL: 0 WORDS</span>
                     <span id="writeSaveStatus" style="font-size:0.75rem;letter-spacing:1px;color:var(--neon);min-width:60px;text-align:right;"></span>
                 </div>
-                <button id="syncWordsBtn" onclick="syncAndSave()" style="width:100%;margin-top:10px;">SYNC AND SAVE</button>
+                <button id="syncWordsBtn" class="btn-primary" onclick="syncAndSave()" style="width:100%;margin-top:10px;min-height:48px;">SYNC AND SAVE</button>
                 <a href="record.html" class="write-record-link">✎ WRITING RECORD</a>
                 <button class="btn-secondary" onclick="exportStory()" style="width:100%;margin-top:8px;">⬇ EXPORT STORY</button>
                 <button class="btn-secondary" onclick="triggerImportStory()" style="width:100%;margin-top:8px;">⬆ IMPORT STORY</button>

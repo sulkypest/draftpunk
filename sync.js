@@ -782,6 +782,12 @@ async function showAccountOverlay() {
             <button onclick="signOutUser()" style="width:100%;margin-bottom:6px;">⊖ SIGN OUT</button>
 
             <div id="dpNotifySection"></div>
+            <div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 12px;"></div>
+            <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px;">EDITOR FONT</div>
+            <div style="display:flex;gap:8px;">
+                <button type="button" class="dp-font-opt" data-font="literata" onclick="window.dpSetEditorFont('literata')" style="flex:1;font-family:Literata,Georgia,serif;text-transform:none;letter-spacing:0;font-size:1rem;">Literata</button>
+                <button type="button" class="dp-font-opt" data-font="georgia" onclick="window.dpSetEditorFont('georgia')" style="flex:1;font-family:Georgia,'Times New Roman',serif;text-transform:none;letter-spacing:0;font-size:1rem;">Georgia</button>
+            </div>
             <div id="dpRecoverySection"></div>
 
             <div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 16px;"></div>
@@ -811,6 +817,7 @@ async function showAccountOverlay() {
     `;
 
     overlay.style.display = 'flex';
+    if (window.dpMarkEditorFont) window.dpMarkEditorFont();
     renderRecoverySection(user).catch(err => console.warn('Recovered copies not listed:', err));
     loadPush().then(m => {
         if (!m) return;

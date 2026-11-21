@@ -35,4 +35,23 @@
     } else {
         applyTheme(isLight);
     }
+
+    // Editor font (Account → Editor font). Literata by default; Georgia for
+    // writers who prefer the old look. Only changes how chapter text is shown.
+    const GEORGIA = "Georgia, 'Times New Roman', serif";
+    function applyEditorFont() {
+        let f = null; try { f = localStorage.getItem('dpEditorFont'); } catch (e) {}
+        if (f === 'georgia') document.documentElement.style.setProperty('--font-editor', GEORGIA);
+        else document.documentElement.style.removeProperty('--font-editor');
+    }
+    window.dpMarkEditorFont = function () {
+        let f = 'literata'; try { f = localStorage.getItem('dpEditorFont') || 'literata'; } catch (e) {}
+        document.querySelectorAll('.dp-font-opt').forEach(b => b.classList.toggle('btn-secondary', b.dataset.font !== f));
+    };
+    window.dpSetEditorFont = function (f) {
+        try { localStorage.setItem('dpEditorFont', f); } catch (e) {}
+        applyEditorFont();
+        window.dpMarkEditorFont();
+    };
+    applyEditorFont();
 })();
