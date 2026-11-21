@@ -340,7 +340,7 @@ async function verifyPrivateCopy(user, expected) {
 
 // ── Recovered copies (Account panel) ────────────────────────────────────────
 // Shown only when there is something: versions of notes, characters etc. that
-// gave way to a newer edit made on another device. Downloaded as plain text.
+// gave way when the same thing was edited on two devices. Downloaded as plain text.
 const RECOVERY_LABELS = { draftPunkData: 'Project data', notesData: 'Notes', beatNotesData: 'Beat notes',
                           charactersData: 'Characters', wordRunnerData: 'Word Runner', dpStreak: 'Streak' };
 async function listRecoveries(user) {
@@ -353,7 +353,7 @@ async function listRecoveries(user) {
     return Object.values(found).sort((a, b) => a.createdAt - b.createdAt);
 }
 function recoveriesAsText(entries) {
-    const lines = ['DRAFT PUNK — RECOVERED COPIES', 'Versions that were replaced by a newer edit made on another device.', ''];
+    const lines = ['DRAFT PUNK — RECOVERED COPIES', 'When the same thing was edited on two devices, the newer edit was kept. These are the other versions.', ''];
     entries.forEach(e => (e.items || []).forEach(i => {
         const where = [RECOVERY_LABELS[i.key] || i.key].concat((i.path || []).slice(1)).join(' › ');
         const val = typeof i.other === 'string' ? i.other : JSON.stringify(i.other, null, 2);
@@ -371,7 +371,7 @@ async function renderRecoverySection(user) {
         <div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 12px;"></div>
         <div style="font-size:0.6rem;opacity:0.6;letter-spacing:2px;margin-bottom:8px;">RECOVERED COPIES (${count})</div>
         <p style="font-size:0.62rem;opacity:0.5;letter-spacing:1px;margin:0 0 8px;line-height:1.5;">
-            Versions that were replaced by a newer edit on another device. Nothing was deleted.</p>
+            When the same thing was edited on two devices, the newer edit was kept. These are the other versions.</p>
         <button id="dpRecoveryBtn" style="width:100%;margin-bottom:6px;background:#333;">⬇ DOWNLOAD RECOVERED COPIES</button>`;
     document.getElementById('dpRecoveryBtn').onclick = () => {
         const blob = new Blob([recoveriesAsText(entries)], { type: 'text/plain' });
