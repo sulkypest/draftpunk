@@ -7,6 +7,26 @@
     <link rel="icon" href="DRAFTPUNK.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="landing.css">
+    <script>
+    // Decide the first screen before anything is drawn, using the same test
+    // script.js applies after load: a signed-out visitor with no work in this
+    // browser opens on the landing page (no splash); anyone else sees the
+    // splash from the first frame, so the app never flashes up underneath.
+    (function () {
+        try {
+            var ls = localStorage, root = document.documentElement;
+            var d = JSON.parse(ls.getItem('draftPunkData') || 'null');
+            var p = d && d.projects && d.activeProjectId && d.projects[d.activeProjectId];
+            var newVisitor = !(p && p.active) && !ls.getItem('dpUserId') && !ls.getItem('authDecisionMade');
+            if (ls.getItem('justSignedOut') || newVisitor) {
+                root.classList.add('dp-open-landing');
+                sessionStorage.setItem('splashSeen', '1');
+            } else if (!sessionStorage.getItem('splashSeen')) {
+                root.classList.add('dp-open-splash');
+            }
+        } catch (e) { /* storage unavailable: fall back to the normal flow */ }
+    })();
+    </script>
     <script src="sentry.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">

@@ -736,6 +736,7 @@ function runSplash(then) {
     sessionStorage.setItem('splashSeen', '1');
 
     splash.classList.add('splash-visible');
+    document.documentElement.classList.remove('dp-open-splash');   // splash-visible holds it now
     if (window.SFX) { try { SFX.intro(); } catch(e) {} }
 
     setTimeout(function () {
@@ -759,6 +760,8 @@ window.onload = function() {
     const nav = document.querySelector('.app-nav');
 
     runSplash(function () {
+        // Routing below takes over from the first screen chosen in <head>
+        document.documentElement.classList.remove('dp-open-landing', 'dp-open-splash');
         // Handle just-signed-out redirect first
         if (localStorage.getItem('justSignedOut')) {
             localStorage.removeItem('justSignedOut');
