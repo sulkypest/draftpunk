@@ -105,17 +105,17 @@
                     <div class="bar-container" style="height:4px;margin-bottom:3px;border-color:var(--border);">
                         <div id="sbXpBar" class="bar-fill" style="width:0%;"></div>
                     </div>
-                    <div id="sbXpText" style="font-size:0.55rem;letter-spacing:1px;color:var(--text-dim);text-align:center;"></div>
+                    <div id="sbXpText" style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);text-align:center;"></div>
                 </div>
             </div>
             <div class="side-box">
                 <div class="sb-label">WORDS</div>
-                <div id="sbWords" style="font-size:1.4rem;font-weight:900;line-height:1;margin:5px 0;color:var(--neon);">0</div>
+                <div id="sbWords" style="font-size:1.95rem;font-weight:700;line-height:1;margin:6px 0 2px;color:var(--neon);">0</div>
             </div>
             <div class="side-box">
                 <div class="sb-label">DEADLINE</div>
                 <div id="sbDays" style="font-size:2.5rem;font-weight:900;line-height:1;margin:5px 0;color:var(--neon);">--</div>
-                <div style="font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">DAYS LEFT</div>
+                <div style="font-size:0.75rem;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);">DAYS LEFT</div>
             </div>`;
         document.body.appendChild(right);
 
@@ -147,7 +147,7 @@
                         <div class="bar-container" style="height:4px;margin-bottom:3px;border-color:var(--border);">
                             <div id="mobXpBar" class="bar-fill" style="width:0%;"></div>
                         </div>
-                        <div id="mobXpText" style="font-size:0.55rem;letter-spacing:1px;color:var(--text-dim);text-align:center;"></div>
+                        <div id="mobXpText" style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);text-align:center;"></div>
                     </div>
                 </div>
                 <div class="side-box" style="margin-bottom:12px;">
@@ -157,7 +157,7 @@
                 <div class="side-box" style="margin-bottom:12px;">
                     <div class="sb-label">DEADLINE</div>
                     <div id="mobDays" style="font-size:3rem;font-weight:900;color:var(--neon);line-height:1;margin:5px 0;">--</div>
-                    <div style="font-size:0.7rem;letter-spacing:1px;color:var(--text-dim);">DAYS LEFT</div>
+                    <div style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);">DAYS LEFT</div>
                 </div>
                 <div class="side-box">
                     <a href="https://www.thewritingcommunitychatshow.com/" target="_blank">

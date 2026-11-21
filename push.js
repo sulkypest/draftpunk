@@ -148,7 +148,7 @@ async function refreshTimeZone(user) {
 }
 
 // ── Account-panel section ────────────────────────────────────────────────────
-const small = 'font-size:0.62rem;opacity:0.5;letter-spacing:1px;margin:0 0 12px;line-height:1.5;';
+const small = 'font-size:0.875rem;color:var(--text-dim);letter-spacing:1px;margin:0 0 12px;line-height:1.5;';
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
 export async function renderNotificationSettings(container) {
@@ -157,8 +157,8 @@ export async function renderNotificationSettings(container) {
     if (state === 'off') { container.innerHTML = ''; return; }
 
     const head = `<div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 16px;"></div>
-        <div style="font-size:0.6rem;opacity:0.4;letter-spacing:2px;margin-bottom:12px;">NOTIFICATIONS</div>`;
-    const err = `<p id="dpNotifyMsg" style="color:#ff4500;font-size:0.65rem;margin:6px 0 0;letter-spacing:1px;min-height:1em;"></p>`;
+        <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:12px;">NOTIFICATIONS</div>`;
+    const err = `<p id="dpNotifyMsg" style="color:#ff4500;font-size:0.75rem;margin:6px 0 0;letter-spacing:1px;min-height:1em;"></p>`;
 
     if (state === 'unsupported') {
         container.innerHTML = head + `<p style="${small}">This browser can’t show notifications from Draft Punk.</p>`;
@@ -193,21 +193,21 @@ export async function renderNotificationSettings(container) {
     const s = await getSettings();
     const others = Math.max(0, s.devices.length - 1);
     container.innerHTML = head + `
-        <label style="display:flex;align-items:center;gap:10px;font-size:0.72rem;letter-spacing:1px;margin-bottom:8px;cursor:pointer;">
+        <label style="display:flex;align-items:center;gap:10px;font-size:0.75rem;letter-spacing:1px;margin-bottom:8px;cursor:pointer;">
             <input type="checkbox" id="dpRemOn" ${s.reminder.enabled ? 'checked' : ''} style="width:18px;height:18px;min-width:18px;flex:0 0 18px;margin:0;padding:0;accent-color:var(--neon,#0ff);">
             DAILY WRITING REMINDER
         </label>
         <div style="display:flex;align-items:center;gap:10px;margin:0 0 4px 26px;">
-            <span style="font-size:0.65rem;opacity:0.6;letter-spacing:1px;">AT</span>
+            <span style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;">AT</span>
             <input type="time" id="dpRemTime" value="${esc(s.reminder.time)}" min="${EARLIEST_TIME}" max="${LATEST_TIME}" step="900" style="width:auto;margin:0;padding:6px 8px;">
         </div>
         <p style="${small}margin-left:26px;">Only sent if you haven’t written that day. If you’re on a streak, it tells you what’s at stake.</p>
-        <label style="display:flex;align-items:center;gap:10px;font-size:0.72rem;letter-spacing:1px;margin-bottom:14px;cursor:pointer;">
+        <label style="display:flex;align-items:center;gap:10px;font-size:0.75rem;letter-spacing:1px;margin-bottom:14px;cursor:pointer;">
             <input type="checkbox" id="dpSocialOn" ${s.social.enabled ? 'checked' : ''} style="width:18px;height:18px;min-width:18px;flex:0 0 18px;margin:0;padding:0;accent-color:var(--neon,#0ff);">
             MESSAGES, FRIENDS &amp; SHARES
         </label>
         <p style="${small}">Nothing is sent between 10pm and 8am. On for this device${others ? ` and ${others} other${others > 1 ? 's' : ''}` : ''}; settings apply to all your devices.</p>
-        <button id="dpNotifyOff" style="width:100%;background:#333;">TURN OFF ON THIS DEVICE</button>${err}`;
+        <button class="btn-secondary" id="dpNotifyOff" style="width:100%;">TURN OFF ON THIS DEVICE</button>${err}`;
 
     const msg = container.querySelector('#dpNotifyMsg');
     const timeEl = container.querySelector('#dpRemTime');
@@ -258,10 +258,10 @@ export async function maybeOfferNotifications() {
     bar.innerHTML = `
         <div style="flex:1;min-width:0;">
             <div style="font-size:0.75rem;font-weight:900;letter-spacing:2px;">\uD83D\uDD14 DAILY NUDGE?</div>
-            <div id="dpOfferSub" style="font-size:0.62rem;opacity:0.6;letter-spacing:1px;margin-top:4px;line-height:1.4;">A reminder if you haven\u2019t written by 7pm, plus message alerts.</div>
+            <div id="dpOfferSub" style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;margin-top:4px;line-height:1.4;">A reminder if you haven\u2019t written by 7pm, plus message alerts.</div>
         </div>
-        <button id="dpOfferYes" style="margin:0;padding:8px 12px;font-size:0.7rem;white-space:nowrap;">TURN ON</button>
-        <button id="dpOfferNo" aria-label="Not now" style="margin:0;padding:8px 10px;font-size:0.9rem;background:transparent;border:none;color:var(--text,#fff);opacity:0.7;box-shadow:none;">\u2715</button>`;
+        <button id="dpOfferYes" style="margin:0;padding:8px 12px;font-size:0.75rem;white-space:nowrap;">TURN ON</button>
+        <button id="dpOfferNo" aria-label="Not now" style="margin:0;padding:8px 10px;font-size:0.9rem;background:transparent;border:none;color:var(--text,#fff);color:var(--text-dim);box-shadow:none;">\u2715</button>`;
     document.body.appendChild(bar);
     const close = () => bar.remove();
     bar.querySelector('#dpOfferNo').onclick = close;

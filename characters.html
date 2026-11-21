@@ -46,7 +46,7 @@
                 <div id="navUserInfo" style="display:none;">
                     <div class="nav-dropdown-item" style="display:flex;align-items:center;gap:8px;cursor:default;">
                         <img id="navAvatar" src="" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--neon);">
-                        <span id="navUserName" style="color:var(--neon);font-size:0.7rem;"></span>
+                        <span id="navUserName" style="color:var(--neon);font-size:0.75rem;"></span>
                     </div>
                     <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
                 </div>
@@ -61,11 +61,11 @@
     <div class="notes-page">
         <div class="app">
             <h1>CHARACTERS</h1>
-            <h2 id="projectTitle" style="font-size:0.9rem;opacity:0.5;margin-top:-10px;margin-bottom:20px;"></h2>
+            <h2 id="projectTitle" class="page-sub"></h2>
 
-            <button onclick="addChar()" style="width:100%;margin-bottom:15px;">+ ADD CHARACTER</button>
+            <button class="btn-primary" onclick="addChar()" style="width:100%;margin-bottom:15px;min-height:48px;">+ ADD CHARACTER</button>
             <div id="charContainer"></div>
-            <button onclick="exportCharacters()" style="width:100%;margin-top:16px;background:#333;">⬇ EXPORT CHARACTER SHEETS</button>
+            <button class="btn-secondary" onclick="exportCharacters()" style="width:100%;margin-top:16px;">⬇ EXPORT CHARACTER SHEETS</button>
         </div>
     </div>
 

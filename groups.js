@@ -129,11 +129,11 @@ async function loadPendingRequests() {
         <div class="lb-row" style="gap:8px;">
             <span class="lb-name" style="flex:1;">${esc(req.fromUsername || 'UNKNOWN')}</span>
             <button data-id="${esc(req.id)}" data-from="${esc(req.from)}" onclick="doAccept(this.dataset.id, this.dataset.from)"
-                style="font-size:0.7rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">
+                style="font-size:0.75rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">
                 ✓ ACCEPT
             </button>
-            <button data-id="${esc(req.id)}" onclick="doDecline(this.dataset.id)"
-                style="font-size:0.7rem;padding:6px 10px;letter-spacing:1px;background:#333;white-space:nowrap;">
+            <button class="btn-secondary" data-id="${esc(req.id)}" onclick="doDecline(this.dataset.id)"
+                style="font-size:0.75rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">
                 ✕ DECLINE
             </button>
         </div>
@@ -299,9 +299,9 @@ async function loadSharedWithMe() {
             <div style="display:flex;width:100%;align-items:center;gap:8px;">
                 <span class="lb-name" style="flex:1;">${esc(share.chapterTitle)}</span>
                 <span class="lb-words">${(Number(share.wordCount) || 0).toLocaleString()} WDS</span>
-                <button data-id="${esc(share.id)}" onclick="viewShare(this.dataset.id)" style="font-size:0.7rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">READ</button>
+                <button data-id="${esc(share.id)}" onclick="viewShare(this.dataset.id)" style="font-size:0.75rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">READ</button>
             </div>
-            <div style="font-size:0.65rem;opacity:0.4;letter-spacing:1px;">${esc(share.projectTitle)} — FROM ${esc(share.ownerUsername)}${share.groupName ? ' · VIA GROUP ' + esc(share.groupName) : ''}</div>
+            <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;">${esc(share.projectTitle)} — FROM ${esc(share.ownerUsername)}${share.groupName ? ' · VIA GROUP ' + esc(share.groupName) : ''}</div>
         </div>
     `).join('');
 }
@@ -311,7 +311,7 @@ window.viewShare = function(shareId) {
     if (!share) return;
     document.getElementById('shareViewTitle').textContent = share.chapterTitle.toUpperCase();
     document.getElementById('shareViewMeta').textContent  = share.projectTitle + ' — BY ' + share.ownerUsername;
-    document.getElementById('shareViewContent').innerHTML = share.content ? safeChapterHtml(share.content) : '<em style="opacity:0.4;">No content.</em>';
+    document.getElementById('shareViewContent').innerHTML = share.content ? safeChapterHtml(share.content) : '<em style="color:var(--text-dim);">No content.</em>';
     document.getElementById('shareViewOverlay').style.display = 'flex';
 };
 

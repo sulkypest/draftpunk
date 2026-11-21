@@ -46,7 +46,7 @@
                 <div id="navUserInfo" style="display:none;">
                     <div class="nav-dropdown-item" style="display:flex;align-items:center;gap:8px;cursor:default;">
                         <img id="navAvatar" src="" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--neon);">
-                        <span id="navUserName" style="color:var(--neon);font-size:0.7rem;"></span>
+                        <span id="navUserName" style="color:var(--neon);font-size:0.75rem;"></span>
                     </div>
                     <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
                 </div>
@@ -59,9 +59,9 @@
     <input type="file" id="importFileInput" accept=".json" onchange="importData(event)" style="display:none;">
 
     <div class="write-focus-bar">
-        <span id="focusChapterTitle" style="font-size:0.7rem;letter-spacing:1px;opacity:0.4;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-        <span id="focusWc" style="font-size:0.7rem;letter-spacing:1px;opacity:0.5;white-space:nowrap;"></span>
-        <button onclick="exitFocus()" style="background:var(--neon);border:none;color:var(--bg);font-family:inherit;font-size:0.7rem;font-weight:900;letter-spacing:1px;padding:4px 12px;min-height:unset;width:auto;cursor:pointer;">✕ EXIT FOCUS</button>
+        <span id="focusChapterTitle" style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+        <span id="focusWc" style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);white-space:nowrap;"></span>
+        <button onclick="exitFocus()" style="background:var(--neon);border:none;color:var(--bg);font-family:inherit;font-size:0.75rem;font-weight:900;letter-spacing:1px;padding:4px 12px;min-height:unset;width:auto;cursor:pointer;">✕ EXIT FOCUS</button>
     </div>
 
     <div class="notes-page">
@@ -70,17 +70,17 @@
 
             <div id="writeChapterList"></div>
 
-            <button onclick="addChapter()" style="width:100%;margin-top:10px;">+ ADD CHAPTER</button>
+            <button class="btn-secondary" onclick="addChapter()" style="width:100%;margin-top:10px;">+ ADD CHAPTER</button>
 
             <div class="write-footer">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-                    <span id="writeTotalWords" style="font-size:0.75rem;opacity:0.6;letter-spacing:1px;flex:1;">TOTAL: 0 WORDS</span>
-                    <span id="writeSaveStatus" style="font-size:0.65rem;letter-spacing:1px;color:var(--neon);min-width:60px;text-align:right;"></span>
+                    <span id="writeTotalWords" style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;flex:1;">TOTAL: 0 WORDS</span>
+                    <span id="writeSaveStatus" style="font-size:0.75rem;letter-spacing:1px;color:var(--neon);min-width:60px;text-align:right;"></span>
                 </div>
-                <button id="syncWordsBtn" onclick="syncAndSave()" style="width:100%;margin-top:10px;">SYNC AND SAVE</button>
+                <button id="syncWordsBtn" class="btn-primary" onclick="syncAndSave()" style="width:100%;margin-top:10px;min-height:48px;">SYNC AND SAVE</button>
                 <a href="record.html" class="write-record-link">✎ WRITING RECORD</a>
-                <button onclick="exportStory()" style="width:100%;margin-top:8px;background:#333;">⬇ EXPORT STORY</button>
-                <button onclick="triggerImportStory()" style="width:100%;margin-top:8px;background:#333;">⬆ IMPORT STORY</button>
+                <button class="btn-secondary" onclick="exportStory()" style="width:100%;margin-top:8px;">⬇ EXPORT STORY</button>
+                <button class="btn-secondary" onclick="triggerImportStory()" style="width:100%;margin-top:8px;">⬆ IMPORT STORY</button>
                 <button class="write-deleted-link" onclick="openRecentlyDeleted()">↺ RECENTLY DELETED</button>
                 <input type="file" id="importStoryFile" accept=".rtf,.txt,.html,.htm" style="display:none" onchange="importStory(event)">
             </div>
@@ -90,33 +90,33 @@
     <div id="deletedOverlay" class="overlay" style="display:none;" onclick="if(event.target===this)closeRecentlyDeleted()">
         <div class="congrats-box" style="max-width:420px;width:90%;max-height:80vh;overflow-y:auto;">
             <h2 style="color:var(--neon);margin-bottom:6px;">RECENTLY DELETED</h2>
-            <p style="font-size:0.65rem;opacity:0.5;letter-spacing:1px;margin-bottom:14px;line-height:1.5;">RESTORED CHAPTERS GO BACK AT THE END OF YOUR STORY.</p>
+            <p style="font-size:0.875rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:14px;line-height:1.5;">RESTORED CHAPTERS GO BACK AT THE END OF YOUR STORY.</p>
             <div id="deletedList"></div>
-            <button onclick="closeRecentlyDeleted()" style="width:100%;margin-top:14px;background:#333;">CLOSE</button>
+            <button class="btn-secondary" onclick="closeRecentlyDeleted()" style="width:100%;margin-top:14px;">CLOSE</button>
         </div>
     </div>
 
     <div id="shareOverlay" class="overlay" style="display:none;" onclick="if(event.target===this)closeShareOverlay()">
         <div class="congrats-box" style="max-width:360px;width:90%;">
             <h2 style="color:var(--neon);margin-bottom:8px;">SHARE CHAPTER</h2>
-            <div id="shareChapterName" style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;margin-bottom:16px;"></div>
+            <div id="shareChapterName" style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:16px;"></div>
 
             <div id="activeSharesSection" style="display:none;margin-bottom:16px;">
-                <span style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;">CURRENTLY SHARED WITH</span>
+                <span style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;">CURRENTLY SHARED WITH</span>
                 <div id="activeSharesList" style="margin-top:8px;"></div>
                 <div style="border-top:1px solid var(--border);margin:14px 0;"></div>
             </div>
 
-            <label for="shareFriendSelect" style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;">SHARE WITH FRIEND</label>
+            <label for="shareFriendSelect" style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;">SHARE WITH FRIEND</label>
             <select id="shareFriendSelect" onchange="shareChoice('friend')" style="width:100%;margin-top:8px;margin-bottom:12px;"></select>
-            <label for="shareGroupSelect" style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;">OR SHARE WITH A GROUP</label>
+            <label for="shareGroupSelect" style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;">OR SHARE WITH A GROUP</label>
             <select id="shareGroupSelect" onchange="shareChoice('group')" style="width:100%;margin-top:8px;margin-bottom:16px;"></select>
             <p id="shareMsg" style="font-size:0.75rem;height:1.2em;margin-bottom:12px;letter-spacing:1px;"></p>
             <div style="display:flex;gap:10px;">
                 <button onclick="confirmShare()" style="flex:1;">⤴ SHARE</button>
-                <button onclick="closeShareOverlay()" style="flex:1;background:#333;">CANCEL</button>
+                <button class="btn-secondary" onclick="closeShareOverlay()" style="flex:1;">CANCEL</button>
             </div>
-            <p style="font-size:0.62rem;opacity:0.3;margin-top:14px;line-height:1.5;letter-spacing:1px;">SHARED CHAPTERS ARE READ-ONLY FOR THE RECIPIENT.</p>
+            <p style="font-size:0.875rem;color:var(--text-dim);margin-top:14px;line-height:1.5;letter-spacing:1px;">SHARED CHAPTERS ARE READ-ONLY FOR THE RECIPIENT.</p>
         </div>
     </div>
 

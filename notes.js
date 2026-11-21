@@ -24,7 +24,7 @@ function render() {
     if (!grid) return;
 
     if (notes.length === 0) {
-        grid.innerHTML = '<div style="opacity:0.3;font-size:0.75rem;letter-spacing:1px;text-align:center;padding:40px 0;">NO NOTES YET — HIT + NEW NOTE TO START</div>';
+        grid.innerHTML = '<div style="color:var(--text-dim);font-size:0.75rem;letter-spacing:1px;text-align:center;padding:40px 0;">NO NOTES YET — HIT + NEW NOTE TO START</div>';
         return;
     }
 

@@ -919,8 +919,8 @@ window.shareChapter = async function(id) {
         activeList.innerHTML = activeShares.map(s => `
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                 <span style="flex:1;font-size:0.8rem;letter-spacing:1px;">${s.groupId ? 'GROUP: ' + escapeAttr(s.groupName || '?') + ' (' + (s.sharedWith || []).length + ')' : escapeAttr(s.sharedWithUsernames && s.sharedWithUsernames[0] || '?')}</span>
-                <button data-id="${escapeAttr(s.id)}" onclick="revokeShare(this.dataset.id)"
-                    style="font-size:0.65rem;padding:4px 8px;background:#333;letter-spacing:1px;white-space:nowrap;">
+                <button class="btn-secondary" data-id="${escapeAttr(s.id)}" onclick="revokeShare(this.dataset.id)"
+                    style="font-size:0.75rem;padding:4px 8px;letter-spacing:1px;white-space:nowrap;">
                     ✕ REVOKE
                 </button>
             </div>`).join('');
@@ -1135,11 +1135,11 @@ function setSaveStatus(state) {
     } else if (state === 'saved') {
         // Guests have no cloud copy, so don't let "SAVED" imply a backup
         el.textContent = localStorage.getItem('dpUserId') ? 'SAVED' : 'SAVED ON THIS DEVICE';
-        el.style.color = '';
+        el.style.color = 'var(--green-ink)';
         saveStatusTimer = setTimeout(() => { el.textContent = ''; }, 2000);
     } else if (state === 'local-only') {
         el.textContent = 'SAVED LOCALLY — cloud sync failed';
-        el.style.color = 'var(--color-warning, #c0392b)';
+        el.style.color = 'var(--red-ink)';
     }
 }
 

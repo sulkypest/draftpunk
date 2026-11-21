@@ -86,7 +86,7 @@
                 '<h2 style="color:var(--neon);margin:0 0 16px;letter-spacing:3px;">' + title + '</h2>' +
                 lines +
                 (items.some(i => i.p === 'week')
-                    ? '<p style="font-size:0.7rem;opacity:0.6;letter-spacing:1px;margin:6px 0 0;">Everyone\u2019s weekly count resets at midnight on Monday, so group totals start level.</p>'
+                    ? '<p style="font-size:0.875rem;color:var(--text-dim);letter-spacing:1px;margin:6px 0 0;">Everyone\u2019s weekly count resets at midnight on Monday, so group totals start level.</p>'
                     : '') +
                 '<div style="height:18px;"></div>' +
                 '<button type="button" style="width:100%;">LET\u2019S WRITE</button>' +

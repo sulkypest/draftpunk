@@ -46,7 +46,7 @@
                 <div id="navUserInfo" style="display:none;">
                     <div class="nav-dropdown-item" style="display:flex;align-items:center;gap:8px;cursor:default;">
                         <img id="navAvatar" src="" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--neon);">
-                        <span id="navUserName" style="color:var(--neon);font-size:0.7rem;"></span>
+                        <span id="navUserName" style="color:var(--neon);font-size:0.75rem;"></span>
                     </div>
                     <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
                 </div>
@@ -67,8 +67,8 @@
                 <img id="wrBuddySprite" class="boss-sprite" src="buddies/buddy1.png">
                 <div style="flex:1;">
                     <div id="wrMissionName">SELECT A MISSION</div>
-                    <div class="bar-container" style="height:10px;margin-bottom:0;border-color:#333;">
-                        <div id="wrCaptivityBar" class="bar-fill" style="background:red;width:100%;transition:width 0.3s;"></div>
+                    <div class="bar-container" style="height:10px;margin-bottom:0;">
+                        <div id="wrCaptivityBar" class="bar-fill" style="background:var(--signal-red);width:100%;transition:width 0.3s;"></div>
                     </div>
                 </div>
             </div>
@@ -78,7 +78,7 @@
 
                 <!-- Tier grid -->
                 <div id="tierGridWrapper">
-                    <span style="font-size:0.75rem;letter-spacing:1px;opacity:0.6;">SELECT MISSION TIER</span>
+                    <span style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);">SELECT MISSION TIER</span>
                     <div class="tier-grid" id="tierGrid"></div>
                 </div>
 
@@ -86,10 +86,10 @@
                 <div id="tierInfo" class="challenge-box hidden">
                     <div class="challenge-stats">
                         <span><span id="challengeDuration">--</span> MIN</span>
-                        <span style="opacity:0.4;">/</span>
+                        <span style="color:var(--text-dim);">/</span>
                         <span><span id="challengeTarget">--</span> WORDS</span>
                     </div>
-                    <div id="tierBuddyStatus" style="font-size:0.7rem;opacity:0.6;margin-top:6px;"></div>
+                    <div id="tierBuddyStatus" style="font-size:0.75rem;color:var(--text-dim);margin-top:6px;"></div>
                 </div>
 
                 <div class="toggle-row">
@@ -110,7 +110,7 @@
                     <input type="number" id="customTarget" placeholder="WORD TARGET" style="width:100%;margin-bottom:10px;">
                 </div>
 
-<button id="startBtn" onclick="startSprint()" style="width:100%;margin-top:10px;" disabled>SELECT A MISSION TO START</button>
+<button id="startBtn" class="btn-primary" onclick="startSprint()" style="width:100%;margin-top:10px;min-height:52px;" disabled>SELECT A MISSION TO START</button>
             </div>
 
             <!-- Sprint controls -->
@@ -119,9 +119,9 @@
 
                 <div style="text-align:center;margin-bottom:10px;">
                     <span id="sprintWordCount" style="font-size:2rem;font-weight:900;color:var(--neon);">0</span>
-                    <span style="opacity:0.5;"> / </span>
+                    <span style="color:var(--text-dim);"> / </span>
                     <span id="sprintTargetDisplay">0</span>
-                    <span style="opacity:0.5;font-size:0.8rem;"> WORDS</span>
+                    <span style="color:var(--text-dim);font-size:0.8rem;"> WORDS</span>
                 </div>
 
                 <div class="bar-container" style="margin-bottom:15px;">
@@ -133,7 +133,7 @@
             <div id="textareaSection" class="hidden">
                 <textarea id="sprintText" class="sprint-textarea" placeholder="Write or paste your words here..." oninput="onSprintInput()"></textarea>
                 <div style="display:flex;gap:10px;margin-top:10px;">
-                    <button id="abandonBtn" onclick="stopSprint()" style="background:#333;flex:1;">ABANDON SPRINT</button>
+                    <button class="btn-secondary" id="abandonBtn" onclick="stopSprint()" style="flex:1;">ABANDON SPRINT</button>
                     <button id="copyBtn" class="hidden" onclick="copySprintText()" style="flex:1;">COPY TEXT</button>
                 </div>
             </div>
@@ -144,13 +144,13 @@
 
     <!-- Rescued overlay -->
     <div id="wrWinOverlay" class="overlay">
-        <div class="congrats-circle">
-            <h2 id="wrWinTitle" style="color:var(--neon);margin:0 0 6px;letter-spacing:2px;">BUDDY RESCUED!</h2>
+        <div class="congrats-circle poster poster-green">
+            <h2 id="wrWinTitle" class="poster-head">BUDDY RESCUED!</h2>
             <img id="wrRescuedSprite" src="" style="width:110px;height:110px;image-rendering:pixelated;object-fit:contain;display:block;margin:8px auto;filter:drop-shadow(0 0 10px var(--neon));">
             <div id="wrWinMessage" style="font-size:0.85rem;margin:8px 0;white-space:pre-line;line-height:1.5;"></div>
             <div style="display:flex;gap:10px;margin-top:12px;">
                 <button id="wrAddToWriteBtn" onclick="addSprintToWrite()" style="flex:1;">+ ADD TO WRITE</button>
-                <button onclick="closeWinOverlay()" style="flex:1;background:#333;">CLOSE</button>
+                <button class="btn-secondary" onclick="closeWinOverlay()" style="flex:1;">CLOSE</button>
             </div>
         </div>
     </div>
@@ -158,10 +158,10 @@
     <!-- Failed overlay -->
     <div id="wrFailOverlay" class="overlay" onclick="closeFailOverlay()">
         <div class="congrats-circle">
-            <h2 style="color:#ff4500;margin:0 0 10px;letter-spacing:2px;">RESCUE FAILED</h2>
+            <h2 class="poster-head poster-head-red">RESCUE FAILED</h2>
             <p style="margin:6px 0;">You wrote <strong id="wrFailWords">0</strong> of <strong id="wrFailTarget">0</strong> words.</p>
-            <p style="font-size:0.85rem;opacity:0.7;margin:6px 0;">Your buddy is still out there.</p>
-            <div style="font-size:0.65rem;opacity:0.5;margin-top:12px;letter-spacing:1px;">CLICK TO CONTINUE</div>
+            <p style="font-size:0.85rem;color:var(--text-dim);margin:6px 0;">Your buddy is still out there.</p>
+            <div style="font-size:0.75rem;color:var(--text-dim);margin-top:12px;letter-spacing:1px;">CLICK TO CONTINUE</div>
         </div>
     </div>
 

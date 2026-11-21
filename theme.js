@@ -12,11 +12,46 @@
         if (window.updateChartTheme) window.updateChartTheme();
     };
 
-    const saved = localStorage.getItem('dpTheme');
-    const isLight = saved === null ? true : saved === 'light';
+    let saved = localStorage.getItem('dpTheme');
+    // Writers who were here before the theme followed the device never chose a
+    // theme and have always seen light: keep them on light. Brand-new writers
+    // (no data on this device yet) follow the device's light/dark setting.
+    if (saved === null) {
+        try {
+            if (localStorage.getItem('dpThemeAuto') === '1') {
+                // a writer who started after this change: keep following the device
+            } else if (localStorage.getItem('draftPunkData')) {
+                saved = 'light';                                  // existing writer: unchanged
+                localStorage.setItem('dpTheme', 'light');
+            } else {
+                localStorage.setItem('dpThemeAuto', '1');         // new writer: follow the device
+            }
+        } catch (e) {}
+    }
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isLight = saved === null ? !prefersDark : saved === 'light';
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () { applyTheme(isLight); });
     } else {
         applyTheme(isLight);
     }
+
+    // Editor font (Account → Editor font). Literata by default; Georgia for
+    // writers who prefer the old look. Only changes how chapter text is shown.
+    const GEORGIA = "Georgia, 'Times New Roman', serif";
+    function applyEditorFont() {
+        let f = null; try { f = localStorage.getItem('dpEditorFont'); } catch (e) {}
+        if (f === 'georgia') document.documentElement.style.setProperty('--font-editor', GEORGIA);
+        else document.documentElement.style.removeProperty('--font-editor');
+    }
+    window.dpMarkEditorFont = function () {
+        let f = 'literata'; try { f = localStorage.getItem('dpEditorFont') || 'literata'; } catch (e) {}
+        document.querySelectorAll('.dp-font-opt').forEach(b => b.classList.toggle('btn-secondary', b.dataset.font !== f));
+    };
+    window.dpSetEditorFont = function (f) {
+        try { localStorage.setItem('dpEditorFont', f); } catch (e) {}
+        applyEditorFont();
+        window.dpMarkEditorFont();
+    };
+    applyEditorFont();
 })();

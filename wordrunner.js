@@ -68,7 +68,7 @@ function renderTierGrid() {
         const complete = rescued === total;
         const selected = selectedTierIdx === i;
         return `<div class="tier-card${selected ? ' selected' : ''}${complete ? ' complete' : ''}" onclick="selectTier(${i})">
-            <div class="tier-duration">${tier.duration}<span style="font-size:0.55rem;opacity:0.7;"> MIN</span></div>
+            <div class="tier-duration">${tier.duration}<span style="font-size:0.75rem;color:var(--text-dim);"> MIN</span></div>
             <div class="tier-label">${tier.label.toUpperCase()}</div>
             <div class="tier-rescued">${rescued}/${total}</div>
         </div>`;

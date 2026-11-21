@@ -6,6 +6,7 @@
     <title>DRAFT PUNK</title>
     <link rel="icon" href="DRAFTPUNK.png" type="image/png">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="landing.css">
     <script src="sentry.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
@@ -54,7 +55,7 @@
                 <div id="navUserInfo" style="display:none;">
                     <div class="nav-dropdown-item" style="display:flex;align-items:center;gap:8px;cursor:default;">
                         <img id="navAvatar" src="" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--neon);">
-                        <span id="navUserName" style="color:var(--neon);font-size:0.7rem;"></span>
+                        <span id="navUserName" style="color:var(--neon);font-size:0.75rem;"></span>
                     </div>
                     <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
                 </div>
@@ -67,19 +68,160 @@
 
     <input type="file" id="importFileInput" accept=".json" onchange="importData(event)" style="display:none;">
 
-    <div id="authScreen">
-        <h1>DRAFT PUNK</h1>
-        <img id="authLogo" src="DRAFTPUNK.png" alt="Draft Punk Logo">
-        <p style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;margin-bottom:20px;">YOUR WRITING. TRACKED. ANYWHERE.</p>
-        <button onclick="signInWithGoogle()" style="width:100%;margin-bottom:10px;">⊕ SIGN IN WITH GOOGLE</button>
-        <button onclick="skipAuth()" class="install-btn" style="color:#555;border-color:#333;">CONTINUE WITHOUT SIGNING IN</button>
-        <p style="font-size:0.65rem;opacity:0.3;margin-top:16px;line-height:1.6;">Sign in to back up and sync across devices.</p>
-        <p style="font-size:0.6rem;opacity:0.25;margin-top:12px;line-height:1.8;">
-            By continuing you agree to our
-            <a href="terms.html" style="color:inherit;text-decoration:underline;">Terms of Service</a>
-            and
-            <a href="privacy.html" style="color:inherit;text-decoration:underline;">Privacy Policy</a>
-        </p>
+    <div id="authScreen" class="dp-landing">
+        <!-- Signed-out landing. Styles: landing.css (design system first pass:
+             Courier Prime / Literata / Anton, logo purple and green). Sign-in
+             stays in the first screen for returning writers. -->
+        <header class="lp-top">
+            <img src="DRAFTPUNK.png" alt="" class="lp-top-logo">
+            <span class="lp-label">Draft Punk</span>
+        </header>
+
+        <section class="lp-hero">
+            <div class="lp-hero-copy">
+                <div class="lp-label">For novelists</div>
+                <h1 class="lp-display-xl">Your writing. <mark>Tracked.</mark> Anywhere.</h1>
+                <p class="lp-lead">A novel-drafting app that turns writing into a game: every word you write moves you toward the next boss.</p>
+                <div class="lp-actions">
+                    <button class="lp-btn lp-btn-primary" onclick="signInWithGoogle()">Sign in with Google</button>
+                    <button class="lp-btn lp-btn-secondary" onclick="skipAuth()">Continue without signing in</button>
+                </div>
+                <p class="lp-small">Sign in to back up and sync across devices. By continuing you agree to our
+                    <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a>.</p>
+            </div>
+            <div class="lp-hero-art" aria-hidden="true">
+                <figure class="lp-card lp-card-a"><img src="landing/boss-3.webp" alt="" width="240" height="240"><figcaption>Boss · Setup</figcaption></figure>
+                <figure class="lp-card lp-card-b"><img src="landing/boss-9.webp" alt="" width="240" height="240"><figcaption>Boss · Midpoint</figcaption></figure>
+                <figure class="lp-card lp-card-c"><img src="landing/boss-11.webp" alt="" width="240" height="240"><figcaption>Boss · All Is Lost</figcaption></figure>
+            </div>
+        </section>
+        <a class="lp-more" href="#lpWrite">What is Draft Punk? ↓</a>
+
+        <section class="lp-section" id="lpWrite">
+            <div class="lp-copy">
+                <div class="lp-label">01 · Write</div>
+                <h2 class="lp-display-m">Draft your novel, <mark>chapter by chapter.</mark></h2>
+                <p class="lp-reading">A distraction-free editor with version history for every chapter. Export a standard manuscript as Word, PDF or RTF whenever you need it.</p>
+            </div>
+            <img class="lp-shot" src="landing/write.webp" alt="The Write page: a chapter open in the editor" loading="lazy" width="300" height="600">
+        </section>
+
+        <section class="lp-band">
+            <div class="lp-band-inner">
+                <div class="lp-copy lp-copy-wide">
+                    <div class="lp-label">02 · Track &amp; play</div>
+                    <h2 class="lp-display-m">Your draft is the game.</h2>
+                    <p class="lp-reading">Set a word goal and a deadline. Every word moves you along the map: a boss at each story beat, minions on the way, ranks as you level up. Daily streaks, streak freezes and reminders keep you going.</p>
+                </div>
+                <div class="lp-boss-row" aria-label="Five of the fifteen story-beat bosses">
+                    <figure class="lp-card"><img src="landing/boss-3.webp" alt="Setup boss" loading="lazy" width="240" height="240"><figcaption>Setup</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-8.webp" alt="Fun and Games boss" loading="lazy" width="240" height="240"><figcaption>Fun and Games</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-9.webp" alt="Midpoint boss" loading="lazy" width="240" height="240"><figcaption>Midpoint</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-11.webp" alt="All Is Lost boss" loading="lazy" width="240" height="240"><figcaption>All Is Lost</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-14.webp" alt="Finale boss" loading="lazy" width="240" height="240"><figcaption>Finale</figcaption></figure>
+                </div>
+                <img class="lp-shot lp-shot-band" src="landing/dashboard.webp" alt="The dashboard: a stage map with the next boss and words to go" loading="lazy" width="300" height="600">
+            </div>
+        </section>
+
+        <section class="lp-collect">
+            <div class="lp-collect-inner">
+                <div class="lp-copy lp-collect-copy">
+                    <div class="lp-label">03 · Collect</div>
+                    <h2 class="lp-display-m">100 buddies to collect.</h2>
+                    <p class="lp-reading">Earn a new buddy for every 5,000 words you write, or rescue one by finishing a Word Runner sprint. Each of the seven sprint lengths, from 5 to 60 minutes, has its own set of buddies to find. Tap a buddy in your collection to meet them.</p>
+                </div>
+
+                <div class="lp-buddy-cards">
+                    <figure class="lp-buddy-card"><img src="buddies/buddy10.png" alt="Margot Marginalia" loading="lazy" width="100" height="100">
+                        <figcaption><strong>Margot Marginalia</strong><span>Writes more notes in the margins than in the actual document.</span></figcaption></figure>
+                    <figure class="lp-buddy-card"><img src="buddies/buddy8.png" alt="Comma Clementine" loading="lazy" width="100" height="100">
+                        <figcaption><strong>Comma Clementine</strong><span>Adds commas to everything, including, soup.</span></figcaption></figure>
+                    <figure class="lp-buddy-card"><img src="buddies/buddy32.png" alt="Revision Rex" loading="lazy" width="100" height="100">
+                        <figcaption><strong>Revision Rex</strong><span>Currently on draft forty-seven of his shopping list.</span></figcaption></figure>
+                </div>
+
+                <div class="lp-binder" aria-hidden="true">
+                    <div class="lp-binder-head"><span class="lp-label">Collection</span><span class="lp-label">Buddies still to find shown as silhouettes</span></div>
+                    <ul class="lp-binder-grid">
+                        <li><img src="buddies/buddy10.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy8.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li class="lp-locked"><img src="buddies/buddy5.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy32.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy30.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li class="lp-locked"><img src="buddies/buddy24.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy12.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy33.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy44.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li class="lp-locked"><img src="buddies/buddy39.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy77.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li class="lp-locked"><img src="buddies/buddy49.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy88.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy97.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li class="lp-locked"><img src="buddies/buddy56.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy2.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy21.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li class="lp-locked"><img src="buddies/buddy60.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy35.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy41.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy47.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li class="lp-locked"><img src="buddies/buddy66.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy53.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li class="lp-locked"><img src="buddies/buddy81.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy62.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li class="lp-locked"><img src="buddies/buddy85.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li><img src="buddies/buddy76.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li class="lp-locked"><img src="buddies/buddy89.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li class="lp-locked"><img src="buddies/buddy90.png" alt="" loading="lazy" width="100" height="100"></li>
+                        <li class="lp-locked"><img src="buddies/buddy99.png" alt="" loading="lazy" width="100" height="100"></li>
+                    </ul>
+                </div>
+
+                <div class="lp-sprint">
+                    <div>
+                        <div class="lp-label">Word Runner</div>
+                        <p class="lp-body">Pick a sprint, hit the word target before the clock runs out, and the buddy you were chasing joins your project.</p>
+                    </div>
+                    <ul class="lp-tiers" aria-label="Sprint lengths and how many buddies each has">
+                        <li><b>5</b><i>min</i><span>Quick Dash</span><em>15 buddies</em></li>
+                        <li><b>10</b><i>min</i><span>Short Sprint</span><em>15 buddies</em></li>
+                        <li><b>15</b><i>min</i><span>Steady Pace</span><em>14 buddies</em></li>
+                        <li><b>20</b><i>min</i><span>Power Push</span><em>14 buddies</em></li>
+                        <li><b>30</b><i>min</i><span>Endurance Run</span><em>14 buddies</em></li>
+                        <li><b>45</b><i>min</i><span>Marathon Dash</span><em>14 buddies</em></li>
+                        <li><b>60</b><i>min</i><span>Grand Sprint</span><em>14 buddies</em></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="lp-section" id="lpTogether">
+            <div class="lp-copy">
+                <div class="lp-label">04 · Together</div>
+                <h2 class="lp-display-m">Write <mark>alongside friends.</mark></h2>
+                <p class="lp-reading">Add writing friends, share chapters with them, and see who's written most on the weekly leaderboard.</p>
+            </div>
+            <img class="lp-shot" src="landing/groups.webp" alt="Writing groups: friends and their word counts" loading="lazy" width="300" height="600">
+        </section>
+
+        <section class="lp-section lp-section-flip">
+            <div class="lp-copy">
+                <div class="lp-label">05 · Writing Record</div>
+                <h2 class="lp-display-m">Show how your <mark>words arrived.</mark></h2>
+                <p class="lp-reading">Draft Punk records how text came into each chapter: typed, dictated, pasted or imported. Export the record, or share it with a read-only link.</p>
+            </div>
+            <img class="lp-shot" src="landing/record.webp" alt="The Writing Record: how much of the text was typed" loading="lazy" width="300" height="600">
+        </section>
+
+        <section class="lp-closer">
+            <h2 class="lp-display-m">Your writing. <mark>Tracked.</mark> Anywhere.</h2>
+            <p class="lp-reading">Works in your browser on phone, tablet and computer, and adds to your home screen like an app. Your chapters are private to you, and you can export everything at any time.</p>
+            <div class="lp-actions">
+                <button class="lp-btn lp-btn-primary" onclick="signInWithGoogle()">Sign in with Google</button>
+                <button class="lp-btn lp-btn-secondary" onclick="skipAuth()">Continue without signing in</button>
+            </div>
+            <p class="lp-small"><a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a></p>
+        </section>
     </div>
 
     <div id="setup" class="setup-screen" style="display:none;">
@@ -162,13 +304,13 @@
 
             <div class="input-zone">
                 <input type="number" id="wordIn" placeholder="WORDS">
-                <button onclick="addWords()">ADD</button>
-                <button onclick="showCorrectWords()" style="background:#333;">CORRECT</button>
-                <button onclick="showGrenade()" style="background:#ff4500; color:#fff;">GRENADE</button>
+                <button class="btn-primary" onclick="addWords()">ADD</button>
+                <button class="btn-secondary" onclick="showCorrectWords()" >CORRECT</button>
+                <button onclick="showGrenade()" style="background:var(--signal-red);color:#ffffff;">GRENADE</button>
             </div>
 
-            <div id="dashSignInPrompt" style="display:none;border:1px solid #333;padding:12px;margin-bottom:12px;text-align:center;">
-                <div style="font-size:0.7rem;opacity:0.5;letter-spacing:1px;margin-bottom:8px;">NOT SYNCING — DATA IS LOCAL ONLY</div>
+            <div id="dashSignInPrompt" style="display:none;border:2px solid var(--neon);padding:12px;margin-bottom:12px;text-align:center;">
+                <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px;">NOT SYNCING — DATA IS LOCAL ONLY</div>
                 <button onclick="signInWithGoogle()" style="width:100%;background:var(--neon);color:#000;font-weight:900;letter-spacing:2px;">⊕ SIGN IN TO SYNC</button>
             </div>
 
@@ -181,8 +323,8 @@
             </div>
             <button class="install-btn hidden" onclick="installApp()" style="margin-top:20px;">+ ADD TO HOME SCREEN</button>
             <div style="display:flex;gap:10px;margin-top:10px;">
-                <button onclick="showProjectSettings()" style="background:#333;flex:1;font-size:0.6rem;">EDIT PROJECT</button>
-                <button onclick="showProjectSwitcher()" style="background:#333;flex:1;font-size:0.6rem;">PROJECTS <span id="projectCountLabel" style="opacity:0.5;"></span></button>
+                <button class="btn-secondary" onclick="showProjectSettings()" style="flex:1;font-size:0.75rem;">EDIT PROJECT</button>
+                <button class="btn-secondary" onclick="showProjectSwitcher()" style="flex:1;font-size:0.75rem;">PROJECTS <span id="projectCountLabel" style="color:var(--text-dim);"></span></button>
             </div>
         </div>
 
@@ -199,34 +341,34 @@
                 <strong>Android:</strong> Tap the browser menu&nbsp;<span style="font-size: 1.3rem;">⋮</span><br>
                 then <strong>"Add to Home Screen"</strong>
             </p>
-            <div style="font-size: 0.7rem; opacity: 0.6;">TAP ANYWHERE TO CLOSE</div>
+            <div style="font-size:0.75rem; color:var(--text-dim);">TAP ANYWHERE TO CLOSE</div>
         </div>
     </div>
 
     <div id="levelUpOverlay" class="overlay" onclick="closeLevelUp()">
-        <div class="congrats-circle">
-            <h2 style="color:var(--neon);margin:0 0 8px;letter-spacing:3px;">LEVEL UP!</h2>
+        <div class="congrats-circle poster poster-purple">
+            <h2 class="poster-head">LEVEL UP!</h2>
             <div class="shield-wrap" style="width:130px;height:130px;margin:8px auto;">
                 <img id="levelUpShield" src="shields/1.png" class="shield-img shield-pop">
                 <div id="levelUpNumber" class="shield-num" style="font-size:3rem;">1</div>
             </div>
             <div id="levelUpRank" style="font-size:0.95rem;font-weight:900;letter-spacing:2px;color:var(--neon);margin:6px 0 2px;"></div>
-            <div style="font-size:0.65rem;color:var(--text-dim);margin-top:12px;letter-spacing:1px;">TAP TO CONTINUE</div>
+            <div style="font-size:0.75rem;color:var(--text-dim);margin-top:12px;letter-spacing:1px;">TAP TO CONTINUE</div>
         </div>
     </div>
 
     <div id="levelOverlay" class="overlay" onclick="closeOverlay()">
-        <div class="congrats-circle">
-            <h2 style="color:var(--neon);margin:0 0 6px;font-size:1rem;letter-spacing:2px;">BOSS BEAT DEFEATED!</h2>
+        <div class="congrats-circle poster poster-ink">
+            <h2 class="poster-head poster-head-red">BOSS BEAT DEFEATED!</h2>
             <img id="defeatedBossSprite" src="" style="width:110px;height:110px;image-rendering:pixelated;object-fit:contain;display:block;margin:8px auto;filter:drop-shadow(0 0 10px var(--neon));">
-            <div id="bossBeatTitle" style="font-size:1.3rem;font-weight:900;color:#fff;margin:8px 0 4px;"></div>
-            <div style="font-size:0.65rem;opacity:0.5;letter-spacing:1px;">CLICK TO CONTINUE</div>
+            <div id="bossBeatTitle" style="font-size:1.3rem;font-weight:900;color:var(--text);margin:8px 0 4px;"></div>
+            <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;">CLICK TO CONTINUE</div>
         </div>
     </div>
 
     <div id="grenadeOverlay" class="overlay" onclick="closeGrenade()">
         <div class="congrats-circle">
-            <h2 style="color:#ff4500;margin:0 0 10px;">NARRATIVE GRENADE</h2>
+            <h2 class="poster-head poster-head-red">NARRATIVE GRENADE</h2>
             <p id="inspireText" style="font-size:1rem;margin:0;line-height:1.6;"></p>
         </div>
     </div>
@@ -255,7 +397,7 @@
                 <input type="date" id="editDeadline"></label>
                 <div style="display:flex;gap:10px;">
                     <button onclick="saveProjectSettings()" style="flex:1;">SAVE</button>
-                    <button onclick="closeProjectSettings()" style="flex:1;background:#333;">CANCEL</button>
+                    <button class="btn-secondary" onclick="closeProjectSettings()" style="flex:1;">CANCEL</button>
                 </div>
             </div>
         </div>
@@ -266,18 +408,18 @@
             <h2 style="color:var(--neon);margin-bottom:20px;">PROJECTS</h2>
             <div id="projectList"></div>
             <button onclick="showNewProjectForm()" style="width:100%;margin-top:12px;">+ NEW PROJECT</button>
-            <button onclick="closeProjectSwitcher()" style="width:100%;margin-top:8px;background:#333;">CLOSE</button>
+            <button class="btn-secondary" onclick="closeProjectSwitcher()" style="width:100%;margin-top:8px;">CLOSE</button>
         </div>
     </div>
 
     <div id="bossZoomOverlay" class="overlay" onclick="closeBossZoom()">
         <div class="congrats-circle">
-            <div style="font-size:0.6rem;letter-spacing:3px;color:var(--text-dim);margin-bottom:6px;">BOSS INTEL</div>
+            <div style="font-size:0.75rem;letter-spacing:3px;color:var(--text-dim);margin-bottom:6px;">BOSS INTEL</div>
             <img id="bossZoomSprite" src="" style="width:130px;height:130px;image-rendering:pixelated;object-fit:contain;filter:drop-shadow(0 0 12px var(--neon));display:block;margin:0 auto;">
             <div id="bossZoomName" style="font-size:1rem;font-weight:900;color:var(--neon);margin:8px 0 4px;letter-spacing:2px;"></div>
-            <div id="bossZoomBeat" style="font-size:0.75rem;letter-spacing:1px;color:var(--neon);opacity:0.7;margin-bottom:6px;"></div>
-            <div id="bossZoomLore" style="font-size:0.75rem;line-height:1.5;opacity:0.85;"></div>
-            <div style="font-size:0.6rem;opacity:0.4;margin-top:10px;letter-spacing:1px;">CLICK TO CLOSE</div>
+            <div id="bossZoomBeat" style="font-size:0.75rem;letter-spacing:1px;color:var(--neon);color:var(--text-dim);margin-bottom:6px;"></div>
+            <div id="bossZoomLore" style="font-size:0.75rem;line-height:1.5;"></div>
+            <div style="font-size:0.75rem;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">CLICK TO CLOSE</div>
         </div>
     </div>
 
@@ -285,28 +427,28 @@
         <div class="congrats-circle">
             <img id="buddyZoomSprite" src="" style="width:140px;height:140px;image-rendering:pixelated;object-fit:contain;filter:drop-shadow(0 0 20px var(--neon));display:block;margin:0 auto;">
             <div id="buddyZoomName" style="font-size:1.2rem;font-weight:900;color:var(--neon);margin:10px 0 6px;letter-spacing:2px;"></div>
-            <div id="buddyZoomFact" style="font-size:0.75rem;line-height:1.5;opacity:0.85;"></div>
-            <div style="font-size:0.6rem;opacity:0.4;margin-top:10px;letter-spacing:1px;">CLICK TO CLOSE</div>
+            <div id="buddyZoomFact" style="font-size:0.75rem;line-height:1.5;"></div>
+            <div style="font-size:0.75rem;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">CLICK TO CLOSE</div>
         </div>
     </div>
 
     <div id="correctOverlay" class="overlay" style="display:none;">
         <div class="congrats-box" style="max-width:340px;width:90%;">
             <h2 style="color:var(--neon);margin-bottom:16px;">CORRECT WORD COUNT</h2>
-            <p style="font-size:0.75rem;opacity:0.6;margin-bottom:16px;letter-spacing:1px;">Set your actual total word count. Period stats (weekly/monthly/yearly) will be adjusted by the difference.</p>
+            <p style="font-size:0.875rem;color:var(--text-dim);margin-bottom:16px;letter-spacing:1px;">Set your actual total word count. Period stats (weekly/monthly/yearly) will be adjusted by the difference.</p>
             <input type="number" id="correctInput" placeholder="TOTAL WORDS" style="width:100%;box-sizing:border-box;margin-bottom:12px;">
             <div style="display:flex;gap:10px;">
                 <button onclick="applyCorrection()" style="flex:1;">APPLY</button>
-                <button onclick="closeCorrectOverlay()" style="flex:1;background:#333;">CANCEL</button>
+                <button class="btn-secondary" onclick="closeCorrectOverlay()" style="flex:1;">CANCEL</button>
             </div>
         </div>
     </div>
 
     <div id="buddyOverlay" class="overlay" onclick="closeBuddyOverlay()">
-        <div class="congrats-circle">
-            <h2 style="color:var(--neon);margin:0 0 8px;letter-spacing:2px;">NEW BUDDY!</h2>
+        <div class="congrats-circle poster poster-green">
+            <h2 class="poster-head">NEW BUDDY!</h2>
             <img id="newBuddySprite" src="" style="width:130px;height:130px;display:block;margin:8px auto;image-rendering:pixelated;filter:drop-shadow(0 0 15px var(--neon));">
-            <div style="font-size:0.7rem;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">TAP TO CONTINUE</div>
+            <div style="font-size:0.75rem;color:var(--text-dim);margin-top:10px;letter-spacing:1px;">TAP TO CONTINUE</div>
         </div>
     </div>
 

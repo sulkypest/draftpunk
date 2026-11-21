@@ -45,7 +45,7 @@
                 <div id="navUserInfo" style="display:none;">
                     <div class="nav-dropdown-item" style="display:flex;align-items:center;gap:8px;cursor:default;">
                         <img id="navAvatar" src="" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--neon);">
-                        <span id="navUserName" style="color:var(--neon);font-size:0.7rem;"></span>
+                        <span id="navUserName" style="color:var(--neon);font-size:0.75rem;"></span>
                     </div>
                     <button class="nav-dropdown-item" onclick="signOutUser(); toggleDataMenu()">⊖ SIGN OUT</button>
                 </div>
@@ -60,10 +60,10 @@
     <div class="notes-page">
         <div class="app">
             <h1>BEAT NOTES</h1>
-            <h2 id="projectTitle" style="font-size:0.9rem;opacity:0.5;margin-top:-10px;margin-bottom:4px;"></h2>
-            <div id="beatFillRate" style="font-size:0.7rem;opacity:0.4;letter-spacing:1px;margin-bottom:20px;">0 / 15 BEATS FILLED</div>
+            <h2 id="projectTitle" class="page-sub"></h2>
+            <div id="beatFillRate" style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:20px;">0 / 15 BEATS FILLED</div>
             <div id="beatContainer"></div>
-            <button onclick="exportBeats()" style="width:100%;margin-top:16px;background:#333;">⬇ EXPORT BEAT SHEET</button>
+            <button class="btn-secondary" onclick="exportBeats()" style="width:100%;margin-top:16px;">⬇ EXPORT BEAT SHEET</button>
         </div>
     </div>
 

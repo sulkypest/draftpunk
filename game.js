@@ -688,7 +688,7 @@ function showPlayerPicker(onPicked) {
 
     const label = document.createElement('div');
     label.textContent = 'CHOOSE YOUR FIGHTER';
-    label.style.cssText = 'color:var(--neon,#0ff);font-size:0.55rem;letter-spacing:3px;margin-bottom:6px;';
+    label.style.cssText = 'color:var(--neon,#0ff);font-size:0.75rem;letter-spacing:3px;margin-bottom:6px;';
     overlay.appendChild(label);
 
     const grid = document.createElement('div');
@@ -699,7 +699,7 @@ function showPlayerPicker(onPicked) {
         card.style.cssText = [
             'cursor:pointer;padding:6px 8px',
             'border:2px solid rgba(255,255,255,0.2)',
-            'text-align:center;font-size:0.5rem;letter-spacing:1px',
+            'text-align:center;font-size:0.75rem;letter-spacing:1px',
             'color:#fff;transition:border-color 0.15s',
             'background:rgba(255,255,255,0.04)',
         ].join(';');
@@ -880,7 +880,7 @@ window.buildPlayerSelector = function(containerId) {
         const selected = key === getSelectedPlayer();
         const idle = manifest.players[key] && manifest.players[key].Idle;
         const preview = idle && idle[0] ? `<img src="${idle[0]}" style="height:60px;image-rendering:pixelated;display:block;margin:0 auto 4px;">` : '';
-        return `<div onclick="setSelectedPlayer('${key}')" style="cursor:pointer;padding:8px;border:2px solid ${selected?'var(--neon)':'var(--border)'};text-align:center;font-size:0.6rem;letter-spacing:1px;">
+        return `<div onclick="setSelectedPlayer('${key}')" style="cursor:pointer;padding:8px;border:2px solid ${selected?'var(--neon)':'var(--border)'};text-align:center;font-size:0.75rem;letter-spacing:1px;">
             ${preview}${key.replace('Player','')}
         </div>`;
     }).join('');
