@@ -271,7 +271,7 @@ function pushChapter(ch) {
         id: ch.id, title: ch.title, content: ch.content,
         order: ch.order, wordCount: ch.wordCount, syncedWords: ch.syncedWords || 0,
         projectId: activeProjectId, updatedAt: ch.updatedAt
-    });
+    }).catch(() => setSaveStatus('local-only'));
 }
 
 window.renameChapter = function(id, newTitle) {
@@ -734,10 +734,14 @@ window.syncToTracker = function() {
 // Footer button: save every chapter now, then add any new words to the
 // tracker (the tracker step still asks first, as before).
 window.syncAndSave = function() {
-    saveAllNow();
+    const saving = saveAllNow();
     const fresh = writingData.chapters.reduce((s, c) => s + unsyncedWords(c), 0);
     if (fresh <= 0) {
-        showWriteToast(null, '✓ SAVED', 'ALL WORDS ARE ON YOUR TRACKER');
+        // Only say SAVED once the cloud save has actually finished.
+        saving.then(ok => {
+            if (ok) showWriteToast(null, '✓ SAVED', 'ALL WORDS ARE ON YOUR TRACKER');
+            else    showWriteToast(null, 'SAVED ON THIS DEVICE ONLY', 'CLOUD SYNC FAILED — TRY AGAIN SHORTLY');
+        });
         return;
     }
     syncChaptersToTracker(writingData.chapters.map(c => c.id));
@@ -1074,6 +1078,8 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+// Resolves true when every chapter reached the cloud (or the writer isn't
+// signed in, so there's no cloud to reach), false if any cloud save failed.
 function saveAllNow() {
     saveMeta();
     setSaveStatus('saving');
@@ -1081,7 +1087,9 @@ function saveAllNow() {
         if (window.pushWritingChapterToCloud) return window.pushWritingChapterToCloud({ ...ch, projectId: activeProjectId });
         return Promise.resolve();
     });
-    Promise.all(promises).then(() => setSaveStatus('saved')).catch(() => setSaveStatus('saved'));
+    return Promise.all(promises)
+        .then(() => { setSaveStatus('saved'); return true; })
+        .catch(() => { setSaveStatus('local-only'); return false; });
 }
 window.saveAllNow = saveAllNow;
 
@@ -1125,7 +1133,8 @@ function setSaveStatus(state) {
         el.textContent = 'SAVING...';
         el.style.color = '';
     } else if (state === 'saved') {
-        el.textContent = 'SAVED';
+        // Guests have no cloud copy, so don't let "SAVED" imply a backup
+        el.textContent = localStorage.getItem('dpUserId') ? 'SAVED' : 'SAVED ON THIS DEVICE';
         el.style.color = '';
         saveStatusTimer = setTimeout(() => { el.textContent = ''; }, 2000);
     } else if (state === 'local-only') {
@@ -1172,11 +1181,11 @@ window.addEventListener('beforeunload', () => {
             id: ch.id, title: ch.title, content: ch.content,
             order: ch.order, wordCount: ch.wordCount, syncedWords: ch.syncedWords || 0,
             projectId: activeProjectId, updatedAt: ch.updatedAt
-        });
+        }).catch(() => {});   // page is closing; local copy is already saved
     });
 });
 
-// On sign-in: compare local vs cloud timestamps and use the newer version
+// On sign-in: combine this device's chapters with the cloud's, chapter by chapter
 document.addEventListener('dpAuthChanged', async function(e) {
     if (e.detail.user && window.pullEvidenceFromCloud && window.DPEvidence) {
         window.pullEvidenceFromCloud(activeProjectId)
@@ -1185,31 +1194,44 @@ document.addEventListener('dpAuthChanged', async function(e) {
     }
     if (!e.detail.user || !window.pullWritingFromCloud) return;
     const cloudChapters = await window.pullWritingFromCloud(activeProjectId);
-    if (!cloudChapters || cloudChapters.length === 0) {
-        // Nothing in cloud — push whatever we have locally
-        if (writingData.chapters.length > 0) {
-            writingData.chapters.forEach(ch => {
-                if (window.pushWritingChapterToCloud) window.pushWritingChapterToCloud({ ...ch, projectId: activeProjectId });
-            });
-        }
+    if (!cloudChapters) {
+        // The cloud couldn't be read (offline or an error). Don't push old
+        // local copies over chapters that may be newer in the cloud; edits
+        // made from here on still save as normal.
         return;
     }
-    const cloudMax = Math.max(...cloudChapters.map(c => c.updatedAt || 0));
-    const localMax = writingData.chapters.length
-        ? Math.max(...writingData.chapters.map(c => c.updatedAt || 0))
-        : 0;
-    if (cloudMax > localMax) {
-        writingData.chapters = cloudChapters;
+    // Combine this device's chapters with the cloud's one chapter at a time
+    // (chapter-merge.js), so a newer edit to one chapter on another device
+    // never wipes out unsynced work on a different chapter here.
+    const first = window.DPChapterMerge.merge(writingData.chapters, cloudChapters);
+
+    // Before any chapter's text here is replaced by a newer cloud copy, keep
+    // this device's text in version history (skipped if it matches the last
+    // saved version, so stale copies don't pile up).
+    if (first.replaced.length && window.DPVersions && window.DPVersions.saveBeforeSync) {
+        await Promise.all(first.replaced.map(ch =>
+            window.DPVersions.saveBeforeSync(ch.id, ch.content || '', activeProjectId)
+                .catch(err => console.warn('Version before sync not saved:', err))));
+    }
+    // Merge again with this device's chapters as they are now, in case the
+    // writer typed while those versions were saving (their newer edit wins).
+    const result = window.DPChapterMerge.merge(writingData.chapters, cloudChapters);
+
+    if (result.changed) {
+        writingData.chapters = result.chapters;
         saveMeta();
         reconcileSyncLedger();
         renderAll();
         updateFooter();
+    }
+
+    if (result.toPush.length) {
+        setSaveStatus('saving');
+        Promise.all(result.toPush.map(ch => window.pushWritingChapterToCloud({ ...ch, projectId: activeProjectId })))
+            .then(() => setSaveStatus('saved'))
+            .catch(() => setSaveStatus('local-only'));
+    } else if (result.changed) {
         setSaveStatus('saved');
-    } else {
-        // Local is newer — push all chapters to cloud to ensure it's current
-        writingData.chapters.forEach(ch => {
-            if (window.pushWritingChapterToCloud) window.pushWritingChapterToCloud({ ...ch, projectId: activeProjectId });
-        });
     }
 });
 
@@ -1280,7 +1302,8 @@ window.importStory = function(e) {
         renderAll();
         updateFooter();
         if (window.pushWritingChapterToCloud) {
-            writingData.chapters.slice(-chapters.length).forEach(ch => window.pushWritingChapterToCloud({ ...ch, projectId: activeProjectId }));
+            writingData.chapters.slice(-chapters.length).forEach(ch => window.pushWritingChapterToCloud({ ...ch, projectId: activeProjectId })
+                .catch(() => setSaveStatus('local-only')));
         }
         showWriteToast(null, '✓ IMPORTED', count + ' CHAPTER' + (count !== 1 ? 'S' : '') + ' ADDED');
     };
