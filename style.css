@@ -2425,6 +2425,7 @@ body.write-focus .write-chapter.write-focus-target .write-toolbar { position: st
 }
 .dp-signin-wide { width: 100%; margin: 4px 0 0; }
 #dpSignInPwToggle { margin-top: 10px; }
+button.dp-signin-link:disabled { background: transparent; color: var(--disabled); text-decoration: none; cursor: default; }
 #dpSignInPwForm { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
 #dpSignInPwForm .dp-signin-link { margin-top: 8px; }
 input.dp-signin-code {
