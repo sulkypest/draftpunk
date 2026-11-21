@@ -221,3 +221,70 @@ test('lib: code check and request decisions', () => {
     assert.ok(/^\d{6}$/.test(lib.newCode()));
     assert.strictEqual(lib.emailKey('A@B.co'), lib.emailKey(' a@b.co '));
 });
+
+// ── Gmail: dots and '+' don't make a different inbox ────────────────────────
+function googleAccount(uid, email, created = 'Mon, 01 Jun 2026 10:00:00 GMT') {
+    accounts.set(email, { uid, email, emailVerified: true, disabled: false,
+        providerData: [{ providerId: 'google.com', email }], metadata: { creationTime: created } });
+}
+
+test('Gmail without the dots finds the Google account (ross.young1 vs rossyoung1)', async () => {
+    reset();
+    googleAccount('google-ross', 'ross.young1@gmail.com');
+    await withNow(T0, () => call(fns.requestSignInCode, { email: 'rossyoung1@gmail.com' }));
+    const res = await withNow(T0 + 1000, () => call(fns.verifySignInCode, { email: 'rossyoung1@gmail.com', code: codeIn('rossyoung1@gmail.com') }));
+    assert.strictEqual(res.token, 'token-for-google-ross');
+    assert.strictEqual(accounts.size, 1, 'no new account');
+});
+
+test('Gmail with a +tag or googlemail.com finds the same account', async () => {
+    reset();
+    googleAccount('google-ross', 'ross.young1@gmail.com');
+    for (const typed of ['RossYoung1+draftpunk@gmail.com', 'ross.young.1@googlemail.com']) {
+        await withNow(T0, () => call(fns.requestSignInCode, { email: typed }));
+        const res = await withNow(T0 + 1000, () => call(fns.verifySignInCode, { email: typed, code: codeIn(typed.toLowerCase()) }));
+        assert.strictEqual(res.token, 'token-for-google-ross', typed);
+        store.clear(); store.set('users/ross/private/notifications', { tokens: { 'ross-phone': { addedAt: 1 } } });
+    }
+    assert.strictEqual(accounts.size, 1);
+});
+
+test('Google account found by its Google sign-in address even if its main email differs', async () => {
+    reset();
+    accounts.set('x', { uid: 'g2', email: undefined, emailVerified: true, disabled: false,
+        providerData: [{ providerId: 'google.com', email: 'a.writer@gmail.com' }], metadata: { creationTime: 'Mon, 01 Jun 2026 10:00:00 GMT' } });
+    await withNow(T0, () => call(fns.requestSignInCode, { email: 'awriter@gmail.com' }));
+    const res = await withNow(T0 + 1000, () => call(fns.verifySignInCode, { email: 'awriter@gmail.com', code: codeIn('awriter@gmail.com') }));
+    assert.strictEqual(res.token, 'token-for-g2');
+});
+
+test('if a stray empty account exists for the undotted address, the original Google account still wins', async () => {
+    reset();
+    googleAccount('google-ross', 'ross.young1@gmail.com', 'Mon, 01 Jun 2026 10:00:00 GMT');
+    accounts.set('rossyoung1@gmail.com', { uid: 'stray', email: 'rossyoung1@gmail.com', emailVerified: true, disabled: false,
+        providerData: [], metadata: { creationTime: 'Sat, 21 Nov 2026 18:55:00 GMT' } });
+    await withNow(T0, () => call(fns.requestSignInCode, { email: 'rossyoung1@gmail.com' }));
+    const res = await withNow(T0 + 1000, () => call(fns.verifySignInCode, { email: 'rossyoung1@gmail.com', code: codeIn('rossyoung1@gmail.com') }));
+    assert.strictEqual(res.token, 'token-for-google-ross');
+});
+
+test('non-Gmail addresses are matched exactly: dots there are different people', async () => {
+    reset();
+    googleAccount('work', 'ross.young@example.com');
+    await withNow(T0, () => call(fns.requestSignInCode, { email: 'rossyoung@example.com' }));
+    const res = await withNow(T0 + 1000, () => call(fns.verifySignInCode, { email: 'rossyoung@example.com', code: codeIn('rossyoung@example.com') }));
+    assert.notStrictEqual(res.token, 'token-for-work');
+    assert.strictEqual(accounts.size, 2);
+});
+
+test('the one-a-minute limit applies to the inbox, not the spelling', async () => {
+    reset();
+    await withNow(T0, () => call(fns.requestSignInCode, { email: 'ross.young1@gmail.com' }));
+    await rejects(withNow(T0 + 5000, () => call(fns.requestSignInCode, { email: 'rossyoung1@gmail.com' })), 'resource-exhausted', 'cooldown');
+});
+
+test('lib: canonical Gmail addresses', () => {
+    assert.strictEqual(lib.canonicalEmail('Ross.Young1+dp@GoogleMail.com'), 'rossyoung1@gmail.com');
+    assert.strictEqual(lib.canonicalEmail('ross.young@example.com'), 'ross.young@example.com');
+    assert.ok(lib.isGmail('a@googlemail.com') && !lib.isGmail('a@gmail.co.uk'));
+});
