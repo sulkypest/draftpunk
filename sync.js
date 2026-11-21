@@ -893,17 +893,27 @@ window.dpCloseSignIn = function() {
     if (ov) ov.style.display = 'none';
 };
 
+// The link as it arrived, kept so a mistyped email can be retried after the
+// one-time code has been taken out of the address bar.
+const arrivedLink = isSignInWithEmailLink(auth, location.href) ? location.href : null;
+
 async function finishEmailLink(email) {
     if (!email) throw { code: 'auth/invalid-email' };
-    await signInWithEmailLink(auth, email, location.href);
+    window.__dpFinishingEmailLink = true;          // script.js goHome stays put
+    // Drop the one-time code from the address bar before signing in, so the
+    // routing that follows sign-in sees a normal address.
+    history.replaceState(null, '', location.pathname + (location.search.includes('dashboard') ? '?dashboard' : ''));
+    try {
+        await signInWithEmailLink(auth, email, arrivedLink);
+    } finally {
+        window.__dpFinishingEmailLink = false;
+    }
     try { localStorage.removeItem(EMAIL_FOR_LINK_KEY); } catch (e) { /* ignore */ }
-    // Drop the one-time code from the address bar
-    history.replaceState(null, '', location.pathname);
     window.dpCloseSignIn();
 }
 
 // Arriving from an emailed sign-in link
-if (isSignInWithEmailLink(auth, location.href)) {
+if (arrivedLink) {
     let saved = null;
     try { saved = localStorage.getItem(EMAIL_FOR_LINK_KEY); } catch (e) { /* ignore */ }
     if (saved) {
