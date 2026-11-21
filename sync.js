@@ -1,5 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, deleteUser }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, deleteUser,
+    signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
+    sendEmailVerification, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
     getFirestore, doc, setDoc, getDoc, deleteDoc, writeBatch, deleteField,
@@ -719,6 +721,203 @@ window.signInWithGoogle = async function() {
         alert('Sign-in failed: ' + err.message);
     }
 };
+
+// ── Sign-in panel: Google, email + password, or an emailed link ──────────────
+// Every route ends in onAuthStateChanged → handleSignedIn, exactly as Google
+// sign-in always has, so syncing and merging are unchanged.
+const EMAIL_FOR_LINK_KEY = 'dpEmailForSignIn';
+
+function signInMessage(err) {
+    const code = (err && err.code) || '';
+    switch (code) {
+        case 'auth/invalid-email':
+            return 'That doesn’t look like an email address.';
+        case 'auth/missing-password':
+            return 'Type your password, or use the emailed link instead.';
+        case 'auth/weak-password':
+            return 'Choose a password of at least 6 characters.';
+        case 'auth/email-already-in-use':
+            return 'There’s already an account with this email. If you usually sign in with Google, use the Google button. Otherwise choose Sign in, or reset your password.';
+        case 'auth/invalid-credential':
+        case 'auth/wrong-password':
+        case 'auth/user-not-found':
+            return 'That email and password don’t match. If you usually sign in with Google, use the Google button, or reset your password below.';
+        case 'auth/too-many-requests':
+            return 'Too many tries. Wait a few minutes, or reset your password.';
+        case 'auth/network-request-failed':
+            return 'No connection. Check you’re online and try again.';
+        case 'auth/invalid-action-code':
+        case 'auth/expired-action-code':
+            return 'That sign-in link has expired or has already been used. Ask for a new one.';
+        case 'auth/operation-not-allowed':
+            return 'This sign-in option isn’t switched on yet.';
+        case 'auth/popup-closed-by-user':
+        case 'auth/cancelled-popup-request':
+            return '';
+        default:
+            return 'Sign-in didn’t work: ' + ((err && err.message) || 'unknown error');
+    }
+}
+
+function signInLinkUrl() {
+    // Back to this site's index.html, wherever it is served from
+    return location.origin + location.pathname.replace(/[^/]*$/, '') + 'index.html';
+}
+
+function buildSignInOverlay() {
+    let ov = document.getElementById('dpSignInOverlay');
+    if (ov) return ov;
+    ov = document.createElement('div');
+    ov.id = 'dpSignInOverlay';
+    ov.className = 'overlay dp-signin-overlay';
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.setAttribute('aria-labelledby', 'dpSignInTitle');
+    ov.innerHTML = `
+        <div class="congrats-box dp-signin">
+            <button type="button" class="dp-signin-close" aria-label="Close" data-act="close">✕</button>
+            <h2 id="dpSignInTitle">Sign in</h2>
+            <p class="dp-signin-sub" id="dpSignInSub">Your writing syncs to every device you sign in on.</p>
+            <div id="dpSignInMain">
+                <button type="button" class="dp-signin-google" data-act="google">Continue with Google</button>
+                <div class="dp-signin-or"><span>or use your email</span></div>
+                <form id="dpSignInForm" novalidate>
+                    <label class="field"><span class="field-label">Email</span>
+                    <input type="email" id="dpSignInEmail" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"></label>
+                    <label class="field"><span class="field-label">Password</span>
+                    <input type="password" id="dpSignInPassword" autocomplete="current-password"></label>
+                    <div class="dp-signin-row">
+                        <button type="submit" class="btn-primary" data-act="signin">Sign in</button>
+                        <button type="button" class="btn-secondary" data-act="create">Create account</button>
+                    </div>
+                </form>
+                <div class="dp-signin-links">
+                    <button type="button" class="dp-signin-link" data-act="reset">Forgot password?</button>
+                    <button type="button" class="dp-signin-link" data-act="link">No password? Email me a sign-in link</button>
+                </div>
+                <p class="dp-signin-note">On iPhone, an emailed link opens in Safari, not in the installed Draft Punk app. If you use the installed app, sign in with a password instead.</p>
+            </div>
+            <div id="dpSignInFinish" style="display:none;">
+                <form id="dpSignInFinishForm" novalidate>
+                    <label class="field"><span class="field-label">Email</span>
+                    <input type="email" id="dpSignInFinishEmail" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"></label>
+                    <button type="submit" class="btn-primary" style="width:100%;">Finish signing in</button>
+                </form>
+            </div>
+            <p class="dp-signin-status" id="dpSignInStatus" role="status" aria-live="polite"></p>
+        </div>`;
+    document.body.appendChild(ov);
+
+    const $ = id => document.getElementById(id);
+    const status = (msg, kind) => {
+        const el = $('dpSignInStatus');
+        el.textContent = msg || '';
+        el.className = 'dp-signin-status' + (kind ? ' is-' + kind : '');
+    };
+    const busy = on => ov.querySelectorAll('button, input').forEach(b => {
+        if (b.dataset.act !== 'close') b.disabled = on;
+    });
+    const emailVal = () => $('dpSignInEmail').value.trim();
+    const passVal  = () => $('dpSignInPassword').value;
+
+    async function run(fn) {
+        status('');
+        busy(true);
+        try { await fn(); }
+        catch (err) { console.warn('Sign-in:', err && err.code); status(signInMessage(err), 'error'); }
+        finally { busy(false); }
+    }
+
+    ov.addEventListener('click', e => {
+        if (e.target === ov) { window.dpCloseSignIn(); return; }
+        const act = e.target.closest('[data-act]')?.dataset.act;
+        if (!act || act === 'signin') return;           // sign in is the form's submit
+        if (act === 'close') window.dpCloseSignIn();
+        else if (act === 'google') run(async () => {
+            await signInWithPopup(auth, provider);
+            window.dpCloseSignIn();
+        });
+        else if (act === 'create') run(async () => {
+            if (!emailVal()) throw { code: 'auth/invalid-email' };
+            const cred = await createUserWithEmailAndPassword(auth, emailVal(), passVal());
+            // Best effort: a verified address keeps its password if the same
+            // email is later used with Google.
+            try { await sendEmailVerification(cred.user); } catch (e) { /* not essential */ }
+            window.dpCloseSignIn();
+        });
+        else if (act === 'reset') run(async () => {
+            if (!emailVal()) throw { code: 'auth/invalid-email' };
+            await sendPasswordResetEmail(auth, emailVal());
+            status('If there’s an account for ' + emailVal() + ', a reset link is on its way. Check your inbox.', 'ok');
+        });
+        else if (act === 'link') run(async () => {
+            if (!emailVal()) throw { code: 'auth/invalid-email' };
+            await sendSignInLinkToEmail(auth, emailVal(), { url: signInLinkUrl(), handleCodeInApp: true });
+            try { localStorage.setItem(EMAIL_FOR_LINK_KEY, emailVal()); } catch (e) { /* private mode */ }
+            status('Link sent to ' + emailVal() + '. Open it on this device to finish signing in.', 'ok');
+        });
+    });
+    $('dpSignInForm').addEventListener('submit', e => {
+        e.preventDefault();
+        run(async () => {
+            if (!emailVal()) throw { code: 'auth/invalid-email' };
+            await signInWithEmailAndPassword(auth, emailVal(), passVal());
+            window.dpCloseSignIn();
+        });
+    });
+    $('dpSignInFinishForm').addEventListener('submit', e => {
+        e.preventDefault();
+        run(async () => { await finishEmailLink($('dpSignInFinishEmail').value.trim()); });
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && ov.style.display === 'flex') window.dpCloseSignIn();
+    });
+    ov._status = status;
+    return ov;
+}
+
+window.dpOpenSignIn = function(mode) {
+    const ov = buildSignInOverlay();
+    const finishing = mode === 'finish-link';
+    document.getElementById('dpSignInMain').style.display   = finishing ? 'none' : '';
+    document.getElementById('dpSignInFinish').style.display = finishing ? '' : 'none';
+    document.getElementById('dpSignInSub').textContent = finishing
+        ? 'To finish, type the email address the sign-in link was sent to.'
+        : 'Your writing syncs to every device you sign in on.';
+    ov._status('');
+    ov.style.display = 'flex';
+    setTimeout(() => document.getElementById(finishing ? 'dpSignInFinishEmail' : 'dpSignInEmail')?.focus(), 30);
+};
+window.dpCloseSignIn = function() {
+    const ov = document.getElementById('dpSignInOverlay');
+    if (ov) ov.style.display = 'none';
+};
+
+async function finishEmailLink(email) {
+    if (!email) throw { code: 'auth/invalid-email' };
+    await signInWithEmailLink(auth, email, location.href);
+    try { localStorage.removeItem(EMAIL_FOR_LINK_KEY); } catch (e) { /* ignore */ }
+    // Drop the one-time code from the address bar
+    history.replaceState(null, '', location.pathname);
+    window.dpCloseSignIn();
+}
+
+// Arriving from an emailed sign-in link
+if (isSignInWithEmailLink(auth, location.href)) {
+    let saved = null;
+    try { saved = localStorage.getItem(EMAIL_FOR_LINK_KEY); } catch (e) { /* ignore */ }
+    if (saved) {
+        finishEmailLink(saved).catch(err => {
+            window.dpOpenSignIn();
+            document.getElementById('dpSignInOverlay')._status(signInMessage(err), 'error');
+        });
+    } else {
+        // Opened on a different device or browser: ask which email it was
+        const open = () => window.dpOpenSignIn('finish-link');
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', open);
+        else open();
+    }
+}
 
 window.signOutUser = async function() {
     if (!confirm('Sign out?')) return;

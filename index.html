@@ -51,7 +51,7 @@
                 <button class="nav-dropdown-item" onclick="exportData(); toggleDataMenu()">⬇ BACKUP</button>
                 <button class="nav-dropdown-item" onclick="triggerImport(); toggleDataMenu()">⬆ RESTORE</button>
                 <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
-                <button id="navSignIn" class="nav-dropdown-item" onclick="signInWithGoogle(); toggleDataMenu()" style="color:var(--neon);">⊕ SIGN IN WITH GOOGLE</button>
+                <button id="navSignIn" class="nav-dropdown-item" onclick="dpOpenSignIn(); toggleDataMenu()" style="color:var(--neon);">⊕ SIGN IN</button>
                 <div id="navUserInfo" style="display:none;">
                     <div class="nav-dropdown-item" style="display:flex;align-items:center;gap:8px;cursor:default;">
                         <img id="navAvatar" src="" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--neon);">
@@ -83,7 +83,7 @@
                 <h1 class="lp-display-xl">Your writing. <mark>Tracked.</mark> Anywhere.</h1>
                 <p class="lp-lead">A novel-drafting app that turns writing into a game: every word you write moves you toward the next boss.</p>
                 <div class="lp-actions">
-                    <button class="lp-btn lp-btn-primary" onclick="signInWithGoogle()">Sign in with Google</button>
+                    <button class="lp-btn lp-btn-primary" onclick="dpOpenSignIn()">Sign in</button>
                     <button class="lp-btn lp-btn-secondary" onclick="skipAuth()">Continue without signing in</button>
                 </div>
                 <p class="lp-small">Sign in to back up and sync across devices. By continuing you agree to our
@@ -217,7 +217,7 @@
             <h2 class="lp-display-m">Your writing. <mark>Tracked.</mark> Anywhere.</h2>
             <p class="lp-reading">Works in your browser on phone, tablet and computer, and adds to your home screen like an app. Your chapters are private to you, and you can export everything at any time.</p>
             <div class="lp-actions">
-                <button class="lp-btn lp-btn-primary" onclick="signInWithGoogle()">Sign in with Google</button>
+                <button class="lp-btn lp-btn-primary" onclick="dpOpenSignIn()">Sign in</button>
                 <button class="lp-btn lp-btn-secondary" onclick="skipAuth()">Continue without signing in</button>
             </div>
             <p class="lp-small"><a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a></p>
@@ -311,7 +311,7 @@
 
             <div id="dashSignInPrompt" style="display:none;border:2px solid var(--neon);padding:12px;margin-bottom:12px;text-align:center;">
                 <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px;">NOT SYNCING — DATA IS LOCAL ONLY</div>
-                <button onclick="signInWithGoogle()" style="width:100%;background:var(--neon);color:#000;font-weight:900;letter-spacing:2px;">⊕ SIGN IN TO SYNC</button>
+                <button onclick="dpOpenSignIn()" style="width:100%;background:var(--neon);color:#000;font-weight:900;letter-spacing:2px;">⊕ SIGN IN TO SYNC</button>
             </div>
 
             <div class="buddy-container">

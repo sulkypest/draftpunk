@@ -202,7 +202,7 @@
         const user = window.getCurrentUser && window.getCurrentUser();
         const existing = localStorage.getItem(shareKey());
         if (!user) {
-            box.innerHTML = `<button onclick="signInWithGoogle()">⊕ SIGN IN TO CREATE A SHARE LINK</button>
+            box.innerHTML = `<button onclick="dpOpenSignIn()">⊕ SIGN IN TO CREATE A SHARE LINK</button>
                 <p class="record-muted">A share link lets anyone you send it to view this report (not your writing).</p>`;
             return;
         }
