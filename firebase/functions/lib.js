@@ -162,9 +162,35 @@ function normaliseEmail(email) {
 function isValidEmail(email) {
     return typeof email === 'string' && email.length <= 254 && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 }
-// Pending codes are stored under a hash of the address, never the address
+// Gmail ignores dots and anything after '+', so ross.young1@gmail.com,
+// rossyoung1@gmail.com and rossyoung1+dp@googlemail.com are one inbox. Other
+// providers don't work like this, so their addresses are left as typed.
+const GMAIL_DOMAINS = ['gmail.com', 'googlemail.com'];
+function isGmail(email) {
+    return GMAIL_DOMAINS.includes(normaliseEmail(email).split('@')[1] || '');
+}
+function canonicalEmail(email) {
+    const e = normaliseEmail(email);
+    const at = e.lastIndexOf('@');
+    if (at < 0) return e;
+    const local = e.slice(0, at), domain = e.slice(at + 1);
+    if (!GMAIL_DOMAINS.includes(domain)) return e;
+    return local.split('+')[0].replace(/\./g, '') + '@gmail.com';
+}
+// Every address an account is known by: its own, plus each sign-in provider's
+function accountEmails(user) {
+    const list = [user && user.email].concat(((user && user.providerData) || []).map(p => p && p.email));
+    return list.filter(Boolean);
+}
+// Of several accounts that share an inbox, the oldest is the writer's original
+function pickOriginal(users) {
+    return users.slice().sort((a, b) =>
+        new Date((a.metadata && a.metadata.creationTime) || 0) - new Date((b.metadata && b.metadata.creationTime) || 0))[0] || null;
+}
+
+// Pending codes are stored under a hash of the inbox, never the address
 function emailKey(email) {
-    return crypto.createHash('sha256').update('dp-signin:' + normaliseEmail(email)).digest('hex');
+    return crypto.createHash('sha256').update('dp-signin:' + canonicalEmail(email)).digest('hex');
 }
 function newCode() {
     return String(crypto.randomInt(0, 10 ** CODE_LENGTH)).padStart(CODE_LENGTH, '0');
@@ -255,7 +281,7 @@ module.exports = {
     localParts, parseTime, inQuietHours, writingStatus, reminderDecision, reminderMessage,
     socialMessage, groupRecipients, isDeadTokenError,
     CODE_TTL_MS, CODE_MAX_ATTEMPTS, RESEND_GAP_MS, CODES_PER_HOUR, QUOTA_WARN_AT,
-    normaliseEmail, isValidEmail, emailKey, newCode, hashCode, codesMatch,
+    normaliseEmail, isValidEmail, isGmail, canonicalEmail, accountEmails, pickOriginal, emailKey, newCode, hashCode, codesMatch,
     codeRequestDecision, codeCheckDecision, utcDayKey, quotaWarningDue, signInEmail,
     accountKind, weeklySummary
 };

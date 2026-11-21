@@ -296,21 +296,48 @@ exports.verifySignInCode = onCall(callOpts, async request => {
     // Correct: the code is single-use
     await ref.delete();
 
-    let user;
-    try {
-        user = await admin.auth().getUserByEmail(email);
+    let user = await findAccount(email);
+    if (user) {
         if (user.disabled) throw new HttpsError('failed-precondition', 'disabled', { reason: 'disabled' });
-        // The writer has just proved they own the address
-        if (!user.emailVerified) await admin.auth().updateUser(user.uid, { emailVerified: true });
-    } catch (err) {
-        if (err instanceof HttpsError) throw err;
-        if (err.code !== 'auth/user-not-found') throw err;
+        // The writer has just proved they own the address. Only mark it
+        // verified when it is exactly the address they typed.
+        if (!user.emailVerified && lib.normaliseEmail(user.email) === email) {
+            await admin.auth().updateUser(user.uid, { emailVerified: true });
+        }
+    } else {
         user = await admin.auth().createUser({ email, emailVerified: true });
         logger.info('New account from sign-in code', { uid: user.uid });
     }
     const token = await admin.auth().createCustomToken(user.uid);
     return { token };
 });
+
+// The account that already belongs to this inbox, or null.
+// Exact address first. For Gmail, also any account whose address (or Google
+// sign-in address) is the same inbox written with different dots or a '+'
+// part, so a writer never lands in a new, empty account by typing their
+// address differently. If several match, the oldest is the original.
+// (Scans the user list for Gmail addresses: fine for thousands of writers;
+// at much larger scale, keep a lookup of canonical addresses instead.)
+async function findAccount(email) {
+    let exact = null;
+    try { exact = await admin.auth().getUserByEmail(email); }
+    catch (err) { if (err.code !== 'auth/user-not-found') throw err; }
+    if (!lib.isGmail(email)) return exact;
+
+    const want = lib.canonicalEmail(email);
+    const matches = [];
+    let pageToken;
+    do {
+        const page = await admin.auth().listUsers(1000, pageToken);
+        page.users.forEach(u => {
+            if (lib.accountEmails(u).some(e => lib.canonicalEmail(e) === want)) matches.push(u);
+        });
+        pageToken = page.pageToken;
+    } while (pageToken);
+    if (matches.length > 1) logger.warn('Several accounts share one Gmail inbox; using the oldest', { uids: matches.map(u => u.uid) });
+    return lib.pickOriginal(matches) || exact;
+}
 
 // ── Weekly numbers, to Ross only ────────────────────────────────────────────
 exports.weeklyNumbers = onSchedule({ schedule: 'every monday 09:00', timeZone: 'Europe/London', secrets: [ADMIN_UID] }, async () => {
