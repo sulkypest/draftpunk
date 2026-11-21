@@ -2,7 +2,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, deleteUser }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-    getFirestore, doc, setDoc, getDoc, deleteDoc, writeBatch,
+    getFirestore, doc, setDoc, getDoc, deleteDoc, writeBatch, deleteField,
     collection, query, orderBy, limit, where, getDocs, arrayUnion, arrayRemove, onSnapshot
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { initializeAppCheck, ReCaptchaV3Provider }
@@ -108,7 +108,12 @@ let currentUser = undefined; // undefined = auth not yet resolved; null = resolv
 let syncTimeout = null;
 
 // ── Push local data up to Firestore ──────────────────────────────────────────
+// Set when the cloud copy couldn't be read on load, so a possibly older copy
+// on this device is never pushed over it. Cleared on the next page load.
+let pushPaused = false;
+
 async function pushToCloud(user) {
+    if (pushPaused) throw new Error('Cloud backup paused: the cloud copy could not be read on load.');
     // Stamp the cloud copy with the SAME timestamp the local copy carries, so
     // after a push the two compare as equal. (Previously this used Date.now(),
     // which made the cloud look newer than local after every push — the next
@@ -119,13 +124,27 @@ async function pushToCloud(user) {
         stamp = Date.now();
         _setItem('dpLastUpdated', String(stamp));
     }
-    const payload = { updatedAt: stamp };
+    const data = {};
     DATA_KEYS.forEach(k => {
         const raw = localStorage.getItem(k);
-        payload[k] = raw ? JSON.parse(raw) : null;
+        data[k] = raw ? JSON.parse(raw) : null;
     });
+
+    // PRIVACY MIGRATION, STEP 3: projects, notes, beat notes, characters, Word
+    // Runner and the streak are saved ONLY to the owner-only record. It's saved
+    // first; if it fails, nothing else is written and the sync dot shows the
+    // error (the work is still safe on this device).
+    const privatePayload = { updatedAt: stamp };
+    DATA_KEYS.forEach(k => { privatePayload[k] = data[k]; });
+    await setDoc(doc(db, 'users', user.uid, 'private', 'data'), privatePayload, { merge: true });
+
+    // The public profile now carries only what the leaderboard, groups and
+    // friends need: word totals, period counts, name and photo. It no longer
+    // carries updatedAt, so a cleared profile can never look newer than the
+    // owner-only copy (to this code or to an older cached copy of the app).
+    const payload = {};
     // Compute totals across all projects for leaderboard fields
-    const dpData   = payload.draftPunkData || {};
+    const dpData   = data.draftPunkData || {};
     const projects = Object.values(dpData.projects || {});
     payload.totalWords     = projects.reduce((s, p) => s + (p.total          || 0), 0);
     // Only count a project's period words if they belong to the current period
@@ -143,26 +162,21 @@ async function pushToCloud(user) {
     payload.photoURL       = user.photoURL    || '';
     await setDoc(doc(db, 'users', user.uid), payload, { merge: true });
 
-    // PRIVACY MIGRATION, STEP 2 (copy only): also keep an identical copy of the
-    // private material, with the same timestamp, in an owner-only record. The
-    // profile copy above is unchanged and still complete. If this copy can't be
-    // saved, nothing else is affected.
-    const privatePayload = { updatedAt: stamp };
-    DATA_KEYS.forEach(k => { privatePayload[k] = payload[k]; });
+    // Once per visit: read the owner-only record back, and only if it matches
+    // exactly what was just saved, remove the old public copy (see below).
     try {
-        await setDoc(doc(db, 'users', user.uid, 'private', 'data'), privatePayload, { merge: true });
         await verifyPrivateCopy(user, privatePayload);
     } catch (err) {
-        console.warn('Private copy not saved (profile copy is fine):', err);
+        console.warn('Private copy check failed (nothing removed):', err);
     }
     setSyncStatus('synced');
 }
 
 // Once per visit, read the private copy back and check it matches exactly what
-// was just saved. If it does, stamp the profile with privateCopyVerifiedAt so
-// it's visible in the Firestore console which writers are safely migrated
-// (needed before the old copy can ever be removed). Only that one field is
-// written — updatedAt and everything else in the profile are untouched.
+// was just saved. Only if it does: stamp the profile with privateCopyVerifiedAt
+// and publicCopyClearedAt (visible in the Firestore console), and remove the
+// old public copy of the private fields. If the check fails or can't run,
+// nothing is removed and it's tried again next visit.
 let privateCopyVerified = false;
 // JSON with object keys sorted, so the comparison doesn't depend on the order
 // Firestore happens to return fields in
@@ -179,7 +193,14 @@ async function verifyPrivateCopy(user, expected) {
     const same = (saved.updatedAt === expected.updatedAt) &&
         DATA_KEYS.every(k => canonical(saved[k] ?? null) === canonical(expected[k] ?? null));
     if (!same) { console.warn('Private copy did not match; not marking as verified.'); return; }
-    await setDoc(doc(db, 'users', user.uid), { privateCopyVerifiedAt: Date.now() }, { merge: true });
+    // PRIVACY MIGRATION, STEP 3 (clean-up): the owner-only record has just
+    // been read back and matches exactly, so remove the old copies of the
+    // private material from the public profile, which any signed-in user can
+    // read. Only those six fields are removed; the username, friends, word
+    // totals and everything else in the profile are untouched.
+    const clear = { privateCopyVerifiedAt: Date.now(), publicCopyClearedAt: Date.now(), updatedAt: deleteField() };
+    DATA_KEYS.forEach(k => { clear[k] = deleteField(); });
+    await setDoc(doc(db, 'users', user.uid), clear, { merge: true });
     privateCopyVerified = true;
 }
 
@@ -191,17 +212,26 @@ async function pullFromCloud(user) {
         return false;
     }
     // Use whichever cloud copy is newer: the profile copy, or the owner-only
-    // private copy (step 2 of the privacy migration). When they're equal, or the
-    // private copy is missing or can't be read, the profile copy is used,
-    // exactly as before.
+    // private copy. Once a writer's old public copy has been cleared (step 3)
+    // the profile has no writing data and no updatedAt, so the owner-only copy
+    // always wins. Writers not yet cleared work exactly as before.
     let cloud = snap.data();
     try {
         const privSnap = await getDoc(doc(db, 'users', user.uid, 'private', 'data'));
         if (privSnap.exists()) {
             const priv = privSnap.data();
-            if ((priv.updatedAt || 0) > (cloud.updatedAt || 0)) cloud = priv;
+            if ((priv.updatedAt || 0) >= (cloud.updatedAt || 0)) cloud = priv;
         }
     } catch (err) {
+        if (snap.data().publicCopyClearedAt) {
+            // The only cloud copy of this writer's projects and notes couldn't
+            // be read. Don't overwrite it with whatever this device has: pause
+            // cloud backup for this visit (work still saves on this device).
+            console.warn('Private copy not read; cloud backup paused for this visit:', err);
+            pushPaused = true;
+            setSyncStatus('error');
+            return false;
+        }
         console.warn('Private copy not read (using profile copy):', err);
     }
     const localTime = parseInt(localStorage.getItem('dpLastUpdated') || '0');
@@ -232,7 +262,10 @@ function schedulePush() {
     localStorage.setItem('dpLastUpdated', Date.now().toString());
     setSyncStatus('pending');
     clearTimeout(syncTimeout);
-    syncTimeout = setTimeout(() => pushToCloud(currentUser), 2500);
+    syncTimeout = setTimeout(() => pushToCloud(currentUser).catch(err => {
+        console.warn('Cloud backup failed (saved on this device):', err);
+        setSyncStatus('error');
+    }), 2500);
 }
 window.schedulePush = schedulePush;
 
