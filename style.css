@@ -2423,7 +2423,14 @@ body.write-focus .write-chapter.write-focus-target .write-toolbar { position: st
     text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 0.875rem;
     text-decoration: underline; text-underline-offset: 3px;
 }
-.dp-signin-note { font-size: 0.75rem; color: var(--text-dim); line-height: 1.5; margin: 12px 0 0; }
+.dp-signin-wide { width: 100%; margin: 4px 0 0; }
+#dpSignInPwToggle { margin-top: 10px; }
+#dpSignInPwForm { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+#dpSignInPwForm .dp-signin-link { margin-top: 8px; }
+input.dp-signin-code {
+    font-size: 1.6rem; letter-spacing: 0.35em; text-align: center;
+    font-variant-numeric: tabular-nums; padding: 12px 8px;
+}
 .dp-signin-status { font-size: 0.875rem; line-height: 1.5; margin: 14px 0 0; }
 .dp-signin-status:empty { display: none; }
 .dp-signin-status.is-error { color: var(--red-ink); }

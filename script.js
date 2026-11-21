@@ -707,14 +707,8 @@ window.showDashboard = function() {
 window.wantsDashboard = function() {
     return new URLSearchParams(window.location.search).has('dashboard');
 };
-// While an emailed sign-in link is being completed (sync.js), stay on this
-// page: leaving it would abandon the link's one-time code.
-window.dpEmailLinkPending = function() {
-    return !!window.__dpFinishingEmailLink ||
-        (/[?&]mode=signIn(&|$)/.test(window.location.search) && /[?&]oobCode=/.test(window.location.search));
-};
 window.goHome = function() {
-    if (window.wantsDashboard() || window.dpEmailLinkPending()) window.showDashboard();
+    if (window.wantsDashboard()) window.showDashboard();
     else window.location.replace('write.html');
 };
 
