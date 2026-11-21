@@ -68,18 +68,79 @@
     <input type="file" id="importFileInput" accept=".json" onchange="importData(event)" style="display:none;">
 
     <div id="authScreen">
-        <h1>DRAFT PUNK</h1>
-        <img id="authLogo" src="DRAFTPUNK.png" alt="Draft Punk Logo">
-        <p style="font-size:0.75rem;opacity:0.5;letter-spacing:1px;margin-bottom:20px;">YOUR WRITING. TRACKED. ANYWHERE.</p>
-        <button onclick="signInWithGoogle()" style="width:100%;margin-bottom:10px;">⊕ SIGN IN WITH GOOGLE</button>
-        <button onclick="skipAuth()" class="install-btn" style="color:#555;border-color:#333;">CONTINUE WITHOUT SIGNING IN</button>
-        <p style="font-size:0.65rem;opacity:0.3;margin-top:16px;line-height:1.6;">Sign in to back up and sync across devices.</p>
-        <p style="font-size:0.6rem;opacity:0.25;margin-top:12px;line-height:1.8;">
-            By continuing you agree to our
-            <a href="terms.html" style="color:inherit;text-decoration:underline;">Terms of Service</a>
-            and
-            <a href="privacy.html" style="color:inherit;text-decoration:underline;">Privacy Policy</a>
-        </p>
+        <!-- Signed-out landing: sign-in first (returning writers need nothing
+             else), then what Draft Punk does, for visitors who are new. -->
+        <section class="landing-hero">
+            <h1>DRAFT PUNK</h1>
+            <img id="authLogo" src="DRAFTPUNK.png" alt="Draft Punk Logo">
+            <p class="landing-tagline">YOUR WRITING. TRACKED. ANYWHERE.</p>
+            <button onclick="signInWithGoogle()" style="width:100%;margin-bottom:10px;">⊕ SIGN IN WITH GOOGLE</button>
+            <button onclick="skipAuth()" class="install-btn" style="color:#555;border-color:#333;">CONTINUE WITHOUT SIGNING IN</button>
+            <p style="font-size:0.65rem;opacity:0.3;margin-top:16px;line-height:1.6;">Sign in to back up and sync across devices.</p>
+            <p style="font-size:0.6rem;opacity:0.25;margin-top:12px;line-height:1.8;">
+                By continuing you agree to our
+                <a href="terms.html" style="color:inherit;text-decoration:underline;">Terms of Service</a>
+                and
+                <a href="privacy.html" style="color:inherit;text-decoration:underline;">Privacy Policy</a>
+            </p>
+            <a class="landing-more" href="#landingFeatures">WHAT IS DRAFT PUNK? ↓</a>
+        </section>
+
+        <div class="landing-features" id="landingFeatures">
+            <section class="landing-feature">
+                <div class="landing-copy">
+                    <div class="landing-label">01 · WRITE</div>
+                    <h2>Draft your novel, chapter by chapter.</h2>
+                    <p>A distraction-free editor with version history for every chapter. Export a standard manuscript as Word, PDF or RTF whenever you need it.</p>
+                </div>
+                <img class="landing-shot" src="landing/write.webp" alt="The Write page: a chapter open in the editor" loading="lazy" width="300" height="600">
+            </section>
+
+            <section class="landing-feature">
+                <div class="landing-copy">
+                    <div class="landing-label">02 · TRACK &amp; PLAY</div>
+                    <h2>Your draft is the game.</h2>
+                    <p>Set a word goal and a deadline. Every word moves you along the map: bosses at each story beat, minions on the way, ranks as you level up. Daily streaks, streak freezes and reminders keep you going.</p>
+                </div>
+                <img class="landing-shot" src="landing/dashboard.webp" alt="The dashboard: a stage map with the next boss and words to go" loading="lazy" width="300" height="600">
+            </section>
+
+            <section class="landing-feature">
+                <div class="landing-copy">
+                    <div class="landing-label">03 · SPRINT</div>
+                    <h2>Word Runner.</h2>
+                    <p>Timed writing sprints from 5 to 60 minutes. Finish one to rescue a buddy for your project.</p>
+                </div>
+                <img class="landing-shot" src="landing/wordrunner.webp" alt="Word Runner: choose a sprint length" loading="lazy" width="300" height="600">
+            </section>
+
+            <section class="landing-feature">
+                <div class="landing-copy">
+                    <div class="landing-label">04 · TOGETHER</div>
+                    <h2>Write alongside friends.</h2>
+                    <p>Add writing friends, share chapters with them, and see who's written most on the weekly leaderboard.</p>
+                </div>
+                <img class="landing-shot" src="landing/groups.webp" alt="Writing groups: friends and their word counts" loading="lazy" width="300" height="600">
+            </section>
+
+            <section class="landing-feature">
+                <div class="landing-copy">
+                    <div class="landing-label">05 · WRITING RECORD</div>
+                    <h2>Show how your words arrived.</h2>
+                    <p>Draft Punk records how text came into each chapter: typed, dictated, pasted or imported. Export the record, or share it with a read-only link.</p>
+                </div>
+                <img class="landing-shot" src="landing/record.webp" alt="The Writing Record: how much of the text was typed" loading="lazy" width="300" height="600">
+            </section>
+
+            <section class="landing-closer">
+                <p>Works in your browser on phone, tablet and computer, and adds to your home screen like an app. Your chapters are private to you, and you can export everything at any time.</p>
+                <button onclick="signInWithGoogle()" style="width:100%;margin-bottom:10px;">⊕ SIGN IN WITH GOOGLE</button>
+                <button onclick="skipAuth()" class="install-btn" style="color:#555;border-color:#333;">CONTINUE WITHOUT SIGNING IN</button>
+                <p class="landing-legal">
+                    <a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a>
+                </p>
+            </section>
+        </div>
     </div>
 
     <div id="setup" class="setup-screen" style="display:none;">
