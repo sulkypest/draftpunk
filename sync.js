@@ -381,7 +381,7 @@ async function renderRecoverySection(user) {
         <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px;">RECOVERED COPIES (${count})</div>
         <p style="font-size:0.875rem;color:var(--text-dim);letter-spacing:1px;margin:0 0 8px;line-height:1.5;">
             When the same thing was edited on two devices, the newer edit was kept. These are the other versions.</p>
-        <button id="dpRecoveryBtn" style="width:100%;margin-bottom:6px;background:#333;">⬇ DOWNLOAD RECOVERED COPIES</button>`;
+        <button class="btn-secondary" id="dpRecoveryBtn" style="width:100%;margin-bottom:6px;">⬇ DOWNLOAD RECOVERED COPIES</button>`;
     document.getElementById('dpRecoveryBtn').onclick = () => {
         const blob = new Blob([recoveriesAsText(entries)], { type: 'text/plain' });
         const a = document.createElement('a');
@@ -787,8 +787,8 @@ async function showAccountOverlay() {
             <div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 16px;"></div>
             <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:12px;">DANGER ZONE</div>
 
-            <button id="dpResetBtn" onclick="window._dpResetCloudData()"
-                style="width:100%;margin-bottom:6px;background:#333;">
+            <button class="btn-secondary" id="dpResetBtn" onclick="window._dpResetCloudData()"
+                style="width:100%;margin-bottom:6px;">
                 ⚠ RESET CLOUD DATA
             </button>
             <p style="font-size:0.875rem;color:var(--text-dim);letter-spacing:1px;margin:0 0 14px;line-height:1.5;">

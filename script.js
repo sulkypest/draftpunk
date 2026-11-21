@@ -660,7 +660,7 @@ window.showProjectSwitcher = function() {
                 ${isActive
                     ? '<span style="font-size:0.75rem;color:var(--neon);white-space:nowrap;">ACTIVE</span>'
                     : `<button onclick="switchProject('${id}')" style="font-size:0.75rem;padding:5px 9px;white-space:nowrap;">SWITCH</button>
-                       <button onclick="deleteProject('${id}')" style="font-size:0.75rem;padding:5px 9px;background:#333;white-space:nowrap;">✕</button>`
+                       <button class="btn-secondary" onclick="deleteProject('${id}')" style="font-size:0.75rem;padding:5px 9px;white-space:nowrap;">✕</button>`
                 }
             </div>`;
         }).join('');

@@ -67,7 +67,7 @@
                 <img id="wrBuddySprite" class="boss-sprite" src="buddies/buddy1.png">
                 <div style="flex:1;">
                     <div id="wrMissionName">SELECT A MISSION</div>
-                    <div class="bar-container" style="height:10px;margin-bottom:0;border-color:#333;">
+                    <div class="bar-container" style="height:10px;margin-bottom:0;">
                         <div id="wrCaptivityBar" class="bar-fill" style="background:red;width:100%;transition:width 0.3s;"></div>
                     </div>
                 </div>
@@ -133,7 +133,7 @@
             <div id="textareaSection" class="hidden">
                 <textarea id="sprintText" class="sprint-textarea" placeholder="Write or paste your words here..." oninput="onSprintInput()"></textarea>
                 <div style="display:flex;gap:10px;margin-top:10px;">
-                    <button id="abandonBtn" onclick="stopSprint()" style="background:#333;flex:1;">ABANDON SPRINT</button>
+                    <button class="btn-secondary" id="abandonBtn" onclick="stopSprint()" style="flex:1;">ABANDON SPRINT</button>
                     <button id="copyBtn" class="hidden" onclick="copySprintText()" style="flex:1;">COPY TEXT</button>
                 </div>
             </div>
@@ -150,7 +150,7 @@
             <div id="wrWinMessage" style="font-size:0.85rem;margin:8px 0;white-space:pre-line;line-height:1.5;"></div>
             <div style="display:flex;gap:10px;margin-top:12px;">
                 <button id="wrAddToWriteBtn" onclick="addSprintToWrite()" style="flex:1;">+ ADD TO WRITE</button>
-                <button onclick="closeWinOverlay()" style="flex:1;background:#333;">CLOSE</button>
+                <button class="btn-secondary" onclick="closeWinOverlay()" style="flex:1;">CLOSE</button>
             </div>
         </div>
     </div>

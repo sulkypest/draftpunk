@@ -79,8 +79,8 @@
                 </div>
                 <button id="syncWordsBtn" onclick="syncAndSave()" style="width:100%;margin-top:10px;">SYNC AND SAVE</button>
                 <a href="record.html" class="write-record-link">✎ WRITING RECORD</a>
-                <button onclick="exportStory()" style="width:100%;margin-top:8px;background:#333;">⬇ EXPORT STORY</button>
-                <button onclick="triggerImportStory()" style="width:100%;margin-top:8px;background:#333;">⬆ IMPORT STORY</button>
+                <button class="btn-secondary" onclick="exportStory()" style="width:100%;margin-top:8px;">⬇ EXPORT STORY</button>
+                <button class="btn-secondary" onclick="triggerImportStory()" style="width:100%;margin-top:8px;">⬆ IMPORT STORY</button>
                 <button class="write-deleted-link" onclick="openRecentlyDeleted()">↺ RECENTLY DELETED</button>
                 <input type="file" id="importStoryFile" accept=".rtf,.txt,.html,.htm" style="display:none" onchange="importStory(event)">
             </div>
@@ -92,7 +92,7 @@
             <h2 style="color:var(--neon);margin-bottom:6px;">RECENTLY DELETED</h2>
             <p style="font-size:0.875rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:14px;line-height:1.5;">RESTORED CHAPTERS GO BACK AT THE END OF YOUR STORY.</p>
             <div id="deletedList"></div>
-            <button onclick="closeRecentlyDeleted()" style="width:100%;margin-top:14px;background:#333;">CLOSE</button>
+            <button class="btn-secondary" onclick="closeRecentlyDeleted()" style="width:100%;margin-top:14px;">CLOSE</button>
         </div>
     </div>
 
@@ -114,7 +114,7 @@
             <p id="shareMsg" style="font-size:0.75rem;height:1.2em;margin-bottom:12px;letter-spacing:1px;"></p>
             <div style="display:flex;gap:10px;">
                 <button onclick="confirmShare()" style="flex:1;">⤴ SHARE</button>
-                <button onclick="closeShareOverlay()" style="flex:1;background:#333;">CANCEL</button>
+                <button class="btn-secondary" onclick="closeShareOverlay()" style="flex:1;">CANCEL</button>
             </div>
             <p style="font-size:0.875rem;color:var(--text-dim);margin-top:14px;line-height:1.5;letter-spacing:1px;">SHARED CHAPTERS ARE READ-ONLY FOR THE RECIPIENT.</p>
         </div>

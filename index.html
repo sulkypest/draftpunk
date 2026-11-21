@@ -305,11 +305,11 @@
             <div class="input-zone">
                 <input type="number" id="wordIn" placeholder="WORDS">
                 <button onclick="addWords()">ADD</button>
-                <button onclick="showCorrectWords()" style="background:#333;">CORRECT</button>
+                <button class="btn-secondary" onclick="showCorrectWords()" >CORRECT</button>
                 <button onclick="showGrenade()" style="background:#ff4500; color:#fff;">GRENADE</button>
             </div>
 
-            <div id="dashSignInPrompt" style="display:none;border:1px solid #333;padding:12px;margin-bottom:12px;text-align:center;">
+            <div id="dashSignInPrompt" style="display:none;border:2px solid var(--neon);padding:12px;margin-bottom:12px;text-align:center;">
                 <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px;">NOT SYNCING — DATA IS LOCAL ONLY</div>
                 <button onclick="signInWithGoogle()" style="width:100%;background:var(--neon);color:#000;font-weight:900;letter-spacing:2px;">⊕ SIGN IN TO SYNC</button>
             </div>
@@ -323,8 +323,8 @@
             </div>
             <button class="install-btn hidden" onclick="installApp()" style="margin-top:20px;">+ ADD TO HOME SCREEN</button>
             <div style="display:flex;gap:10px;margin-top:10px;">
-                <button onclick="showProjectSettings()" style="background:#333;flex:1;font-size:0.75rem;">EDIT PROJECT</button>
-                <button onclick="showProjectSwitcher()" style="background:#333;flex:1;font-size:0.75rem;">PROJECTS <span id="projectCountLabel" style="color:var(--text-dim);"></span></button>
+                <button class="btn-secondary" onclick="showProjectSettings()" style="flex:1;font-size:0.75rem;">EDIT PROJECT</button>
+                <button class="btn-secondary" onclick="showProjectSwitcher()" style="flex:1;font-size:0.75rem;">PROJECTS <span id="projectCountLabel" style="color:var(--text-dim);"></span></button>
             </div>
         </div>
 
@@ -397,7 +397,7 @@
                 <input type="date" id="editDeadline"></label>
                 <div style="display:flex;gap:10px;">
                     <button onclick="saveProjectSettings()" style="flex:1;">SAVE</button>
-                    <button onclick="closeProjectSettings()" style="flex:1;background:#333;">CANCEL</button>
+                    <button class="btn-secondary" onclick="closeProjectSettings()" style="flex:1;">CANCEL</button>
                 </div>
             </div>
         </div>
@@ -408,7 +408,7 @@
             <h2 style="color:var(--neon);margin-bottom:20px;">PROJECTS</h2>
             <div id="projectList"></div>
             <button onclick="showNewProjectForm()" style="width:100%;margin-top:12px;">+ NEW PROJECT</button>
-            <button onclick="closeProjectSwitcher()" style="width:100%;margin-top:8px;background:#333;">CLOSE</button>
+            <button class="btn-secondary" onclick="closeProjectSwitcher()" style="width:100%;margin-top:8px;">CLOSE</button>
         </div>
     </div>
 
@@ -439,7 +439,7 @@
             <input type="number" id="correctInput" placeholder="TOTAL WORDS" style="width:100%;box-sizing:border-box;margin-bottom:12px;">
             <div style="display:flex;gap:10px;">
                 <button onclick="applyCorrection()" style="flex:1;">APPLY</button>
-                <button onclick="closeCorrectOverlay()" style="flex:1;background:#333;">CANCEL</button>
+                <button class="btn-secondary" onclick="closeCorrectOverlay()" style="flex:1;">CANCEL</button>
             </div>
         </div>
     </div>

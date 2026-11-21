@@ -207,7 +207,7 @@ export async function renderNotificationSettings(container) {
             MESSAGES, FRIENDS &amp; SHARES
         </label>
         <p style="${small}">Nothing is sent between 10pm and 8am. On for this device${others ? ` and ${others} other${others > 1 ? 's' : ''}` : ''}; settings apply to all your devices.</p>
-        <button id="dpNotifyOff" style="width:100%;background:#333;">TURN OFF ON THIS DEVICE</button>${err}`;
+        <button class="btn-secondary" id="dpNotifyOff" style="width:100%;">TURN OFF ON THIS DEVICE</button>${err}`;
 
     const msg = container.querySelector('#dpNotifyMsg');
     const timeEl = container.querySelector('#dpRemTime');

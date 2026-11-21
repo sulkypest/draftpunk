@@ -132,8 +132,8 @@ async function loadPendingRequests() {
                 style="font-size:0.75rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">
                 ✓ ACCEPT
             </button>
-            <button data-id="${esc(req.id)}" onclick="doDecline(this.dataset.id)"
-                style="font-size:0.75rem;padding:6px 10px;letter-spacing:1px;background:#333;white-space:nowrap;">
+            <button class="btn-secondary" data-id="${esc(req.id)}" onclick="doDecline(this.dataset.id)"
+                style="font-size:0.75rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">
                 ✕ DECLINE
             </button>
         </div>

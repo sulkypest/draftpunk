@@ -108,6 +108,13 @@ h2 {
     color: var(--on-action) !important;
     border-color: var(--action) !important;
 }
+/* Second-choice buttons: outlined, fully readable (replaces the old #333 fills) */
+.btn-secondary, button.btn-secondary {
+    background: transparent !important;
+    color: var(--text) !important;
+    border: 2px solid var(--neon) !important;
+}
+.btn-secondary:hover { background: var(--neon) !important; color: var(--bg) !important; }
 mark.dp-mark { background: var(--punk-green); color: var(--on-green); padding: 0 .1em; }
 
 .app-nav {
