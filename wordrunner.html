@@ -68,7 +68,7 @@
                 <div style="flex:1;">
                     <div id="wrMissionName">SELECT A MISSION</div>
                     <div class="bar-container" style="height:10px;margin-bottom:0;">
-                        <div id="wrCaptivityBar" class="bar-fill" style="background:red;width:100%;transition:width 0.3s;"></div>
+                        <div id="wrCaptivityBar" class="bar-fill" style="background:var(--signal-red);width:100%;transition:width 0.3s;"></div>
                     </div>
                 </div>
             </div>
@@ -144,8 +144,8 @@
 
     <!-- Rescued overlay -->
     <div id="wrWinOverlay" class="overlay">
-        <div class="congrats-circle">
-            <h2 id="wrWinTitle" style="color:var(--neon);margin:0 0 6px;letter-spacing:2px;">BUDDY RESCUED!</h2>
+        <div class="congrats-circle poster poster-green">
+            <h2 id="wrWinTitle" class="poster-head">BUDDY RESCUED!</h2>
             <img id="wrRescuedSprite" src="" style="width:110px;height:110px;image-rendering:pixelated;object-fit:contain;display:block;margin:8px auto;filter:drop-shadow(0 0 10px var(--neon));">
             <div id="wrWinMessage" style="font-size:0.85rem;margin:8px 0;white-space:pre-line;line-height:1.5;"></div>
             <div style="display:flex;gap:10px;margin-top:12px;">
@@ -158,7 +158,7 @@
     <!-- Failed overlay -->
     <div id="wrFailOverlay" class="overlay" onclick="closeFailOverlay()">
         <div class="congrats-circle">
-            <h2 style="color:#ff4500;margin:0 0 10px;letter-spacing:2px;">RESCUE FAILED</h2>
+            <h2 class="poster-head poster-head-red">RESCUE FAILED</h2>
             <p style="margin:6px 0;">You wrote <strong id="wrFailWords">0</strong> of <strong id="wrFailTarget">0</strong> words.</p>
             <p style="font-size:0.85rem;color:var(--text-dim);margin:6px 0;">Your buddy is still out there.</p>
             <div style="font-size:0.75rem;color:var(--text-dim);margin-top:12px;letter-spacing:1px;">CLICK TO CONTINUE</div>
