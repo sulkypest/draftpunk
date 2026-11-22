@@ -1778,10 +1778,22 @@ window.getFriends = async function() {
         if (!userSnap.exists()) return [];
         const friends = userSnap.data().friends || [];
         if (friends.length === 0) return [];
-        const results = await Promise.all(friends.map(uid => readLeaderboardDoc(uid)));
-        return results.filter(s => s.exists())
-                      .map(s => ({ uid: s.id, ...s.data() }))
-                      .filter(u => u.username);
+        // A friend stays a friend even if their leaderboard record isn't
+        // there yet (writers who haven't opened the app since profiles became
+        // owner-only in Nov 2026, until the nightly fill creates it). Their
+        // name then comes from the usernames list, with word counts at 0.
+        // Read-only: nothing here changes anyone's friends list.
+        const results = await Promise.all(friends.map(async uid => {
+            let s = null;
+            try { s = await readLeaderboardDoc(uid); } catch (e) { s = null; }
+            if (s && s.exists() && s.data().username) return { uid, ...s.data() };
+            try {
+                const names = await getDocs(query(collection(db, 'usernames'), where('uid', '==', uid), limit(1)));
+                if (!names.empty) return { uid, username: names.docs[0].id, totalWords: 0, wordsThisWeek: 0, wordsThisMonth: 0, wordsThisYear: 0 };
+            } catch (e) { /* fall through */ }
+            return null;
+        }));
+        return results.filter(u => u && u.username);
     } catch (err) {
         return { error: err.message };
     }
