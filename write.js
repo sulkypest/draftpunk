@@ -772,7 +772,7 @@ window.openChapterMenu = function(id, btn) {
         `${opts && opts.disabled ? ' disabled' : ''} onclick="closeChapterMenu(); ${fn}">${label}</button>`;
     m.innerHTML =
         item('⛶ FOCUS MODE', `focusChapter('${id}')`) +
-        item('⤴ SHARE', `shareChapter('${id}')`) +
+        (document.body.classList.contains('dp-under-min') ? '' : item('⤴ SHARE', `shareChapter('${id}')`)) +
         '<div class="ch-menu-sep"></div>' +
         item('↑ MOVE UP', `moveChapter('${id}', -1)`, { disabled: idx === 0 }) +
         item('↓ MOVE DOWN', `moveChapter('${id}', 1)`, { disabled: idx === last }) +
@@ -892,6 +892,8 @@ let _sharingChapterId = null;
 window.shareChapter = async function(id) {
     const user = window.getCurrentUser && window.getCurrentUser();
     if (!user) { alert('Sign in to share chapters.'); return; }
+    if (window.dpAccount && !window.dpAccount.accepted()) { window.dpAccount.open(); return; }
+    if (window.dpAccount && window.dpAccount.band() === 'under-min') return;
 
     const ch = writingData.chapters.find(c => c.id === id);
     if (!ch) return;

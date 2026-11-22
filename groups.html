@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WRITING GROUPS</title>
     <link rel="icon" href="DRAFTPUNK.png" type="image/png">
-    <link rel="stylesheet" href="style.css?v=20261122c">
-    <script src="sentry.js?v=20261122c"></script>
+    <link rel="stylesheet" href="style.css?v=20261122e">
+    <script src="sentry.js?v=20261122e"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -154,22 +154,25 @@
                     <h2 id="shareViewTitle" style="color:var(--neon);margin:0 0 4px;"></h2>
                     <div id="shareViewMeta" style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;"></div>
                 </div>
-                <button class="btn-secondary" onclick="closeShareView()" style="min-width:unset;width:auto;padding:4px 10px;font-size:0.75rem;white-space:nowrap;flex-shrink:0;">✕ CLOSE</button>
+                <div style="display:flex;gap:6px;flex-shrink:0;">
+                    <button class="btn-secondary" id="shareViewReport" style="min-width:unset;width:auto;padding:4px 10px;font-size:0.75rem;white-space:nowrap;">⚑ REPORT</button>
+                    <button class="btn-secondary" onclick="closeShareView()" style="min-width:unset;width:auto;padding:4px 10px;font-size:0.75rem;white-space:nowrap;">✕ CLOSE</button>
+                </div>
             </div>
             <div id="shareViewContent" style="flex:1;overflow-y:auto;margin-top:12px;font-size:0.9rem;line-height:1.8;text-align:left;border-top:1px solid var(--border);padding-top:12px;"></div>
         </div>
     </div>
 
-    <script src="theme.js?v=20261122c"></script>
-    <script src="sidebar.js?v=20261122c"></script>
-    <script src="period-notice.js?v=20261122c"></script>
-    <script src="streak.js?v=20261122c"></script>
-    <script src="streak-ui.js?v=20261122c"></script>
-    <script src="backup.js?v=20261122c"></script>
-    <script src="friend-picker.js?v=20261122c"></script>
-    <script src="groups.js?v=20261122c"></script>
-    <script src="data-merge.js?v=20261122c"></script>
-    <script type="module" src="sync.js?v=20261122c"></script>
+    <script src="theme.js?v=20261122e"></script>
+    <script src="sidebar.js?v=20261122e"></script>
+    <script src="period-notice.js?v=20261122e"></script>
+    <script src="streak.js?v=20261122e"></script>
+    <script src="streak-ui.js?v=20261122e"></script>
+    <script src="backup.js?v=20261122e"></script>
+    <script src="friend-picker.js?v=20261122e"></script>
+    <script src="groups.js?v=20261122e"></script>
+    <script src="data-merge.js?v=20261122e"></script>
+    <script type="module" src="sync.js?v=20261122e"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js');

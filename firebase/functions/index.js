@@ -357,5 +357,117 @@ exports.weeklyNumbers = onSchedule({ schedule: 'every monday 09:00', timeZone: '
     }
     const summary = lib.weeklySummary(users, days);
     logger.info('Weekly numbers', { newWriters: summary.newWriters, total: summary.total, codes: summary.codes });
+    try { await db.collection('ops').doc('weeklyNumbers').set({ title: summary.title, body: summary.body, at: Date.now() }); }
+    catch (e) { logger.warn('Weekly numbers not saved for the admin page', { e: e.message }); }
     await notifyAdmin(summary.title, summary.body);
+});
+
+
+// ── Reports (Nov 2026) ───────────────────────────────────────────────────────
+// A writer reported a message, request, shared chapter or another writer.
+// Email the details to Sulk Media and push an alert to Ross. The item's
+// current text is looked up only for messages and shared chapters.
+const REPORTS_TO   = 'reports@draft-punk.com';   // forwarded to Ross's inbox (set up in Squarespace)
+const REPORTS_FROM = 'Draft Punk <reports@mail.draft-punk.com>';
+exports.emailReport = onDocumentCreated({ document: 'reports/{reportId}', secrets: [RESEND_API_KEY, ADMIN_UID] }, async event => {
+    const r = event.data && event.data.data();
+    if (!r) return;
+    let reporterName = '';
+    try { const u = await db.collection('users').doc(r.from).get(); reporterName = u.exists ? (u.data().username || '') : ''; } catch (e) {}
+    let item = '';
+    if (r.path && lib.reportPathAllowed(r.path)) {
+        try {
+            const d = await db.doc(r.path).get();
+            if (d.exists) {
+                const x = d.data();
+                item = r.path.startsWith('shares/')
+                    ? `Shared chapter "${x.chapterTitle || ''}" from "${x.projectTitle || ''}" by ${x.ownerUsername || x.ownerId}, ${x.wordCount || 0} words. Ask before reading the chapter itself.`
+                    : `From ${x.fromUsername || x.from}: ${x.body || ''}`;
+            }
+        } catch (e) { logger.warn('Report item lookup failed', { path: r.path, e: e.message }); }
+    }
+    const mail = lib.reportEmail(r, reporterName, item);
+    const subject = mail.subject;
+    const text = mail.text + `\n\nDeal with it in the admin area: ${SITE}admin.html`;
+    const html = mail.html + `<p style="font-family:sans-serif"><a href="${SITE}admin.html">Open the admin area</a></p>`;
+    try {
+        const res = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + RESEND_API_KEY.value(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from: REPORTS_FROM, to: [REPORTS_TO], subject, text, html })
+        });
+        if (!res.ok) logger.error('Report email failed', { status: res.status, id: event.params.reportId });
+    } catch (e) { logger.error('Report email failed', { e: e.message, id: event.params.reportId }); }
+    await notifyAdmin('DRAFT PUNK · NEW REPORT', subject.replace(/^Draft Punk report: /, ''));
+});
+
+// ── Daily housekeeping (Nov 2026) ────────────────────────────────────────────
+// 1. Deletes accounts that gave an under-13 birth date at sign-up (see
+//    lib.underageDeletionDue: an account from before the age step can never
+//    match). These accounts were blocked in the app from the moment they
+//    answered.
+// 2. Creates a leaderboard record for any writer who has a username but no
+//    record yet (writers who haven't opened the app since profiles became
+//    owner-only). Reads only the username and word count fields.
+async function deleteWholeAccount(uid) {
+    await db.recursiveDelete(db.collection('users').doc(uid));
+    const batch = db.batch();
+    batch.delete(db.collection('leaderboard').doc(uid));
+    const names  = await db.collection('usernames').where('uid', '==', uid).get();
+    names.forEach(d => batch.delete(d.ref));
+    const links  = await db.collection('evidenceShares').where('uid', '==', uid).get();
+    links.forEach(d => batch.delete(d.ref));
+    for (const f of ['from', 'to']) {
+        const reqs = await db.collection('friendRequests').where(f, '==', uid).get();
+        reqs.forEach(d => batch.delete(d.ref));
+    }
+    await batch.commit();
+    await admin.auth().deleteUser(uid);
+}
+exports.dailyHousekeeping = onSchedule({ schedule: 'every day 03:17', timeZone: 'Europe/London', secrets: [ADMIN_UID] }, async () => {
+    const now = Date.now();
+    // 1. Under-13 sign-ups
+    const deleted = [];
+    let pageToken;
+    do {
+        const page = await admin.auth().listUsers(1000, pageToken);
+        for (const u of page.users) {
+            if (Date.parse(u.metadata.creationTime) < lib.AGE_STEP_START) continue;
+            const acc = await db.collection('users').doc(u.uid).collection('private').doc('account').get();
+            if (!acc.exists || !lib.underageDeletionDue(u.metadata.creationTime, acc.data(), now)) continue;
+            try { await deleteWholeAccount(u.uid); deleted.push(u.uid); logger.info('Deleted under-13 sign-up', { uid: u.uid }); }
+            catch (e) { logger.error('Under-13 deletion failed', { uid: u.uid, e: e.message }); }
+        }
+        pageToken = page.pageToken;
+    } while (pageToken);
+    // 2. Missing leaderboard records
+    let filled = 0;
+    const profiles = await db.collection('users').select(...lib.LEADERBOARD_FIELDS).get();
+    for (const p of profiles.docs) {
+        const rec = lib.leaderboardRecord(p.data());
+        if (!rec) continue;
+        const ref = db.collection('leaderboard').doc(p.id);
+        try {
+            await db.runTransaction(async tx => { if (!(await tx.get(ref)).exists) { tx.set(ref, rec); filled++; } });
+        } catch (e) { logger.warn('Leaderboard fill failed', { uid: p.id, e: e.message }); }
+    }
+    logger.info('Daily housekeeping', { deleted: deleted.length, leaderboardFilled: filled });
+    if (deleted.length) await notifyAdmin('DRAFT PUNK · UNDER-13 ACCOUNTS DELETED', `${deleted.length} account(s) that gave an under-13 birth date at sign-up were deleted.`);
+});
+
+
+// ── Admin (Nov 2026) ─────────────────────────────────────────────────────────
+// The admin page calls this once. If the caller is Ross's account (the
+// ADMIN_UID secret), it marks the account as admin, which the database rules
+// check. Anyone else gets { admin: false } and nothing changes.
+exports.claimAdmin = onCall({ enforceAppCheck: true, secrets: [ADMIN_UID] }, async request => {
+    const uid = request.auth && request.auth.uid;
+    const adminUid = (ADMIN_UID.value() || '').trim();
+    if (!uid || !adminUid || uid !== adminUid) return { admin: false };
+    const user = await admin.auth().getUser(uid);
+    if (!(user.customClaims && user.customClaims.admin === true)) {
+        await admin.auth().setCustomUserClaims(uid, { ...(user.customClaims || {}), admin: true });
+        logger.info('Admin claim set', { uid });
+    }
+    return { admin: true };
 });

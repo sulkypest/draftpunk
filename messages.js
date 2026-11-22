@@ -111,7 +111,7 @@ function conversations() {
     const map = new Map();
     _all.forEach(m => {
         const o = otherOf(m);
-        if (!o.uid) return;
+        if (!o.uid || (window.dpIsBlocked && window.dpIsBlocked(o.uid))) return;
         const c = map.get(o.uid) || { type: 'dm', key: o.uid, name: o.username, messages: [], unread: 0 };
         c.messages.push(m);
         if (m.to === _me && !m.read) c.unread++;
@@ -278,7 +278,7 @@ function renderThread(scrollToEnd) {
     document.getElementById('threadName').textContent = title;
     document.getElementById('threadSub').innerHTML = isGroup
         ? `${(group.members || []).length} members · <button class="msg-link" onclick="toggleGroupPanel()">MEMBERS &amp; SETTINGS</button>`
-        : '';
+        : `<button class="msg-link" onclick="reportWriter('${escapeAttr(_open.uid)}', '${escapeAttr(title)}')">REPORT</button> · <button class="msg-link" onclick="blockFromThread('${escapeAttr(_open.uid)}', '${escapeAttr(title)}')">BLOCK</button>`;
 
     const box = document.getElementById('threadMessages');
     const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
@@ -302,6 +302,7 @@ function renderThread(scrollToEnd) {
                     <div class="msg-meta">
                         <span>${escapeHtml(timeOnly(m.createdAt))}${status}</span>
                         ${canDelete ? `<button class="msg-del" onclick="doDeleteMessage('${escapeAttr(m.id)}')" title="${delTitle}" aria-label="${delTitle}">✕</button>` : ''}
+                        ${!mine ? `<button class="msg-del" onclick="reportMessage('${escapeAttr(m.id)}')" title="Report this message" aria-label="Report this message">⚑</button>` : ''}
                     </div>
                 </div>
             </div>`;
@@ -369,6 +370,7 @@ function renderGroupPanel() {
     document.getElementById('groupMembers').innerHTML = (g.members || []).map(uid => `<div class="msg-member">
         <span>${escapeHtml(names[uid] || '?')}${uid === g.ownerId ? ' <em>(created the group)</em>' : ''}${uid === _me ? ' <em>(you)</em>' : ''}</span>
         ${isOwner && uid !== _me ? `<button class="msg-small" onclick="removeMember('${escapeAttr(uid)}')">REMOVE</button>` : ''}
+        ${uid !== _me ? `<button class="msg-small" onclick="reportWriter('${escapeAttr(uid)}', '${escapeAttr(names[uid] || '?')}')">REPORT</button>` : ''}
     </div>`).join('');
     if (isOwner) {
         const room = GROUP_MAX - (g.members || []).length;
@@ -479,6 +481,33 @@ window.doDeleteMessage = async function(id) {
 };
 
 // ── Formatting ────────────────────────────────────────────────────────────────
+// ── Report and block ─────────────────────────────────────────────────────────
+window.reportMessage = function(id) {
+    const isGroup = _open && _open.type === 'group';
+    const list = isGroup ? (_groupMsgs[_open.id] || []) : _all;
+    const m = list.find(x => x.id === id);
+    if (!m) return;
+    const group = currentGroup();
+    window.openReportDialog({
+        type: isGroup ? 'groupMessage' : 'message',
+        uid: m.from,
+        username: m.fromUsername || (group && (group.memberNames || {})[m.from]) || '?',
+        path: isGroup ? `groups/${_open.id}/messages/${id}` : `messages/${id}`,
+        excerpt: m.body
+    });
+};
+window.reportWriter = function(uid, username) {
+    window.openReportDialog({ type: 'writer', uid, username });
+};
+window.blockFromThread = async function(uid, username) {
+    if (await window.confirmBlock(uid, username)) closeThread();
+};
+window.onDpBlockChange = async function() {
+    await loadFriends();
+    if (_open && _open.type !== 'group' && window.dpIsBlocked(_open.uid)) closeThread();
+    refresh();
+};
+
 function escapeHtml(str) {
     return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

@@ -1,9 +1,9 @@
-const CACHE = 'draftpunk-v132';
+const CACHE = 'draftpunk-v133';
 
 const PRECACHE = [
     './',
     './index.html',
-    './style.css?v=20261122c',
+    './style.css?v=20261122e',
     './script.js',
     './fx.js',
     './sidebar.js',
