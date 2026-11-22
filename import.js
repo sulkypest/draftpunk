@@ -649,6 +649,11 @@
     };
 
     function open(mode) {
+        // A suspended account can read and export its writing, but not add to it
+        if (window.dpIsSuspended && window.dpIsSuspended()) {
+            alert('Your account is suspended, so writing can\'t be added. You can still read and export your writing.');
+            return;
+        }
         let ov = document.getElementById('importOverlay');
         if (!ov) { ov = document.createElement('div'); ov.id = 'importOverlay'; ov.className = 'export-overlay'; document.body.appendChild(ov); }
         const proj = projectTitle();

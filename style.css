@@ -2707,3 +2707,6 @@ body.dp-suspended { padding-bottom: 64px; }
 .adm-form input, .adm-form select, .adm-form textarea { padding: 8px; font-family: var(--font-mono); font-size: 0.85rem; background: var(--bg); color: var(--text); border: 1px solid var(--border-mid); width: 100%; box-sizing: border-box; letter-spacing: 0; }
 .adm-form-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .adm-form-row label { flex: 1 1 200px; }
+
+/* ── Import dialog ── */
+.imp-error { color: var(--red-ink) !important; }

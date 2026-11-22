@@ -1351,7 +1351,8 @@ window.dpAddImportedChapters = function(list) {
     const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
     const proj = dpData.projects && dpData.projects[activeProjectId];
     if (proj && counted) {
-        proj.writeWords = (proj.writeWords !== undefined ? proj.writeWords : 0) + counted;
+        // Same as a sync: the ledger total is the sum of every chapter's counted words
+        proj.writeWords = writingData.chapters.reduce((s, c) => s + (c.syncedWords || 0), 0);
         localStorage.setItem('draftPunkData', JSON.stringify(dpData));
     }
 
