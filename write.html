@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WRITE</title>
     <link rel="icon" href="DRAFTPUNK.png" type="image/png">
-    <link rel="stylesheet" href="style.css?v=20261122f">
-    <script src="sentry.js?v=20261122f"></script>
+    <link rel="stylesheet" href="style.css?v=20261122g">
+    <script src="sentry.js?v=20261122g"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -40,6 +40,7 @@
                 <button class="nav-dropdown-item" id="themeToggle" onclick="toggleTheme()">LIGHT MODE</button>
                 <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
                 <button class="nav-dropdown-item" onclick="exportData(); toggleDataMenu()">⬇ BACKUP</button>
+                <button class="nav-dropdown-item" onclick="dpRestore(); toggleDataMenu()">⬆ RESTORE</button>
                 <div style="border-top:1px solid var(--border);margin:2px 0;"></div>
                 <button id="navSignIn" class="nav-dropdown-item" onclick="dpOpenSignIn(); toggleDataMenu()" style="color:var(--neon);">⊕ SIGN IN</button>
                 <div id="navUserInfo" style="display:none;">
@@ -55,7 +56,6 @@
             </div>
         </div>
     </nav>
-    <input type="file" id="importFileInput" accept=".json" onchange="importData(event)" style="display:none;">
 
     <div class="write-focus-bar">
         <span id="focusChapterTitle" style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
@@ -81,7 +81,6 @@
                 <button class="btn-secondary" onclick="exportStory()" style="width:100%;margin-top:8px;">⬇ EXPORT STORY</button>
                 <button class="btn-secondary" onclick="triggerImportStory()" style="width:100%;margin-top:8px;">⬆ IMPORT STORY</button>
                 <button class="write-deleted-link" onclick="openRecentlyDeleted()">↺ RECENTLY DELETED</button>
-                <input type="file" id="importStoryFile" accept=".rtf,.txt,.html,.htm" style="display:none" onchange="importStory(event)">
             </div>
         </div>
     </div>
@@ -119,23 +118,24 @@
         </div>
     </div>
 
-    <script src="theme.js?v=20261122f"></script>
-    <script src="sidebar.js?v=20261122f"></script>
-    <script src="period-notice.js?v=20261122f"></script>
-    <script src="streak.js?v=20261122f"></script>
-    <script src="streak-ui.js?v=20261122f"></script>
-    <script src="data.js?v=20261122f"></script>
-    <script src="tracker.js?v=20261122f"></script>
-    <script src="evidence.js?v=20261122f"></script>
-    <script src="backup.js?v=20261122f"></script>
-    <script src="chapter-merge.js?v=20261122f"></script>
-    <script src="fx.js?v=20261122f"></script>
-    <script src="write.js?v=20261122f"></script>
-    <script src="export.js?v=20261122f"></script>
-    <script src="versions.js?v=20261122f"></script>
-    <script src="nav-height.js?v=20261122f"></script>
-    <script src="data-merge.js?v=20261122f"></script>
-    <script type="module" src="sync.js?v=20261122f"></script>
+    <script src="theme.js?v=20261122g"></script>
+    <script src="sidebar.js?v=20261122g"></script>
+    <script src="period-notice.js?v=20261122g"></script>
+    <script src="streak.js?v=20261122g"></script>
+    <script src="streak-ui.js?v=20261122g"></script>
+    <script src="data.js?v=20261122g"></script>
+    <script src="tracker.js?v=20261122g"></script>
+    <script src="evidence.js?v=20261122g"></script>
+    <script src="backup.js?v=20261122g"></script>
+    <script src="chapter-merge.js?v=20261122g"></script>
+    <script src="fx.js?v=20261122g"></script>
+    <script src="write.js?v=20261122g"></script>
+    <script src="export.js?v=20261122g"></script>
+    <script src="import.js?v=20261122g"></script>
+    <script src="versions.js?v=20261122g"></script>
+    <script src="nav-height.js?v=20261122g"></script>
+    <script src="data-merge.js?v=20261122g"></script>
+    <script type="module" src="sync.js?v=20261122g"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js');
