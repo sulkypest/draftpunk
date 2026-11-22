@@ -82,7 +82,7 @@
                     <label for="friendUsernameInput" style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);">ADD FRIEND BY USERNAME</label>
                     <div style="display:flex;gap:8px;margin-top:8px;">
                         <input type="text" id="friendUsernameInput" placeholder="USERNAME"
-                            style="flex:1;text-transform:uppercase;"
+                            style="flex:1;min-width:0;text-transform:uppercase;"
                             oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9_]/g,'')"
                             onkeydown="if(event.key==='Enter') doAddFriend()">
                         <button class="btn-primary" onclick="doAddFriend()" style="white-space:nowrap;">+ ADD</button>

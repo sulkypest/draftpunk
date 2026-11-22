@@ -2361,7 +2361,14 @@ body.write-focus .write-chapter.write-focus-target .write-toolbar { position: st
 }
 .sm-next img { height: 40px; width: 40px; object-fit: contain; display: block; }
 .sm-next-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.sm-next-name { font-size: 0.95rem; font-weight: 700; color: var(--neon); }
+.sm-next-name { font-size: 0.95rem; font-weight: 700; color: var(--neon); overflow-wrap: break-word; }
+/* Narrow phones: long encounter names get the full width, words-to-go drops below */
+@media (max-width: 400px) {
+    .sm-next { flex-wrap: wrap; row-gap: 6px; }
+    .sm-next-togo { width: 100%; text-align: left; padding-left: 52px; display: flex; align-items: baseline; gap: 8px; }
+    .sm-next-togo .sm-label { white-space: nowrap; }
+}
+.sm-next-togo { flex-shrink: 0; }
 .sm-next-togo { text-align: right; }
 .sm-next-togo > div:first-child { font-size: 1.25rem; font-weight: 900; color: var(--neon); }
 .sm-boss { margin: 12px 12px 0; display: flex; flex-direction: column; gap: 6px; }
@@ -2546,9 +2553,7 @@ input.dp-signin-code {
 
 /* Idle movement while the page is just being looked at */
 .sm-boss-sprite { display: block; width: 100%; height: 100%; background-repeat: no-repeat; }
-.sm-boss-next .sm-boss-sprite { animation: smBob 2.6s ease-in-out infinite; }
 .sm-minion.sm-is-next { animation: smNextPulse 2s ease-in-out infinite; }
-@keyframes smBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 @keyframes smNextPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(242,242,242,0); } 50% { box-shadow: 0 0 0 5px rgba(242,242,242,0.18); } }
 body.light-mode .sm-minion.sm-is-next { animation-name: smNextPulseLight; }
 @keyframes smNextPulseLight { 0%, 100% { box-shadow: 0 0 0 0 rgba(20,20,20,0); } 50% { box-shadow: 0 0 0 5px rgba(20,20,20,0.15); } }
