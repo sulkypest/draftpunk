@@ -101,8 +101,10 @@
             <div class="record-meta">${snap.author ? esc(snap.author) + ' · ' : ''}${opts.shared ? (snap.issuedBy === 'draft-punk' ? 'Issued' : 'Shared') : 'Generated'} ${esc(fmtDateTime(snap.issuedAt || snap.generatedAt))}</div>
         </div>`;
         if (opts.shared) {
+            html += `<p class="record-whatis">This is a Writing Record from Draft Punk, a writing app. It shows how the text of this project was entered as it was written: typed, pasted or imported.${snap.fingerprint && shareId
+                ? ` <a class="no-print" href="verify.html?share=${esc(shareId)}">Check a story against this record →</a>` : ''}</p>`;
             html += snap.issuedBy === 'draft-punk'
-                ? `<div class="record-issued"><b>✓ ISSUED BY DRAFT PUNK</b><span>Draft Punk built this report itself, on ${esc(fmtDateTime(snap.issuedAt))}, from the record saved in the writer’s account. The writer could not edit it.</span>${snap.fingerprint && shareId ? `<a class="record-check-link no-print" href="verify.html?share=${esc(shareId)}">CHECK A STORY AGAINST THIS RECORD →</a>` : ''}</div>`
+                ? `<div class="record-issued"><b>✓ ISSUED BY DRAFT PUNK</b><span>Draft Punk built this report itself, on ${esc(fmtDateTime(snap.issuedAt))}, from the record saved in the writer’s account. The writer could not edit it.</span></div>`
                 : `<div class="record-issued older"><b>EARLIER SHARE LINK</b><span>This link was made before Draft Punk began issuing reports itself (November 2026). Its figures were sent by the writer’s own device. The writer can update the link to have it issued by Draft Punk.</span></div>`;
         }
 
@@ -198,6 +200,10 @@
     }
 
     // ── Share controls (writer's own report only) ────────────────────────────
+    // The check page's short address on this site, e.g. draft-punk.com/verify
+    function verifyAddress() {
+        return (location.host.replace(/^www\./, '') + location.pathname.replace(/[^/]*$/, '') + 'verify');
+    }
     function shareKey() {
         const dp = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
         return 'dpRecordShare_' + (dp.activeProjectId || '');
@@ -251,6 +257,7 @@
                 <button id="recStop" class="record-stop">STOP SHARING</button>
             </div>
             ${note ? `<p class="record-share-note">${esc(note)}</p>` : ''}
+            <p class="record-muted">Whoever you send this to can check your story against it at <a href="verify" target="_blank" rel="noopener">${esc(verifyAddress())}</a>.</p>
             <p class="record-muted">The link shows the report as Draft Punk issued it. Use UPDATE TO LATEST to issue it again with your latest writing. The link also holds a fingerprint of your text, so a copy of your story can be checked against it later. The fingerprint can’t be turned back into your writing.</p>`;
         document.getElementById('recCopy').onclick = () => {
             const inp = document.getElementById('recShareUrl'); inp.select();
