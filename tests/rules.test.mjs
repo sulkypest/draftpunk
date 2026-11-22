@@ -152,9 +152,9 @@ await env.withSecurityRulesDisabled(async ctx => {
 });
 const anon = env.unauthenticatedContext().firestore();
 await t('anyone can read a share link', () => assertSucceeds(getDoc(doc(anon, 'evidenceShares/aaaaaaaaaaaaaaaaaaaaaaaa'))));
-await t('writer can't create a share link from the browser', () => assertFails(setDoc(doc(as('adult'), 'evidenceShares/bbbbbbbbbbbbbbbbbbbbbbbb'), { uid: 'adult', title: 'T' })));
-await t('writer can't rewrite their own share link', () => assertFails(setDoc(doc(as('adult'), 'evidenceShares/aaaaaaaaaaaaaaaaaaaaaaaa'), { uid: 'adult', totals: { typed: 1e9 } })));
-await t('others can't delete it', () => assertFails(deleteDoc(doc(as('teen'), 'evidenceShares/aaaaaaaaaaaaaaaaaaaaaaaa'))));
+await t('writer can\'t create a share link from the browser', () => assertFails(setDoc(doc(as('adult'), 'evidenceShares/bbbbbbbbbbbbbbbbbbbbbbbb'), { uid: 'adult', title: 'T' })));
+await t('writer can\'t rewrite their own share link', () => assertFails(setDoc(doc(as('adult'), 'evidenceShares/aaaaaaaaaaaaaaaaaaaaaaaa'), { uid: 'adult', totals: { typed: 1e9 } })));
+await t('others can\'t delete it', () => assertFails(deleteDoc(doc(as('teen'), 'evidenceShares/aaaaaaaaaaaaaaaaaaaaaaaa'))));
 await t('writer can stop sharing', () => assertSucceeds(deleteDoc(doc(as('adult'), 'evidenceShares/aaaaaaaaaaaaaaaaaaaaaaaa'))));
 await t('writer can still save Writing Record figures', () => assertSucceeds(setDoc(doc(as('teen'), 'users/teen/evidence/ch1'), { projectId: 'p', devices: { d: { typed: 1 } } }, { merge: true })));
 await t('writer can still read their share list', () => assertSucceeds(getDoc(doc(as('teen'), 'users/teen/evidence/_shares'))));
