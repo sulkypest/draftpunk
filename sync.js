@@ -586,7 +586,7 @@ const MIN_AGE = 16;            // social features
 const MIN_AGE_ACCOUNT = 13;    // any new account
 // Accounts created on or after this moment must answer before using the app.
 // SET TO THE LIVE RELEASE DATE when this ships.
-const AGE_STEP_START = Date.parse('2026-11-23T00:00:00Z');
+const AGE_STEP_START = Date.parse('2026-11-22T17:02:00Z');
 const SOCIAL_PAGES = ['groups.html', 'messages.html'];
 function isSocialPage() { return SOCIAL_PAGES.includes(location.pathname.split('/').pop()); }
 function ageFromYM(y, m) {
@@ -967,6 +967,14 @@ window.dpAdmin = {
         try { const s = await getDoc(doc(db, 'ops', 'weeklyNumbers')); return s.exists() ? s.data() : null; } catch (e) { return null; }
     }
 };
+
+// A writer's leaderboard record (username and word counts). Until the
+// Nov 2026 database rules are live it can't be read, so fall back to their
+// profile record, which other writers could read under the old rules.
+async function readLeaderboardDoc(uid) {
+    try { return await getDoc(doc(db, 'leaderboard', uid)); }
+    catch (e) { return getDoc(doc(db, 'users', uid)); }
+}
 
 // ── Friend request badge ──────────────────────────────────────────────────────
 function updateRequestBadge(count) {
@@ -1635,8 +1643,11 @@ window.getLeaderboard = async function(field = 'totalWords') {
     try {
         // Query directly by the requested field so period leaderboards
         // aren't limited to users who happen to have high total words.
-        const q    = query(collection(db, 'leaderboard'), orderBy(field, 'desc'), limit(50));
-        const snap = await getDocs(q);
+        // Until the Nov 2026 database rules are live, the leaderboard
+        // collection can't be read yet: fall back to the old profile records
+        let snap;
+        try { snap = await getDocs(query(collection(db, 'leaderboard'), orderBy(field, 'desc'), limit(50))); }
+        catch (e) { snap = await getDocs(query(collection(db, 'users'), orderBy(field, 'desc'), limit(50))); }
         // Counts from a period that has already ended show as 0 (and drop off),
         // even if that writer hasn't opened the app since to reset them.
         return snap.docs
@@ -1657,7 +1668,7 @@ window.getFriends = async function() {
         if (!userSnap.exists()) return [];
         const friends = userSnap.data().friends || [];
         if (friends.length === 0) return [];
-        const results = await Promise.all(friends.map(uid => getDoc(doc(db, 'leaderboard', uid))));
+        const results = await Promise.all(friends.map(uid => readLeaderboardDoc(uid)));
         return results.filter(s => s.exists())
                       .map(s => ({ uid: s.id, ...s.data() }))
                       .filter(u => u.username);
@@ -2116,7 +2127,7 @@ window.markGroupRead = async function(groupId, time) {
 window.getGroupStats = async function(group) {
     const rows = await Promise.all((group.members || []).map(async uid => {
         try {
-            const s = await getDoc(doc(db, 'leaderboard', uid));
+            const s = await readLeaderboardDoc(uid);
             const d = s.exists() ? s.data() : {};
             return { uid, username: d.username || (group.memberNames || {})[uid] || '?',
                      totalWords: d.totalWords || 0,

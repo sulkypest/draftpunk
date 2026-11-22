@@ -279,7 +279,7 @@ function weeklySummary(users, days, now = new Date()) {
 // ── Age (Nov 2026) ───────────────────────────────────────────────────────────
 // Accounts created on or after this moment had to give a birth date at
 // sign-up. SET TO THE LIVE RELEASE DATE (same as AGE_STEP_START in sync.js).
-const AGE_STEP_START = Date.parse('2026-11-23T00:00:00Z');
+const AGE_STEP_START = Date.parse('2026-11-22T17:02:00Z');
 // Same sum as the app and the database rules: whole months, rounding down,
 // so during the birth month the birthday counts as not yet reached.
 function ageFromYM(birthYear, birthMonth, now) {
