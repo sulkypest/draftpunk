@@ -15,13 +15,17 @@
 // Nothing here changes how chapters themselves are saved.
 //
 // Retention: everything from the last 24 hours, then the newest per hour for a
-// week, then the newest per day. Named versions are always kept.
+// week, then the newest per day for 30 days. Older versions are removed when
+// the chapter is next saved. Always kept, whatever their age: named versions,
+// the newest version of each chapter, and the copy saved when a chapter was
+// deleted (RECENTLY DELETED).
 (function () {
     const DB_NAME = 'draftpunk-versions';
     const STORE   = 'versions';
     const INTERVAL_MS    = 15 * 60 * 1000;
     const BIG_DELETE     = 100;   // words removed in one change
     const HOUR = 3600000, DAY = 86400000;
+    const KEEP_DAYS = 30;          // daily versions older than this are removed
 
     // ── IndexedDB ───────────────────────────────────────────────────────────
     let dbPromise = null;
@@ -130,7 +134,8 @@
         const keep = new Set(), seenHour = new Set(), seenDay = new Set();
         sorted.forEach((v, i) => {
             const age = now - v.t;
-            if (i === 0 || v.name || age < DAY) { keep.add(v.id); return; }
+            if (i === 0 || v.name || v.reason === 'chapter-deleted' || age < DAY) { keep.add(v.id); return; }
+            if (age >= KEEP_DAYS * DAY) return;
             if (age < 7 * DAY) {
                 const h = Math.floor(v.t / HOUR);
                 if (!seenHour.has(h)) { seenHour.add(h); keep.add(v.id); }
@@ -384,6 +389,7 @@
                 <input type="text" id="verName" placeholder="Name this version (optional)" maxlength="80">
                 <button id="verSaveBtn">SAVE VERSION</button>
             </div>
+            <p class="exp-note ver-keep">Versions are kept for 30 days. Name a version to keep it for good.</p>
             <div class="ver-body">
                 <div class="ver-list" id="verList"><p class="exp-note">Loading…</p></div>
                 <div class="ver-detail" id="verDetail"><p class="exp-note">Choose a version to read, compare, restore or copy from.</p></div>
