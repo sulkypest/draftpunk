@@ -474,10 +474,7 @@ function updateUI() {
     document.getElementById('loreBox').innerText = curB.lore;
     document.getElementById('tipsBox').innerText = MICRO_TIPS[Math.min(100, Math.floor(progress))];
     if (window.updateSidebar) window.updateSidebar();
-    document.getElementById('buddyCountDisplay').innerText = state.inventory.length;
-    document.getElementById('buddyGallery').innerHTML = state.inventory.map(i =>
-        `<img src="buddies/${i}" class="buddy-relic" onclick="showBuddyZoom('buddies/${i}')">`
-    ).join('');
+    renderBuddies();
 
     renderStageMap(progress, curIdx);
     rememberSeen();
@@ -750,6 +747,52 @@ function dashReplay(fromTotal, opts) {
         if (window._dpRedrawAfterReplay) { window._dpRedrawAfterReplay = false; updateUI(); }
     }, dur + 700);
 }
+
+// ── Buddies: latest finds + the full binder ─────────────────────────────────
+// Display only. The binder shows all 100 slots; buddies still to find are
+// dark silhouettes. Open/closed is remembered on this device only.
+const BUDDY_TOTAL = 100;
+function buddyName(file) {
+    const m = /buddy(\d+)\.png/.exec(file || '');
+    const b = m && typeof BUDDY_DATA !== 'undefined' ? BUDDY_DATA[parseInt(m[1], 10) - 1] : null;
+    return b ? b.name : 'Buddy';
+}
+function renderBuddies() {
+    const inv = (state.inventory || []).filter(f => /^buddy\d+\.png$/.test(f));
+    document.getElementById('buddyCountDisplay').textContent = inv.length;
+    const tot = document.getElementById('buddyTotal'); if (tot) tot.textContent = BUDDY_TOTAL;
+    const bar = document.getElementById('buddyProgress'); if (bar) bar.style.width = Math.min(100, inv.length / BUDDY_TOTAL * 100) + '%';
+    const recent = inv.slice(-8).reverse();
+    const label = document.getElementById('buddyRecentLabel');
+    if (label) label.textContent = inv.length ? 'LATEST FINDS' : 'NO BUDDIES YET · ONE EVERY 5,000 WORDS';
+    document.getElementById('buddyGallery').innerHTML = recent.map((f, i) =>
+        `<button type="button" class="bd-tile${i === 0 ? ' bd-newest' : ''}" onclick="showBuddyZoom('buddies/${f}')" aria-label="${buddyName(f)}">` +
+        `<img src="buddies/${f}" class="buddy-relic" alt=""><span>${buddyName(f)}</span></button>`).join('');
+    let open = false; try { open = localStorage.getItem('dpBinderOpen') === '1'; } catch (e) {}
+    setBinder(open, inv);
+}
+function setBinder(open, inv) {
+    const list = document.getElementById('buddyBinder'), btn = document.getElementById('buddyBinderBtn');
+    if (!list || !btn) return;
+    list.hidden = !open;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = open ? 'CLOSE BINDER ▴' : 'OPEN BINDER ▾';
+    if (!open) { list.innerHTML = ''; return; }
+    const have = new Set(inv || (state.inventory || []));
+    let html = '';
+    for (let n = 1; n <= BUDDY_TOTAL; n++) {
+        const f = `buddy${n}.png`;
+        html += have.has(f)
+            ? `<li><button type="button" onclick="showBuddyZoom('buddies/${f}')" aria-label="${buddyName(f)}"><img src="buddies/${f}" alt="" loading="lazy"></button></li>`
+            : `<li class="bd-locked" aria-hidden="true"><img src="buddies/${f}" alt="" loading="lazy"></li>`;
+    }
+    list.innerHTML = html;
+}
+window.toggleBuddyBinder = function() {
+    const open = document.getElementById('buddyBinder').hidden;
+    try { localStorage.setItem('dpBinderOpen', open ? '1' : '0'); } catch (e) {}
+    setBinder(open);
+};
 
 // A buddy in the collection hops now and then
 let _buddyHopTimer = null;
