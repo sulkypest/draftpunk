@@ -110,9 +110,9 @@
                     <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a>.</p>
             </div>
             <div class="lp-hero-art" aria-hidden="true">
-                <figure class="lp-card lp-card-a"><img src="landing/boss-3.webp" alt="" width="240" height="240"><figcaption>Boss · Setup</figcaption></figure>
-                <figure class="lp-card lp-card-b"><img src="landing/boss-9.webp" alt="" width="240" height="240"><figcaption>Boss · Midpoint</figcaption></figure>
-                <figure class="lp-card lp-card-c"><img src="landing/boss-11.webp" alt="" width="240" height="240"><figcaption>Boss · All Is Lost</figcaption></figure>
+                <figure class="lp-card lp-card-a"><img src="landing/boss-3.webp?v=2" alt="" width="240" height="240"><figcaption>Boss · Setup</figcaption></figure>
+                <figure class="lp-card lp-card-b"><img src="landing/boss-9.webp?v=2" alt="" width="240" height="240"><figcaption>Boss · Midpoint</figcaption></figure>
+                <figure class="lp-card lp-card-c"><img src="landing/boss-11.webp?v=2" alt="" width="240" height="240"><figcaption>Boss · All Is Lost</figcaption></figure>
             </div>
         </section>
         <a class="lp-more" href="#lpWrite">What is Draft Punk? ↓</a>
@@ -134,13 +134,13 @@
                     <p class="lp-reading">Set a word goal and a deadline. Every word moves you along the map: a boss at each story beat, minions on the way, ranks as you level up. Daily streaks, streak freezes and reminders keep you going.</p>
                 </div>
                 <div class="lp-boss-row" aria-label="Five of the fifteen story-beat bosses">
-                    <figure class="lp-card"><img src="landing/boss-3.webp" alt="Setup boss" loading="lazy" width="240" height="240"><figcaption>Setup</figcaption></figure>
-                    <figure class="lp-card"><img src="landing/boss-8.webp" alt="Fun and Games boss" loading="lazy" width="240" height="240"><figcaption>Fun and Games</figcaption></figure>
-                    <figure class="lp-card"><img src="landing/boss-9.webp" alt="Midpoint boss" loading="lazy" width="240" height="240"><figcaption>Midpoint</figcaption></figure>
-                    <figure class="lp-card"><img src="landing/boss-11.webp" alt="All Is Lost boss" loading="lazy" width="240" height="240"><figcaption>All Is Lost</figcaption></figure>
-                    <figure class="lp-card"><img src="landing/boss-14.webp" alt="Finale boss" loading="lazy" width="240" height="240"><figcaption>Finale</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-3.webp?v=2" alt="Setup boss" loading="lazy" width="240" height="240"><figcaption>Setup</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-8.webp?v=2" alt="Fun and Games boss" loading="lazy" width="240" height="240"><figcaption>Fun and Games</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-9.webp?v=2" alt="Midpoint boss" loading="lazy" width="240" height="240"><figcaption>Midpoint</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-11.webp?v=2" alt="All Is Lost boss" loading="lazy" width="240" height="240"><figcaption>All Is Lost</figcaption></figure>
+                    <figure class="lp-card"><img src="landing/boss-14.webp?v=2" alt="Finale boss" loading="lazy" width="240" height="240"><figcaption>Finale</figcaption></figure>
                 </div>
-                <img class="lp-shot lp-shot-band" src="landing/dashboard.webp" alt="The dashboard: a stage map with the next boss and words to go" loading="lazy" width="300" height="600">
+                <img class="lp-shot lp-shot-band" src="landing/dashboard.webp?v=2" alt="The dashboard: a stage map with the next boss and words to go" loading="lazy" width="300" height="600">
             </div>
         </section>
 
@@ -275,6 +275,11 @@
         <div class="app">
             <h1 id="wipDisplay">PROJECT</h1>
             <h2 id="lvlName">LEVEL</h2>
+            <div class="wc-display">
+                <div class="wc-display-number" id="wcMain">0</div>
+                <div class="wc-display-label">WORDS WRITTEN</div>
+                <div class="wc-display-gain" id="wcGain" aria-live="polite"></div>
+            </div>
 
             <section class="stage-map" aria-label="Stage map">
                 <div class="sm-head"><span>STAGE MAP</span><span id="smRange"></span></div>
@@ -299,28 +304,8 @@
                 </div>
             </section>
 
-            <button class="intel-btn" onclick="toggleIntel()">MICROBEAT TIPS ▾</button>
-            <div id="intelContainer" class="hidden">
-                <div id="loreBox" class="lore-container"></div>
-                <div id="tipsBox" class="tips-container"></div>
-            </div>
 
-            <div class="chart-shield">
-                <canvas id="velocityChart"></canvas>
-            </div>
 
-            <div class="wc-display">
-                <div class="wc-display-number" id="wcMain">0</div>
-                <div class="wc-display-label">WORDS WRITTEN</div>
-            </div>
-
-            <span class="bar-label">TOTAL PROGRESS</span>
-            <div class="bar-container">
-                <div id="hpBar" class="bar-fill"></div>
-                <div class="sm-ticks" id="progressTicks" aria-hidden="true"></div>
-            </div>
-            <div id="hpText">0 / 0</div>
-            <div class="sm-legend" aria-hidden="true"><span><i class="sm-key sm-key-boss"></i>BOSS</span><span><i class="sm-key"></i>MINION</span></div>
 
             <div class="input-zone">
                 <input type="number" id="wordIn" placeholder="WORDS">
@@ -328,6 +313,22 @@
                 <button class="btn-secondary" onclick="showCorrectWords()" >CORRECT</button>
                 <button onclick="showGrenade()" style="background:var(--signal-red);color:#ffffff;">GRENADE</button>
             </div>
+            <span class="bar-label">TOTAL PROGRESS</span>
+            <div class="bar-container">
+                <div id="hpBar" class="bar-fill"></div>
+                <div class="sm-ticks" id="progressTicks" aria-hidden="true"></div>
+            </div>
+            <div id="hpText">0 / 0</div>
+            <div class="sm-legend" aria-hidden="true"><span><i class="sm-key sm-key-boss"></i>BOSS</span><span><i class="sm-key"></i>MINION</span></div>
+            <button class="intel-btn" onclick="toggleIntel()">MICROBEAT TIPS ▾</button>
+            <div id="intelContainer" class="hidden">
+                <div id="loreBox" class="lore-container"></div>
+                <div id="tipsBox" class="tips-container"></div>
+            </div>
+            <div class="chart-shield">
+                <canvas id="velocityChart"></canvas>
+            </div>
+
 
             <div id="dashSignInPrompt" style="display:none;border:2px solid var(--neon);padding:12px;margin-bottom:12px;text-align:center;">
                 <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px;">NOT SYNCING — DATA IS LOCAL ONLY</div>
@@ -380,7 +381,7 @@
     <div id="levelOverlay" class="overlay" onclick="closeOverlay()">
         <div class="congrats-circle poster poster-ink">
             <h2 class="poster-head poster-head-red">BOSS BEAT DEFEATED!</h2>
-            <img id="defeatedBossSprite" src="" style="width:110px;height:110px;image-rendering:pixelated;object-fit:contain;display:block;margin:8px auto;filter:drop-shadow(0 0 10px var(--neon));">
+            <span id="defeatedBossSprite" class="sm-boss-sprite dp-boss-pop" style="width:240px;height:130px;margin:4px auto;" role="img" aria-label="Boss"></span>
             <div id="bossBeatTitle" style="font-size:1.3rem;font-weight:900;color:var(--text);margin:8px 0 4px;"></div>
             <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:1px;">CLICK TO CONTINUE</div>
         </div>
@@ -435,7 +436,7 @@
     <div id="bossZoomOverlay" class="overlay" onclick="closeBossZoom()">
         <div class="congrats-circle">
             <div style="font-size:0.75rem;letter-spacing:3px;color:var(--text-dim);margin-bottom:6px;">BOSS INTEL</div>
-            <img id="bossZoomSprite" src="" style="width:130px;height:130px;image-rendering:pixelated;object-fit:contain;filter:drop-shadow(0 0 12px var(--neon));display:block;margin:0 auto;">
+            <span id="bossZoomSprite" class="sm-boss-sprite dp-boss-pop" style="width:130px;height:130px;margin:8px auto;" role="img" aria-label="Boss"></span>
             <div id="bossZoomName" style="font-size:1rem;font-weight:900;color:var(--neon);margin:8px 0 4px;letter-spacing:2px;"></div>
             <div id="bossZoomBeat" style="font-size:0.75rem;letter-spacing:1px;color:var(--neon);color:var(--text-dim);margin-bottom:6px;"></div>
             <div id="bossZoomLore" style="font-size:0.75rem;line-height:1.5;"></div>
@@ -484,6 +485,7 @@
     <script src="buddy-data.js"></script>
     <script src="tracker.js"></script>
     <script src="backup.js"></script>
+    <script src="fx.js"></script>
     <script src="script.js"></script>
     <script src="data-merge.js"></script>
     <script type="module" src="sync.js"></script>

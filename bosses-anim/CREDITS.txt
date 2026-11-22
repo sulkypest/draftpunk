@@ -1,0 +1,6 @@
+Boss sprites: CraftPix.net character packs (licensed to Draft Punk's owner).
+Sources (one character each): flying monster, monster pack 2, monster sprites,
+land monster, 2D fantasy ghosts, elemental spirits chibi, 2D fantasy trolls,
+2D fantasy cyclops, 2D fantasy orc, 2D fantasy skeletons, 2D fantasy elemental,
+2D fantasy necromancer, 2D fantasy golems, demon of darkness chibi,
+2D fantasy demon. Rows in each sheet: idle, hurt, die (256px frames).
