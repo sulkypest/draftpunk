@@ -276,11 +276,10 @@ function queueToast(sprite, title, sub) {
 
 function pushChapter(ch) {
     if (!window.pushWritingChapterToCloud) return;
-    window.pushWritingChapterToCloud({
-        id: ch.id, title: ch.title, content: ch.content,
-        order: ch.order, wordCount: ch.wordCount, syncedWords: ch.syncedWords || 0,
-        projectId: activeProjectId, updatedAt: ch.updatedAt
-    }).catch(() => setSaveStatus('local-only'));
+    if (!navigator.onLine && localStorage.getItem('dpUserId')) { failedCloudSaves.add(ch.id); setSaveStatus('offline'); return; }
+    window.pushWritingChapterToCloud(chapterForCloud(ch))
+        .then(() => { failedCloudSaves.delete(ch.id); })
+        .catch(() => { failedCloudSaves.add(ch.id); setSaveStatus('local-only'); });
 }
 
 window.renameChapter = function(id, newTitle) {
@@ -1140,6 +1139,8 @@ function setSaveStatus(state) {
     const el = document.getElementById('writeSaveStatus');
     if (!el) return;
     clearTimeout(saveStatusTimer);
+    // With no connection, say so plainly instead of "SAVING..." that never ends
+    if (state !== 'offline' && !navigator.onLine && localStorage.getItem('dpUserId')) state = 'offline';
     if (state === 'saving') {
         el.textContent = 'SAVING...';
         el.style.color = '';
@@ -1148,6 +1149,10 @@ function setSaveStatus(state) {
         el.textContent = localStorage.getItem('dpUserId') ? 'SAVED' : 'SAVED ON THIS DEVICE';
         el.style.color = 'var(--green-ink)';
         saveStatusTimer = setTimeout(() => { el.textContent = ''; }, 2000);
+    } else if (state === 'offline') {
+        el.textContent = 'OFFLINE — SAVED ON THIS DEVICE';
+        el.style.color = 'var(--text-dim)';
+        el.title = 'Your writing is saved in this browser and will be backed up to the cloud when you\'re back online.';
     } else if (state === 'local-only') {
         el.textContent = 'SAVED LOCALLY — cloud sync failed';
         el.style.color = 'var(--red-ink)';
@@ -1157,22 +1162,36 @@ function setSaveStatus(state) {
 // ── Cloud sync ────────────────────────────────────────────────────────────────
 const cloudTimers = {};
 const pendingCloudSaves = new Set();
+// Chapters whose cloud save failed or was skipped while offline. They are
+// sent again when the connection comes back (and in any case on the next
+// sign-in, when this device's newer chapters are sent to the cloud).
+const failedCloudSaves = new Set();
+
+function chapterForCloud(ch) {
+    return {
+        id: ch.id, title: ch.title, content: ch.content,
+        order: ch.order, wordCount: ch.wordCount, syncedWords: ch.syncedWords || 0,
+        projectId: activeProjectId, updatedAt: ch.updatedAt
+    };
+}
 
 function scheduleCloudSave(ch) {
     if (!ch) return;
     pendingCloudSaves.add(ch.id);
     clearTimeout(cloudTimers[ch.id]);
     cloudTimers[ch.id] = setTimeout(async () => {
-        if (window.pushWritingChapterToCloud) {
+        if (window.pushWritingChapterToCloud && localStorage.getItem('dpUserId') && !navigator.onLine) {
+            // Offline: the chapter is saved in this browser; send it later
+            failedCloudSaves.add(ch.id);
+            setSaveStatus('offline');
+        } else if (window.pushWritingChapterToCloud) {
             try {
-                await window.pushWritingChapterToCloud({
-                    id: ch.id, title: ch.title, content: ch.content,
-                    order: ch.order, wordCount: ch.wordCount, syncedWords: ch.syncedWords || 0,
-                    projectId: activeProjectId, updatedAt: ch.updatedAt
-                });
-                setSaveStatus('saved');
+                await window.pushWritingChapterToCloud(chapterForCloud(ch));
+                failedCloudSaves.delete(ch.id);
+                setSaveStatus(failedCloudSaves.size ? 'local-only' : 'saved');
             } catch (e) {
                 console.warn('Chapter cloud save failed:', e);
+                failedCloudSaves.add(ch.id);
                 setSaveStatus('local-only');
             }
         } else {
@@ -1181,6 +1200,29 @@ function scheduleCloudSave(ch) {
         pendingCloudSaves.delete(ch.id);
     }, 800);
 }
+
+// Send again any chapters that didn't reach the cloud
+let retryingCloud = false;
+async function retryFailedCloudSaves() {
+    if (retryingCloud || !failedCloudSaves.size || !window.pushWritingChapterToCloud || !navigator.onLine) return;
+    retryingCloud = true;
+    setSaveStatus('saving');
+    try {
+        for (const id of [...failedCloudSaves]) {
+            const ch = writingData && writingData.chapters.find(c => c.id === id);
+            if (!ch) { failedCloudSaves.delete(id); continue; }
+            try { await window.pushWritingChapterToCloud(chapterForCloud(ch)); failedCloudSaves.delete(id); }
+            catch (e) { console.warn('Chapter cloud save retry failed:', e); }
+        }
+    } finally { retryingCloud = false; }
+    setSaveStatus(failedCloudSaves.size ? 'local-only' : 'saved');
+}
+window.addEventListener('online', () => {
+    if (failedCloudSaves.size) retryFailedCloudSaves();
+    else { const el = document.getElementById('writeSaveStatus'); if (el && /OFFLINE/.test(el.textContent)) el.textContent = ''; }
+    if (window.schedulePush) window.schedulePush();      // notes, projects and the rest
+});
+window.addEventListener('offline', () => setSaveStatus('offline'));
 
 // Flush any unsaved chapters immediately when the page closes
 window.addEventListener('beforeunload', () => {
@@ -1271,109 +1313,71 @@ window.setFontSize = function(size) {
 };
 
 // ── Story import ──────────────────────────────────────────────────────────────
+// The import dialog is in import.js. It shows what it found and then calls
+// dpAddImportedChapters, which only ever ADDS chapters at the end of the
+// project (new ids; nothing existing changes).
 window.triggerImportStory = function() {
-    document.getElementById('importStoryFile').value = '';
-    document.getElementById('importStoryFile').click();
+    if (window.DPImport) window.DPImport.open();
 };
 
-window.importStory = function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(ev) {
-        const raw = ev.target.result;
-        const ext = file.name.split('.').pop().toLowerCase();
-        let text;
-        if (ext === 'rtf') {
-            text = rtfToPlainText(raw);
-        } else if (ext === 'html' || ext === 'htm') {
-            const div = document.createElement('div');
-            div.innerHTML = raw;
-            text = div.innerText;
-        } else {
-            text = raw;
+// Imported words are already written, so they are marked as counted: they
+// show as imported in the Writing Record and are never added to the tracker,
+// XP, streaks or the leaderboard. proj.writeWords (the total of counted
+// words across chapters) is raised by the same amount to keep the ledger
+// consistent; the tracker total itself is not touched.
+window.dpAddImportedChapters = function(list) {
+    const added = [];
+    const now = Date.now();
+    list.forEach((item, i) => {
+        const html = sanitizeHtml(item.html || '');
+        const wc = countWords(html);
+        const order = writingData.chapters.length;
+        const ch = {
+            id: makeId() + i, title: (item.title || '').trim() || ('Chapter ' + (order + 1)),
+            order, wordCount: wc, syncedWords: wc, content: html, updatedAt: now + i
+        };
+        writingData.chapters.push(ch);
+        added.push(ch);
+        if (window.DPEvidence) {
+            const tmp = document.createElement('div'); tmp.innerHTML = html;
+            window.DPEvidence.recordNewChapter(ch.id, activeProjectId, tmp.textContent || '', 'import');
         }
-        const chapters = splitIntoChapters(text);
-        const count = chapters.length;
-        if (!confirm(`Import "${file.name}"?\n\n${count} chapter${count !== 1 ? 's' : ''} detected.\nChapters will be added to this project.`)) return;
-        chapters.forEach((ch, i) => {
-            const id = makeId();
-            const order = writingData.chapters.length;
-            const lines = ch.body.split('\n').filter(l => l.trim());
-            const html = lines.map(l => `<p>${escapeHtml(l)}</p>`).join('');
-            const wc = countWords(html);
-            writingData.chapters.push({
-                id, title: ch.title || ('Chapter ' + (order + 1)),
-                order, wordCount: wc, content: html, updatedAt: Date.now() + i
-            });
-            if (window.DPEvidence) window.DPEvidence.recordNewChapter(id, activeProjectId, lines.join(''), 'import');
-        });
-        writingData.chapters.forEach((c, i) => c.order = i);
-        saveMeta();
-        renderAll();
-        updateFooter();
-        if (window.pushWritingChapterToCloud) {
-            writingData.chapters.slice(-chapters.length).forEach(ch => window.pushWritingChapterToCloud({ ...ch, projectId: activeProjectId })
-                .catch(() => setSaveStatus('local-only')));
-        }
-        showWriteToast(null, '✓ IMPORTED', count + ' CHAPTER' + (count !== 1 ? 'S' : '') + ' ADDED');
-    };
-    reader.readAsText(file, 'utf-8');
+    });
+    if (!added.length) return 0;
+    writingData.chapters.forEach((c, i) => c.order = i);
+    saveMeta();
+
+    const counted = added.reduce((s, c) => s + c.syncedWords, 0);
+    const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+    const proj = dpData.projects && dpData.projects[activeProjectId];
+    if (proj && counted) {
+        proj.writeWords = (proj.writeWords !== undefined ? proj.writeWords : 0) + counted;
+        localStorage.setItem('draftPunkData', JSON.stringify(dpData));
+    }
+
+    renderAll();
+    updateFooter();
+    if (window.pushWritingChapterToCloud) {
+        setSaveStatus('saving');
+        Promise.all(added.map(ch => window.pushWritingChapterToCloud({ ...ch, projectId: activeProjectId })))
+            .then(() => setSaveStatus('saved'))
+            .catch(() => { added.forEach(ch => failedCloudSaves.add(ch.id)); setSaveStatus('local-only'); });
+    }
+    return added.length;
 };
 
 function escapeHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function rtfToPlainText(rtf) {
-    let s = rtf;
-    // Drop destination groups (font/colour tables, stylesheets, pictures, etc.)
-    s = s.replace(/\{\\(?:fonttbl|colortbl|stylesheet|info|pict|header|footer|object)[^{}]*(?:\{[^{}]*\}[^{}]*)*/g, '');
-    // Paragraph / line breaks → newline
-    s = s.replace(/\\(?:par|pard|sect|page)\b\s?/g, '\n');
-    s = s.replace(/\\line\b\s?/g, '\n');
-    // Tab
-    s = s.replace(/\\tab\b\s?/g, '\t');
-    // Hex escapes  \'XX
-    s = s.replace(/\\'([0-9a-fA-F]{2})/g, (_, h) => {
-        try { return decodeURIComponent('%' + h); } catch { return ''; }
-    });
-    // Unicode  \uN
-    s = s.replace(/\\u(-?\d+)\??/g, (_, n) => String.fromCharCode(parseInt(n)));
-    // Drop all remaining control words and groups
-    s = s.replace(/\\[a-zA-Z*]+[-]?\d*\s?/g, '');
-    s = s.replace(/[{}]/g, '');
-    // Tidy whitespace
-    s = s.replace(/[ \t]+/g, ' ');
-    s = s.replace(/\n{3,}/g, '\n\n');
-    return s.trim();
-}
-
-// Split plain text into chapters based on common heading patterns
-function splitIntoChapters(text) {
-    const CHAPTER_RE = /^(?:chapter|part|scene|act|prologue|epilogue|interlude)\b[^\n]*/i;
-    const lines = text.split(/\r?\n/);
-    const chapters = [];
-    let current = null;
-
-    for (const raw of lines) {
-        const line = raw.trim();
-        if (CHAPTER_RE.test(line)) {
-            if (current) chapters.push(current);
-            current = { title: line, body: '' };
-        } else {
-            if (!current) current = { title: '', body: '' };
-            current.body += (current.body ? '\n' : '') + raw;
-        }
-    }
-    if (current) chapters.push(current);
-
-    // If nothing matched, return the whole text as one chapter
-    if (chapters.length === 1 && !chapters[0].title) {
-        chapters[0].title = '';
-    }
-    return chapters.filter(c => c.body.trim() || c.title);
-}
-
 // ── Boot ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => { init(); applyWriteAreaFontSize(); });
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+    applyWriteAreaFontSize();
+    if (!navigator.onLine) setSaveStatus('offline');
+    // Data menu → RESTORE on another page brings the writer here
+    if (/[?&]restore=1/.test(location.search) && window.DPImport) {
+        history.replaceState(null, '', location.pathname);
+        window.DPImport.open('backup');
+    }
+});

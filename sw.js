@@ -1,9 +1,9 @@
-const CACHE = 'draftpunk-v134';
+const CACHE = 'draftpunk-v135';
 
 const PRECACHE = [
     './',
     './index.html',
-    './style.css?v=20261122f',
+    './style.css?v=20261122g',
     './script.js',
     './fx.js',
     './sidebar.js',
@@ -60,6 +60,7 @@ const PRECACHE = [
     './record.html',
     './record.js',
     './export.js',
+    './import.js',
     './versions.js',
     './nav-height.js',
     './friend-picker.js',
@@ -109,7 +110,10 @@ self.addEventListener('fetch', event => {
                 const clone = response.clone();
                 caches.open(CACHE).then(cache => cache.put(event.request, clone));
                 return response;
-            }).catch(() => caches.match(event.request))
+            }).catch(() => caches.match(event.request)
+                // Offline: pages ask for files with a ?v= version on the end;
+                // fall back to the precached copy saved without it
+                .then(hit => hit || caches.match(event.request, { ignoreSearch: true })))
         );
     }
 });
