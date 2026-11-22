@@ -2012,6 +2012,8 @@ body.record-page { display: block; padding: 0 16px 40px; }
 .verify-result.match b { color: var(--neon); }
 .verify-result.nomatch { border-color: #ff4444; }
 .verify-result.nomatch b { color: var(--red-ink, #c00); }
+.record-whatis { font-size: 0.85rem; line-height: 1.6; max-width: 640px; margin: 14px 0 0; }
+.record-whatis a { color: var(--neon); white-space: nowrap; }
 .record-check-link { display: inline-block; margin-top: 10px; font-size: 0.75rem; letter-spacing: 1px; color: var(--neon); }
 .record-stop { background: transparent !important; border: 1px solid #ff4444 !important; color: var(--red-ink) !important; }
 
