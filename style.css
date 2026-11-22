@@ -2596,3 +2596,8 @@ body.light-mode .sm-minion.sm-is-next { animation-name: smNextPulseLight; }
 /* Boss in the 'beat defeated' and boss-info pop-ups (same art as the map) */
 .dp-boss-pop { display: block; filter: drop-shadow(0 0 10px var(--neon)); }
 .write-toast-sprite[src*="stagemap/"], .write-toast-sprite[src*="bosses-anim/"] { image-rendering: auto; }
+
+/* Narrow phones: tighten the top-bar menus so they clear the centre logo */
+@media (max-width: 420px) {
+    .app-nav .nav-dropdown-btn { padding: 12px 8px; letter-spacing: 0; font-size: 0.7rem; }
+}
