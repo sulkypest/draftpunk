@@ -6,8 +6,8 @@
     <meta name="robots" content="noindex">
     <title>ADMIN — DRAFT PUNK</title>
     <link rel="icon" href="DRAFTPUNK.png" type="image/png">
-    <link rel="stylesheet" href="style.css?v=20261122e">
-    <script src="sentry.js?v=20261122e"></script>
+    <link rel="stylesheet" href="style.css?v=20261122f">
+    <script src="sentry.js?v=20261122f"></script>
 </head>
 <body class="sb-ready">
     <nav class="app-nav">
@@ -36,6 +36,27 @@
                 <div id="admReports"></div>
             </section>
 
+            <section class="adm-section" aria-labelledby="admNoticeHead">
+                <h2 id="admNoticeHead">NOTICES</h2>
+                <p class="adm-dim">Shown once to each writer, the next time they open the app between the start and end times. Offers can be turned off by writers; updates and competition news can't. Don't put anything secret in a scheduled notice: it's stored before it starts showing.</p>
+                <form id="admNoticeForm" class="adm-card adm-form">
+                    <label>TYPE<select name="type"><option value="update">Update</option><option value="competition">Competition</option><option value="offer">Offer</option></select></label>
+                    <label>TITLE<input name="title" maxlength="120" required></label>
+                    <label>TEXT<textarea name="body" maxlength="1500" rows="4" required></textarea></label>
+                    <div class="adm-form-row">
+                        <label>BUTTON TEXT (OPTIONAL)<input name="buttonText" maxlength="40"></label>
+                        <label>BUTTON LINK<input name="buttonUrl" maxlength="300" placeholder="groups.html or https://…"></label>
+                    </div>
+                    <div class="adm-form-row">
+                        <label>STARTS<input name="startAt" type="datetime-local" required></label>
+                        <label>ENDS (OPTIONAL)<input name="endAt" type="datetime-local"></label>
+                    </div>
+                    <div class="adm-actions"><button type="submit">SAVE NOTICE</button><button type="button" class="btn-secondary" id="admNoticePreview">PREVIEW</button></div>
+                    <p class="adm-err" id="admNoticeErr" aria-live="polite"></p>
+                </form>
+                <div id="admNotices"></div>
+            </section>
+
             <section class="adm-section" aria-labelledby="admSuspHead">
                 <h2 id="admSuspHead">SUSPENDED WRITERS</h2>
                 <p class="adm-dim">Suspended writers can sign in, read and export their writing, but can't add to it or use friends, messages, groups or sharing.</p>
@@ -49,9 +70,9 @@
         </div>
     </main>
 
-    <script src="theme.js?v=20261122e"></script>
-    <script src="data-merge.js?v=20261122e"></script>
-    <script type="module" src="sync.js?v=20261122e"></script>
-    <script src="admin.js?v=20261122e"></script>
+    <script src="theme.js?v=20261122f"></script>
+    <script src="data-merge.js?v=20261122f"></script>
+    <script type="module" src="sync.js?v=20261122f"></script>
+    <script src="admin.js?v=20261122f"></script>
 </body>
 </html>

@@ -30,6 +30,8 @@
         $('admStatus').style.display = 'none';
         $('admContent').style.display = '';
         await loadAll();
+        wireNotices();
+        await loadNotices();
     }
 
     async function loadAll() {
@@ -46,6 +48,53 @@
         renderSuspended();
         const w = await window.dpAdmin.weekly();
         $('admWeekly').textContent = w ? `${w.body} (${when(w.at)})` : 'Nothing yet. This fills in every Monday morning.';
+    }
+
+    // ── Notices ──────────────────────────────────────────────────────
+    let notices = [];
+    const toLocalInput = t => { const d = new Date(t - new Date(t).getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); };
+    async function loadNotices() {
+        try { notices = await window.dpAdmin.notices(); } catch (e) { $('admNotices').innerHTML = `<p class="adm-err">Couldn't load notices: ${esc(e.message)}</p>`; return; }
+        const now = Date.now();
+        const state = n => n.startAt > now ? 'SCHEDULED' : (n.endAt && n.endAt <= now ? 'ENDED' : 'SHOWING');
+        $('admNotices').innerHTML = notices.length ? notices.map(n => `<div class="adm-row">
+            <span><span class="adm-tag">${state(n)}</span> <strong>${esc(n.title)}</strong>
+            <span class="adm-dim"> · ${esc(n.type)} · from ${when(n.startAt)}${n.endAt ? ' to ' + when(n.endAt) : ''}</span></span>
+            <button type="button" class="btn-secondary" data-delnotice="${esc(n.id)}">DELETE</button></div>`).join('')
+            : '<p class="adm-dim">No notices yet.</p>';
+    }
+    function formNotice() {
+        const f = $('admNoticeForm');
+        return {
+            type: f.type.value, title: f.title.value.trim(), body: f.body.value.trim(),
+            buttonText: f.buttonText.value.trim(), buttonUrl: f.buttonUrl.value.trim(),
+            startAt: f.startAt.value ? new Date(f.startAt.value).getTime() : Date.now(),
+            endAt: f.endAt.value ? new Date(f.endAt.value).getTime() : 0
+        };
+    }
+    function wireNotices() {
+        const f = $('admNoticeForm');
+        f.startAt.value = toLocalInput(Date.now());
+        f.onsubmit = async e => {
+            e.preventDefault();
+            const n = formNotice(), err = $('admNoticeErr');
+            err.textContent = '';
+            if (n.buttonText && !n.buttonUrl) { err.textContent = 'Add a link for the button, or remove the button text.'; return; }
+            if (n.endAt && n.endAt <= n.startAt) { err.textContent = 'The end has to be after the start.'; return; }
+            try { await window.dpAdmin.saveNotice(n); f.reset(); f.startAt.value = toLocalInput(Date.now()); await loadNotices(); }
+            catch (ex) { err.textContent = 'Couldn\'t save: ' + ex.message; }
+        };
+        $('admNoticePreview').onclick = () => {
+            const n = formNotice();
+            if (!n.title) { $('admNoticeErr').textContent = 'Add a title to preview.'; return; }
+            window.dpShowNotice(n, () => {});
+        };
+        document.addEventListener('click', async e => {
+            const b = e.target.closest('[data-delnotice]');
+            if (!b) return;
+            if (!confirm('Delete this notice? Writers who haven\'t seen it yet won\'t see it.')) return;
+            try { await window.dpAdmin.deleteNotice(b.dataset.delnotice); await loadNotices(); } catch (ex) { alert('Could not delete: ' + ex.message); }
+        });
     }
 
     function isOpen(r) { return r.status !== 'done'; }
