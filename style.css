@@ -1995,6 +1995,24 @@ body.record-page { display: block; padding: 0 16px 40px; }
 .record-issued.older b { color: var(--text-dim); }
 .record-share-note { font-size: 0.8rem; line-height: 1.5; margin: 8px 0 0; padding: 8px 10px; border: 1px solid var(--border); }
 @media print { .record-issued { border-color: #000 !important; } .record-issued b { color: #000 !important; } }
+.verify-intro { font-size: 0.9rem; line-height: 1.6; max-width: 640px; margin: 14px 0 0; }
+.verify-row { display: flex; flex-direction: column; gap: 6px; }
+.verify-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.verify-inline input[type=text] { flex: 1; min-width: 220px; font-size: 0.8rem; box-sizing: border-box; }
+.verify-page textarea { width: 100%; box-sizing: border-box; margin-top: 6px; font-family: 'Literata', Georgia, serif; font-size: 0.95rem; line-height: 1.5; resize: vertical; }
+.verify-file { cursor: pointer; display: inline-block; padding: 10px 14px; font-size: 0.75rem; letter-spacing: 1px; }
+.verify-inline .btn-primary { margin-left: auto; }
+.verify-card { margin-top: 14px; padding: 14px; border: 1px solid var(--border); }
+.verify-card-title { font-size: 1.3rem; font-weight: 700; word-break: break-word; }
+.verify-full { display: inline-block; margin-top: 10px; font-size: 0.75rem; letter-spacing: 1px; color: var(--neon); }
+.verify-result { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; padding: 12px 14px; border: 2px solid var(--border); border-left-width: 6px; }
+.verify-result b { font-size: 0.85rem; letter-spacing: 2px; }
+.verify-result span { font-size: 0.85rem; line-height: 1.5; }
+.verify-result.match { border-color: var(--neon); }
+.verify-result.match b { color: var(--neon); }
+.verify-result.nomatch { border-color: #ff4444; }
+.verify-result.nomatch b { color: var(--red-ink, #c00); }
+.record-check-link { display: inline-block; margin-top: 10px; font-size: 0.75rem; letter-spacing: 1px; color: var(--neon); }
 .record-stop { background: transparent !important; border: 1px solid #ff4444 !important; color: var(--red-ink) !important; }
 
 @media print {

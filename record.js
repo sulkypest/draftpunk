@@ -102,7 +102,7 @@
         </div>`;
         if (opts.shared) {
             html += snap.issuedBy === 'draft-punk'
-                ? `<div class="record-issued"><b>✓ ISSUED BY DRAFT PUNK</b><span>Draft Punk built this report itself, on ${esc(fmtDateTime(snap.issuedAt))}, from the record saved in the writer’s account. The writer could not edit it.</span></div>`
+                ? `<div class="record-issued"><b>✓ ISSUED BY DRAFT PUNK</b><span>Draft Punk built this report itself, on ${esc(fmtDateTime(snap.issuedAt))}, from the record saved in the writer’s account. The writer could not edit it.</span>${snap.fingerprint && shareId ? `<a class="record-check-link no-print" href="verify.html?share=${esc(shareId)}">CHECK A STORY AGAINST THIS RECORD →</a>` : ''}</div>`
                 : `<div class="record-issued older"><b>EARLIER SHARE LINK</b><span>This link was made before Draft Punk began issuing reports itself (November 2026). Its figures were sent by the writer’s own device. The writer can update the link to have it issued by Draft Punk.</span></div>`;
         }
 

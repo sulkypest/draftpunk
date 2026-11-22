@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHECK A WRITING RECORD — Draft Punk</title>
+    <meta name="description" content="Check a Draft Punk Writing Record, and whether a submitted story matches it.">
+    <link rel="icon" href="DRAFTPUNK.png" type="image/png">
+    <link rel="stylesheet" href="style.css?v=20261122j">
+    <!-- No error monitoring on this page: the story pasted here must never leave the browser. -->
+</head>
+<body class="record-page verify-page sb-ready">
+
+    <div class="record-topbar">
+        <a href="index.html" class="record-back">MADE WITH DRAFT PUNK</a>
+    </div>
+
+    <div class="app record-app">
+        <div class="record-head">
+            <div class="record-kicker">DRAFT PUNK</div>
+            <h1 class="record-title">Check a Writing Record</h1>
+        </div>
+        <p class="verify-intro">Draft Punk is a writing app. As a writer works, it records how their text arrives: typed, pasted or imported. A writer can share that record with a link. Use this page to see a record, and to check whether a story you’ve received matches it. You don’t need an account.</p>
+
+        <h2 class="record-h2">1. THE RECORD</h2>
+        <form id="vfLinkForm" class="verify-row" autocomplete="off">
+            <label for="vfLink" class="record-muted">Paste the Writing Record link the writer sent you</label>
+            <div class="verify-inline">
+                <input id="vfLink" type="text" inputmode="url" spellcheck="false" placeholder="https://www.draft-punk.com/record.html?share=…">
+                <button type="submit" id="vfLoad">LOAD</button>
+            </div>
+        </form>
+        <div id="vfRecord" aria-live="polite"></div>
+
+        <div id="vfStorySection" style="display:none;">
+            <h2 class="record-h2">2. THE STORY</h2>
+            <label for="vfStory" class="record-muted">Paste the submitted story, or choose its file (Word .docx or plain text). Formatting, capitals and curly quotes don’t matter.</label>
+            <textarea id="vfStory" rows="10" spellcheck="false" placeholder="Paste the story here"></textarea>
+            <div class="verify-inline">
+                <label class="verify-file btn-secondary" for="vfFile">CHOOSE FILE</label>
+                <input id="vfFile" type="file" accept=".docx,.txt,.md,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+                <span id="vfFileName" class="record-muted"></span>
+                <button type="button" id="vfCheck" class="btn-primary">CHECK THE STORY</button>
+            </div>
+            <p class="record-muted">The story is checked here, in your browser. It isn’t sent to Draft Punk or stored anywhere.</p>
+            <div id="vfResult" aria-live="polite"></div>
+        </div>
+
+        <h2 class="record-h2">WHAT THIS CHECK CAN AND CAN’T TELL YOU</h2>
+        <div class="record-about">
+            <p><b>The match</b> compares the story with a fingerprint of the writer’s text, taken by Draft Punk when the link was issued. The fingerprint is made from short runs of words. It can confirm whether a story is the text in the record, but it can’t be turned back into the text.</p>
+            <p><b>The record</b> shows how text was entered into Draft Punk: typed (on a keyboard, a phone keyboard or by dictation), pasted, or imported from a file. Draft Punk issues the report from the record saved in the writer’s account, and the writer can’t change the report itself. The figures are recorded on the writer’s own devices as they write.</p>
+            <p><b>It isn’t proof of authorship.</b> Text from elsewhere can be retyped by hand. Treat the record as evidence of how a story was written, alongside your own judgement.</p>
+        </div>
+    </div>
+
+    <script src="theme.js?v=20261122j"></script>
+    <script src="firebase/functions/record-core.js?v=20261122j"></script>
+    <script src="verify.js?v=20261122k"></script>
+    <script type="module" src="sync.js?v=20261122j"></script>
+</body>
+</html>
