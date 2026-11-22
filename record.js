@@ -98,8 +98,13 @@
         html += `<div class="record-head">
             <div class="record-kicker">WRITING RECORD</div>
             <h1 class="record-title">${esc(snap.title)}</h1>
-            <div class="record-meta">${snap.author ? esc(snap.author) + ' · ' : ''}${opts.shared ? 'Shared' : 'Generated'} ${esc(fmtDateTime(snap.generatedAt))}</div>
+            <div class="record-meta">${snap.author ? esc(snap.author) + ' · ' : ''}${opts.shared ? (snap.issuedBy === 'draft-punk' ? 'Issued' : 'Shared') : 'Generated'} ${esc(fmtDateTime(snap.issuedAt || snap.generatedAt))}</div>
         </div>`;
+        if (opts.shared) {
+            html += snap.issuedBy === 'draft-punk'
+                ? `<div class="record-issued"><b>✓ ISSUED BY DRAFT PUNK</b><span>Draft Punk built this report itself, on ${esc(fmtDateTime(snap.issuedAt))}, from the record saved in the writer’s account. The writer could not edit it.</span></div>`
+                : `<div class="record-issued older"><b>EARLIER SHARE LINK</b><span>This link was made before Draft Punk began issuing reports itself (November 2026). Its figures were sent by the writer’s own device. The writer can update the link to have it issued by Draft Punk.</span></div>`;
+        }
 
         if (!added && !num(T.untrackedWords)) {
             html += `<p class="record-muted">Nothing has been written in this project yet.</p>`;
@@ -185,6 +190,7 @@
                 <p>Draft Punk records how text arrives in each chapter as it is written: typed (on a keyboard, a phone keyboard or by dictation, including Word Runner sprints), pasted, dropped in, or imported from a file. Deletions and active writing time are recorded too. The text itself is not part of this record.</p>
                 <p>Text that was already in a chapter when its record began is shown as <b>untracked</b>: it is not counted as either typed or pasted.</p>
                 <p>This record shows how text was entered into Draft Punk. It cannot show who composed it: text from elsewhere can be retyped by hand, and the record is kept on the writer's own devices. It is evidence of a writing process, not proof of authorship.</p>
+                ${opts.shared && snap.issuedBy === 'draft-punk' ? '<p>The figures are recorded on the writer’s own devices as they write and saved to their account. Draft Punk issues the report from that saved record; the writer can’t change the report itself.</p>' : ''}
                 ${opts.shared ? '<p>This is a snapshot from the date above and does not update by itself.</p>' : ''}
             </div>`;
 
@@ -206,21 +212,37 @@
                 <p class="record-muted">A share link lets anyone you send it to view this report (not your writing).</p>`;
             return;
         }
+        const pid = (JSON.parse(localStorage.getItem('draftPunkData') || '{}')).activeProjectId;
+        // Send this device's latest figures, ask the server to issue the
+        // report, then say if the saved text differs from this device's.
+        async function issue(btn, shareId, busyText) {
+            const label = btn.textContent;
+            btn.disabled = true; btn.textContent = busyText;
+            try {
+                if (window.DPEvidence) await window.DPEvidence.pushAll(pid);
+                const res = await window.issueEvidenceShare(pid, shareId);
+                localStorage.setItem(shareKey(), res.id);
+                const here = snapRef().totals.words;
+                localStorage.setItem(shareKey() + '_note', res.words !== here
+                    ? `The link shows ${Math.round(res.words).toLocaleString()} words, the version saved in your account. This device has ${Math.round(here).toLocaleString()}. To include the latest, open Write, press SYNC AND SAVE, then come back and press UPDATE TO LATEST.`
+                    : '');
+                return true;
+            } catch (e) {
+                alert(e.message);
+                btn.disabled = false; btn.textContent = label;
+                return false;
+            }
+        }
         if (!existing) {
             box.innerHTML = `<button id="recShareBtn">⤴ CREATE SHARE LINK</button>
-                <p class="record-muted">Anyone with the link can view this report — the figures only, never your writing.</p>`;
+                <p class="record-muted">Draft Punk issues the report from the record saved in your account. Anyone with the link can view it: the figures only, never your writing.</p>`;
             document.getElementById('recShareBtn').onclick = async () => {
-                const btn = document.getElementById('recShareBtn');
-                btn.disabled = true; btn.textContent = 'CREATING…';
-                try {
-                    const id = await window.createEvidenceShare(snapRef());
-                    localStorage.setItem(shareKey(), id);
-                } catch (e) { alert('Could not create the link: ' + e.message); }
-                renderShareBox(snapRef);
+                if (await issue(document.getElementById('recShareBtn'), null, 'ISSUING…')) renderShareBox(snapRef);
             };
             return;
         }
         const url = location.origin + location.pathname + '?share=' + existing;
+        const note = localStorage.getItem(shareKey() + '_note') || '';
         box.innerHTML = `<label class="record-muted" for="recShareUrl">SHARE LINK</label>
             <input id="recShareUrl" type="text" readonly value="${esc(url)}">
             <div class="record-share-btns">
@@ -228,20 +250,24 @@
                 <button id="recUpdate">UPDATE TO LATEST</button>
                 <button id="recStop" class="record-stop">STOP SHARING</button>
             </div>
-            <p class="record-muted">The link shows the report as it was when shared. Use UPDATE TO LATEST to refresh it.</p>`;
+            ${note ? `<p class="record-share-note">${esc(note)}</p>` : ''}
+            <p class="record-muted">The link shows the report as Draft Punk issued it. Use UPDATE TO LATEST to issue it again with your latest writing. The link also holds a fingerprint of your text, so a copy of your story can be checked against it later. The fingerprint can’t be turned back into your writing.</p>`;
         document.getElementById('recCopy').onclick = () => {
             const inp = document.getElementById('recShareUrl'); inp.select();
             (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).catch(() => document.execCommand('copy'));
             document.getElementById('recCopy').textContent = 'COPIED';
         };
         document.getElementById('recUpdate').onclick = async () => {
-            try { await window.updateEvidenceShare(existing, snapRef()); document.getElementById('recUpdate').textContent = 'UPDATED'; }
-            catch (e) { alert('Could not update the link: ' + e.message); }
+            if (await issue(document.getElementById('recUpdate'), existing, 'UPDATING…')) {
+                renderShareBox(snapRef);
+                document.getElementById('recUpdate').textContent = 'UPDATED';
+            }
         };
         document.getElementById('recStop').onclick = async () => {
             if (!confirm('Stop sharing? The link will stop working.')) return;
             try { await window.deleteEvidenceShare(existing); } catch (e) { alert('Could not remove the link: ' + e.message); return; }
             localStorage.removeItem(shareKey());
+            localStorage.removeItem(shareKey() + '_note');
             renderShareBox(snapRef);
         };
     }

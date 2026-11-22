@@ -1988,6 +1988,13 @@ body.record-page { display: block; padding: 0 16px 40px; }
 .record-share input { width: 100%; margin: 6px 0; box-sizing: border-box; font-size: 0.75rem; }
 .record-share-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .record-share-btns button { flex: 1; min-width: 120px; }
+.record-issued { display: flex; flex-direction: column; gap: 4px; margin: 18px 0 0; padding: 10px 12px; border: 1px solid var(--neon); border-left-width: 4px; }
+.record-issued b { font-size: 0.75rem; letter-spacing: 2px; color: var(--neon); }
+.record-issued span { font-size: 0.8rem; line-height: 1.5; }
+.record-issued.older { border-color: var(--border); }
+.record-issued.older b { color: var(--text-dim); }
+.record-share-note { font-size: 0.8rem; line-height: 1.5; margin: 8px 0 0; padding: 8px 10px; border: 1px solid var(--border); }
+@media print { .record-issued { border-color: #000 !important; } .record-issued b { color: #000 !important; } }
 .record-stop { background: transparent !important; border: 1px solid #ff4444 !important; color: var(--red-ink) !important; }
 
 @media print {
