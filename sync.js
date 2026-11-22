@@ -1941,6 +1941,14 @@ window.pushEvidenceToCloud = async function(chapterId, meta, deviceId, counters)
     } catch (err) { console.warn('Writing Record push error:', err); }
 };
 
+// One chapter's cloud record: its data, null if there is none, or undefined
+// when signed out. Throws if the cloud couldn't be read.
+window.pullEvidenceChapter = async function(chapterId) {
+    if (!currentUser) return undefined;
+    const snap = await getDoc(doc(db, 'users', currentUser.uid, 'evidence', chapterId));
+    return snap.exists() ? snap.data() : null;
+};
+
 window.pullEvidenceFromCloud = async function(projectId) {
     if (!currentUser) return null;
     const snap = await getDocs(collection(db, 'users', currentUser.uid, 'evidence'));
@@ -1948,19 +1956,19 @@ window.pullEvidenceFromCloud = async function(projectId) {
 };
 
 // Read-only share links: a snapshot of the report (figures only, no chapter
-// text) that anyone with the link can view.
-window.createEvidenceShare = async function(snapshot) {
+// text) that anyone with the link can view. Since Nov 2026 the server builds
+// and stamps the report from the writer's saved cloud copy (Cloud Function
+// issueWritingRecord); the browser can no longer write one itself.
+window.issueEvidenceShare = async function(projectId, shareId) {
     if (!currentUser) throw new Error('Sign in to create a share link.');
-    const id = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
-    await setDoc(doc(db, 'evidenceShares', id), { ...snapshot, uid: currentUser.uid, createdAt: Date.now() });
-    // Private list of this writer's share links, so account deletion can remove them
-    // (share links can't be searched for). Kept in the owner-only evidence area.
-    await setDoc(doc(db, 'users', currentUser.uid, 'evidence', '_shares'), { ids: arrayUnion(id) }, { merge: true });
-    return id;
-};
-window.updateEvidenceShare = async function(id, snapshot) {
-    if (!currentUser) throw new Error('Sign in to update the share link.');
-    await setDoc(doc(db, 'evidenceShares', id), { ...snapshot, uid: currentUser.uid, createdAt: Date.now() });
+    try {
+        return await callFn('issueWritingRecord', shareId ? { projectId, shareId } : { projectId });
+    } catch (err) {
+        const code = (err && err.code) || '';
+        if (/not-found/.test(code)) throw new Error('This project hasn’t been saved to the cloud yet. Open Write, press SYNC AND SAVE, then try again.');
+        if (/permission-denied/.test(code)) throw new Error('This link belongs to another account.');
+        throw new Error('Draft Punk couldn’t issue the record just now. Check your connection and try again.');
+    }
 };
 window.deleteEvidenceShare = async function(id) {
     if (!currentUser) throw new Error('Sign in to stop sharing.');

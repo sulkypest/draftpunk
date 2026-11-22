@@ -168,13 +168,14 @@ service cloud.firestore {
     }
 
     // Writing Record share links. Anyone with the link (an unguessable id) can
-    // read one report; nobody can list them. Only the writer can create,
-    // replace or delete their own.
+    // read one report; nobody can list them. Since Nov 2026 reports are built
+    // and written only by the server (Cloud Function issueWritingRecord), so a
+    // report can't be written from a browser. The writer can still delete
+    // their own (stop sharing, account deletion).
     match /evidenceShares/{shareId} {
       allow get: if true;
       allow list: if false;
-      allow create, update: if request.auth != null && request.resource.data.uid == request.auth.uid
-                            && (resource == null || resource.data.uid == request.auth.uid);
+      allow create, update: if false;
       allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 

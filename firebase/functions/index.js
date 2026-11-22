@@ -17,6 +17,8 @@
 //   AUTH   creates an account only when a sign-in code is used by an email
 //          address that no account has yet; marks an address verified once a
 //          code proves the writer owns it.
+//   WRITE  evidenceShares/{id}, users/{uid}/evidence/_shares  (Writing Record
+//          share links: see issueWritingRecord at the end of this file)
 // Nothing else is ever written. No writing, project or word-count data is changed.
 
 'use strict';
@@ -470,4 +472,73 @@ exports.claimAdmin = onCall({ enforceAppCheck: true, secrets: [ADMIN_UID] }, asy
         logger.info('Admin claim set', { uid });
     }
     return { admin: true };
+});
+
+
+// ── Writing Record share links, issued by the server (Nov 2026) ──────────────
+// The writer asks for a share link (or to update one); this function builds
+// the report itself from the writer's saved cloud copy, instead of accepting
+// figures sent by the browser, and stamps it as issued by Draft Punk. It also
+// stores a fingerprint of the text (record-core.js) so a copy of the story can
+// later be checked against the record. The fingerprint can't be turned back
+// into the text; the text itself is never stored in the share.
+//   READ   users/{uid}/private/data, users/{uid}    (project title, username)
+//   READ   users/{uid}/writing   (this project's chapters: words + fingerprint)
+//   READ   users/{uid}/evidence  (this project's Writing Record figures)
+//   WRITE  evidenceShares/{id}   (the share link; only the writer's own)
+//   WRITE  users/{uid}/evidence/_shares  (adds the id to the writer's private
+//                                         list, used by account deletion)
+// Nothing in the writer's chapters, projects or Writing Record is changed.
+const recordCore = require('./record-core');
+const crypto = require('crypto');
+const SHARE_MAX_BYTES = 900 * 1024;   // Firestore documents hold up to 1 MiB
+
+exports.issueWritingRecord = onCall({ enforceAppCheck: true }, async request => {
+    const uid = request.auth && request.auth.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'sign-in');
+    const projectId = request.data && request.data.projectId;
+    const shareId   = request.data && request.data.shareId;
+    if (typeof projectId !== 'string' || !/^[\w-]{1,120}$/.test(projectId)) throw new HttpsError('invalid-argument', 'project');
+    if (shareId != null && (typeof shareId !== 'string' || !/^[a-f0-9]{24}$/.test(shareId))) throw new HttpsError('invalid-argument', 'share');
+
+    const shareRef = db.collection('evidenceShares').doc(shareId || crypto.randomBytes(12).toString('hex'));
+    if (shareId) {
+        const existing = await shareRef.get();
+        if (!existing.exists || existing.data().uid !== uid) throw new HttpsError('permission-denied', 'not-yours');
+    }
+
+    const userRef = db.collection('users').doc(uid);
+    const [w, profile, chapters, evidence] = await Promise.all([
+        writerData(uid),
+        userRef.get(),
+        userRef.collection('writing').where('projectId', '==', projectId).get(),
+        userRef.collection('evidence').where('projectId', '==', projectId).get()
+    ]);
+    const project = w.draftPunkData && w.draftPunkData.projects && w.draftPunkData.projects[projectId];
+    if (!project) throw new HttpsError('not-found', 'project');
+
+    const now = Date.now();
+    const { snapshot, text } = recordCore.buildSnapshot({
+        title: project.title,
+        author: (profile.exists && profile.data().username) || '',
+        chapters: chapters.docs.map(d => ({ ...d.data(), id: d.id })),
+        evidence: evidence.docs.map(d => ({ ...d.data(), id: d.id })),
+        now
+    });
+    const share = {
+        ...snapshot,
+        uid, createdAt: now,
+        issuedBy: 'draft-punk', issuedAt: now,
+        fingerprint: recordCore.fingerprint(text, crypto.randomBytes(6).toString('hex'))
+    };
+    // Stay within the document size limit: list fewer pastes individually
+    while (Buffer.byteLength(JSON.stringify(share)) > SHARE_MAX_BYTES && share.pastes.length) {
+        const old = share.pastes.splice(0, Math.ceil(share.pastes.length / 2));
+        share.totals.earlierPastes += old.length;
+        share.totals.earlierPastedChars += old.reduce((s, p) => s + p.c, 0);
+    }
+    await shareRef.set(share);
+    await userRef.collection('evidence').doc('_shares').set({ ids: FieldValue.arrayUnion(shareRef.id) }, { merge: true });
+    logger.info('Writing Record issued', { uid, share: shareRef.id, words: snapshot.totals.words, update: !!shareId });
+    return { id: shareRef.id, words: snapshot.totals.words, issuedAt: now };
 });

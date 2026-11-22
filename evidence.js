@@ -9,6 +9,14 @@
 // a chapter from saving, and the record is size-capped. If browser storage
 // fills up, write.js drops this record locally (it is backed up to the cloud
 // for signed-in writers) so the chapter text can still be saved.
+//
+// RESTORING (Nov 2026): a chapter record that is (re)created in this browser
+// is marked `restore` until this device's own figures in the cloud have been
+// checked. Its figures are not sent to the cloud before then, and any figures
+// the cloud already holds for this device (for example after the local copy
+// was dropped to make room for chapter text) are added back first. Before
+// this, a dropped local copy started again from zero and then overwrote this
+// device's figures in the cloud.
 (function () {
     const KEY          = 'writingEvidence';
     const MAX_PASTES   = 300;         // per chapter per device; older ones are summarised
@@ -90,7 +98,8 @@
                 baselineChars: (currentText || '').length,
                 baselineWords: wordsIn(currentText),
                 mine: emptyCounters(),
-                others: {}
+                others: {},
+                restore: true
             };
             scheduleSave();
         }
@@ -123,11 +132,58 @@
         clearTimeout(cloudTimers[id]);
         cloudTimers[id] = setTimeout(() => pushChapter(id), CLOUD_DELAY);
     }
-    function pushChapter(id) {
+    // Add two sets of one device's figures together (used when restoring:
+    // `a` is what the cloud held, `b` what this browser recorded since).
+    function addCounters(a, b) {
+        const out = emptyCounters();
+        ['typed', 'pasted', 'dropped', 'imported', 'deleted', 'earlierPastes', 'earlierPastedChars']
+            .forEach(k => out[k] = (Number(a[k]) || 0) + (Number(b[k]) || 0));
+        out.pastes = [...(Array.isArray(a.pastes) ? a.pastes : []), ...(Array.isArray(b.pastes) ? b.pastes : [])]
+            .sort((x, y) => x.t - y.t);
+        while (out.pastes.length > MAX_PASTES) {
+            const old = out.pastes.shift();
+            out.earlierPastes++; out.earlierPastedChars += old.c || 0;
+        }
+        [a.days || {}, b.days || {}].forEach(days => Object.entries(days).forEach(([k, v]) => {
+            const t = out.days[k] || (out.days[k] = { typed: 0, pasted: 0, deleted: 0, min: 0, words: 0 });
+            ['typed', 'pasted', 'deleted', 'min', 'words'].forEach(f => t[f] += Number(v && v[f]) || 0);
+        }));
+        out.lastMinute = Math.max(Number(a.lastMinute) || 0, Number(b.lastMinute) || 0);
+        return out;
+    }
+
+    // Bring back this device's own figures from the cloud copy of a chapter
+    // (doc may be null: the cloud has nothing for this chapter yet).
+    function restoreFrom(rec, doc, device) {
+        if (!rec.restore) return;
+        if (doc) {
+            const own = doc.devices && doc.devices[device];
+            if (own && typeof own === 'object') rec.mine = addCounters(own, rec.mine || emptyCounters());
+            if (doc.startedAt && doc.startedAt < rec.startedAt) {
+                rec.startedAt = doc.startedAt;
+                rec.baselineChars = doc.baselineChars || 0;
+                rec.baselineWords = doc.baselineWords || 0;
+            }
+        }
+        delete rec.restore;
+    }
+
+    async function pushChapter(id) {
         const d = load();
-        const rec = d.chapters[id];
+        let rec = d.chapters[id];
         if (!rec || !window.pushEvidenceToCloud) return;
-        window.pushEvidenceToCloud(id, {
+        if (rec.restore) {
+            if (!window.pullEvidenceChapter) return;
+            let doc;
+            try { doc = await window.pullEvidenceChapter(id); }
+            catch (e) { console.warn('Writing Record: cloud copy not checked yet; will try again', e); return; }
+            if (doc === undefined) return;            // signed out
+            rec = d.chapters[id];
+            if (!rec) return;
+            restoreFrom(rec, doc, d.device);
+            saveNow();
+        }
+        await window.pushEvidenceToCloud(id, {
             projectId: rec.projectId, startedAt: rec.startedAt,
             baselineChars: rec.baselineChars, baselineWords: rec.baselineWords
         }, d.device, rec.mine);
@@ -236,9 +292,11 @@
                     rec = d.chapters[doc.id] = {
                         projectId: doc.projectId, startedAt: doc.startedAt || Date.now(),
                         baselineChars: doc.baselineChars || 0, baselineWords: doc.baselineWords || 0,
-                        mine: emptyCounters(), others: {}
+                        mine: emptyCounters(), others: {}, restore: true
                     };
-                } else if (doc.startedAt && doc.startedAt < rec.startedAt) {
+                }
+                if (rec.restore) restoreFrom(rec, doc, d.device);
+                else if (doc.startedAt && doc.startedAt < rec.startedAt) {
                     // Another device started tracking earlier — its baseline is the true one
                     rec.startedAt = doc.startedAt;
                     rec.baselineChars = doc.baselineChars || 0;
@@ -276,8 +334,21 @@
             try { localStorage.removeItem(KEY); } catch (e) {}
         },
 
+        // Send every chapter record of a project to the cloud now (before a
+        // share link is issued from the cloud copy). Never throws.
+        async pushAll(projectId) {
+            const d = load();
+            const ids = Object.keys(d.chapters).filter(id => d.chapters[id].projectId === projectId);
+            for (const id of ids) {
+                clearTimeout(cloudTimers[id]);
+                try { await pushChapter(id); } catch (e) { console.warn('Writing Record push:', e); }
+            }
+        },
+
         flush: saveNow,
-        _load: load
+        _load: load,
+        _addCounters: addCounters,
+        _restoreFrom: restoreFrom
     };
 
     window.addEventListener('pagehide', saveNow);
