@@ -30,15 +30,18 @@
     }
 
     // What a check result means, in plain words
+    const MIN_WORDS = 25;
     function verdict(r, fp) {
-        if (!r || !r.checked) return { level: 'none', title: 'NOT ENOUGH TEXT TO CHECK', text: 'Paste at least a few sentences of the story.' };
-        const p = Math.round(r.share * 100);
+        if (!r || !r.checked || r.words < MIN_WORDS) return { level: 'none', title: 'NOT ENOUGH TEXT TO CHECK', text: 'Paste the whole story, or at least a few sentences of it.' };
+        const p = Math.floor(r.share * 100);
         const sizeNote = fp && fp.words && r.words < fp.words * 0.8
-            ? ` The record covers ${fmt(fp.words)} words; this story is ${fmt(r.words)}, so the record also includes other writing.` : '';
+            ? ` The record covers ${fmt(fp.words)} words and this story is ${fmt(r.words)}, so the record also includes other writing.` : '';
+        const shortNote = r.words < 300 ? ' This is a short piece, so even small edits lower the percentage a lot.' : '';
         if (r.exact) return { level: 'match', title: '✓ MATCHES THE RECORD EXACTLY', text: 'This story is the text in the record, word for word.' };
-        if (r.share >= 0.95) return { level: 'match', title: '✓ MATCHES THE RECORD', text: `${p}% of the story matches the record. Small differences, such as a title or a few edits, account for the rest.` + sizeNote };
-        if (r.share >= 0.6) return { level: 'partial', title: 'MOSTLY MATCHES', text: `${p}% of the story matches the record. The rest was changed after the record was issued, or isn’t in it. If the writer edited the story afterwards, they can update the link.` + sizeNote };
-        if (r.share >= 0.15) return { level: 'partial', title: 'PARTLY MATCHES', text: `Only ${p}% of the story matches the record. Much of this story isn’t in it.` };
+        if (r.found === r.checked) return { level: 'match', title: '✓ MATCHES THE RECORD', text: 'All of this story is in the record.' + sizeNote };
+        if (r.share >= 0.95) return { level: 'match', title: '✓ MATCHES THE RECORD', text: `${p}% of the story matches the record word for word. Small differences, such as a title or a few edits, account for the rest.` + sizeNote };
+        if (r.share >= 0.6) return { level: 'partial', title: 'MOSTLY MATCHES', text: `${p}% of the story matches the record word for word. The rest was changed after the record was issued, or isn’t in it. If the writer edited the story afterwards, they can update the link.` + shortNote + sizeNote };
+        if (r.share >= 0.15) return { level: 'partial', title: 'PARTLY MATCHES', text: `${p}% of the story matches the record word for word.` + (shortNote || ' Much of this story isn’t in the record.') + ' If the writer edited the story after the record was issued, they can update the link.' };
         return { level: 'nomatch', title: '✗ DOESN’T MATCH THIS RECORD', text: p ? `Only ${p}% of the story matches. This doesn’t look like the text in the record.` : 'None of this story was found in the record.' };
     }
 
@@ -99,7 +102,7 @@
                 : `<div class="record-issued older"><b>EARLIER SHARE LINK</b><span>This link was made before Draft Punk began issuing reports itself (November 2026). Its figures were sent by the writer’s own device, and it can’t be checked against a story. Ask the writer to update the link.</span></div>`}
             <div class="record-facts">
                 <div><b>${added ? pct(num(T.typed), added) + '%' : '—'}</b><span>of text added was typed in Draft Punk</span></div>
-                <div><b>${fmt(pastes)}</b><span>paste${pastes === 1 ? '' : 's'} or imports</span></div>
+                <div><b>${fmt(pastes)}</b><span>${pastes === 1 ? 'paste or import' : 'pastes or imports'}</span></div>
                 <div><b>${fmtMins(mins)}</b><span>active writing over ${days.length} day${days.length === 1 ? '' : 's'}${days.length ? ' (' + esc(fmtDay(days[0])) + (days.length > 1 ? ' – ' + esc(fmtDay(days[days.length - 1])) : '') + ')' : ''}</span></div>
                 <div><b>${fmt(T.words)}</b><span>words, of which ${fmt(T.untrackedWords)} were written before the record began</span></div>
             </div>

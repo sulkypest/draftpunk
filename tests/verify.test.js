@@ -23,6 +23,15 @@ test('verdicts: exact, match, mostly, partly, none, too short', () => {
     const fp = { words: 1000 };
     assert.strictEqual(verdict({ checked: 100, found: 100, share: 1, exact: true, words: 1000 }, fp).level, 'match');
     assert.match(verdict({ checked: 100, found: 97, share: 0.97, words: 1000 }, fp).title, /^✓ MATCHES THE RECORD$/);
+    // All of the story is in a bigger record: no talk of "differences"
+    const part = verdict({ checked: 100, found: 100, share: 1, exact: false, words: 900 }, { words: 5000 });
+    assert.match(part.text, /^All of this story is in the record\./);
+    assert.doesNotMatch(part.text, /differences/);
+    // A short piece is told that small edits count heavily
+    assert.match(verdict({ checked: 30, found: 18, share: 0.6, words: 38 }, fp).text, /short piece/);
+    assert.strictEqual(verdict({ checked: 1, found: 0, share: 0, words: 2 }, fp).level, 'none');
+    // 99.6% is never rounded up to look like 100%
+    assert.match(verdict({ checked: 1000, found: 996, share: 0.996, words: 1000 }, fp).text, /^99%/);
     assert.strictEqual(verdict({ checked: 100, found: 70, share: 0.7, words: 1000 }, fp).title, 'MOSTLY MATCHES');
     assert.strictEqual(verdict({ checked: 100, found: 20, share: 0.2, words: 1000 }, fp).title, 'PARTLY MATCHES');
     assert.strictEqual(verdict({ checked: 100, found: 0, share: 0, words: 1000 }, fp).level, 'nomatch');
