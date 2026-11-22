@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>ADMIN — DRAFT PUNK</title>
+    <link rel="icon" href="DRAFTPUNK.png" type="image/png">
+    <link rel="stylesheet" href="style.css?v=20261122e">
+    <script src="sentry.js?v=20261122e"></script>
+</head>
+<body class="sb-ready">
+    <nav class="app-nav">
+        <div class="nav-dropdown">
+            <button class="nav-dropdown-btn" onclick="this.nextElementSibling.classList.toggle('open')">DRAFT PUNK</button>
+            <div class="nav-dropdown-menu">
+                <a href="index.html?dashboard" class="nav-dropdown-item">DASHBOARD</a>
+                <a href="write.html" class="nav-dropdown-item">WRITE</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="notes-page adm-page">
+        <h1 class="adm-title">ADMIN</h1>
+        <p id="admStatus" class="adm-dim">Checking your account…</p>
+
+        <div id="admContent" style="display:none;">
+            <section class="adm-section" aria-labelledby="admReportsHead">
+                <div class="adm-head">
+                    <h2 id="admReportsHead">REPORTS</h2>
+                    <div class="adm-tabs" role="tablist">
+                        <button type="button" role="tab" id="admTabOpen" aria-selected="true" onclick="admShow('open')">OPEN <span id="admOpenCount"></span></button>
+                        <button type="button" role="tab" id="admTabDone" aria-selected="false" onclick="admShow('done')">DEALT WITH</button>
+                    </div>
+                </div>
+                <div id="admReports"></div>
+            </section>
+
+            <section class="adm-section" aria-labelledby="admSuspHead">
+                <h2 id="admSuspHead">SUSPENDED WRITERS</h2>
+                <p class="adm-dim">Suspended writers can sign in, read and export their writing, but can't add to it or use friends, messages, groups or sharing.</p>
+                <div id="admSuspended"></div>
+            </section>
+
+            <section class="adm-section" aria-labelledby="admWeekHead">
+                <h2 id="admWeekHead">WEEK IN NUMBERS</h2>
+                <div id="admWeekly" class="adm-dim">—</div>
+            </section>
+        </div>
+    </main>
+
+    <script src="theme.js?v=20261122e"></script>
+    <script src="data-merge.js?v=20261122e"></script>
+    <script type="module" src="sync.js?v=20261122e"></script>
+    <script src="admin.js?v=20261122e"></script>
+</body>
+</html>

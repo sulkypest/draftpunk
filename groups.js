@@ -136,6 +136,9 @@ async function loadPendingRequests() {
                 style="font-size:0.75rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;">
                 ✕ DECLINE
             </button>
+            <button class="btn-secondary" data-from="${esc(req.from)}" data-name="${esc(req.fromUsername || '')}" onclick="openReportDialog({type:'friendRequest', uid:this.dataset.from, username:this.dataset.name})"
+                title="Report or block" aria-label="Report or block ${esc(req.fromUsername || '')}"
+                style="font-size:0.75rem;padding:6px 10px;letter-spacing:1px;white-space:nowrap;min-width:unset;width:auto;">⚑</button>
         </div>
     `).join('');
 
@@ -218,7 +221,8 @@ function renderFriends(list) {
             <span class="lb-rank">✦</span>
             <span class="lb-name">${esc(u.username)}</span>
             <span class="lb-words">${(u.totalWords || 0).toLocaleString()} WDS</span>
-            <button class="lb-remove-btn" data-uid="${esc(u.uid)}" data-name="${esc(u.username)}" onclick="doRemoveFriend(this.dataset.uid, this.dataset.name)">✕</button>
+            <button class="lb-remove-btn" data-uid="${esc(u.uid)}" data-name="${esc(u.username)}" onclick="openReportDialog({type:'writer', uid:this.dataset.uid, username:this.dataset.name})" title="Report or block" aria-label="Report or block ${esc(u.username)}">⚑</button>
+            <button class="lb-remove-btn" data-uid="${esc(u.uid)}" data-name="${esc(u.username)}" onclick="doRemoveFriend(this.dataset.uid, this.dataset.name)" aria-label="Remove ${esc(u.username)}">✕</button>
         </div>
     `).join('');
 }
@@ -312,8 +316,12 @@ window.viewShare = function(shareId) {
     document.getElementById('shareViewTitle').textContent = share.chapterTitle.toUpperCase();
     document.getElementById('shareViewMeta').textContent  = share.projectTitle + ' — BY ' + share.ownerUsername;
     document.getElementById('shareViewContent').innerHTML = share.content ? safeChapterHtml(share.content) : '<em style="color:var(--text-dim);">No content.</em>';
+    document.getElementById('shareViewReport').onclick = () => window.openReportDialog({
+        type: 'share', uid: share.ownerId, username: share.ownerUsername,
+        path: 'shares/' + share.id, excerpt: share.chapterTitle });
     document.getElementById('shareViewOverlay').style.display = 'flex';
 };
+window.onDpBlockChange = function() { closeShareView(); loadAll(); };
 
 window.closeShareView = function() {
     document.getElementById('shareViewOverlay').style.display = 'none';

@@ -106,6 +106,7 @@ window.dpOfferNotifications = function() {
     });
 };
 
+let _myLbUsername = '';           // set once known; used for the leaderboard record
 let currentUser = undefined; // undefined = auth not yet resolved; null = resolved, not signed in
 let syncTimeout = null;
 
@@ -258,6 +259,7 @@ async function syncNow(user) {
 async function pushToCloud(user) { await syncNow(user); }
 
 async function writeCloud(user, data, stamp) {
+    if (_suspended) return;   // suspended: nothing new is saved (the database would refuse it)
     // PRIVACY MIGRATION, STEP 3: projects, notes, beat notes, characters, Word
     // Runner and the streak are saved ONLY to the owner-only record. It's saved
     // first; if it fails, nothing else is written and the sync dot shows the
@@ -289,6 +291,20 @@ async function writeCloud(user, data, stamp) {
     payload.displayName    = user.displayName || '';
     payload.photoURL       = user.photoURL    || '';
     await setDoc(doc(db, 'users', user.uid), payload, { merge: true });
+
+    // Leaderboard record: username and word counts only, the one thing other
+    // writers can read (Nov 2026; the profile above is now owner-only).
+    // Never allowed to fail the save.
+    if (_myLbUsername) {
+        try {
+            await setDoc(doc(db, 'leaderboard', user.uid), {
+                username: _myLbUsername,
+                totalWords: payload.totalWords, wordsThisWeek: payload.wordsThisWeek,
+                wordsThisMonth: payload.wordsThisMonth, wordsThisYear: payload.wordsThisYear,
+                weekEndsAt: payload.weekEndsAt, monthEndsAt: payload.monthEndsAt, yearEndsAt: payload.yearEndsAt
+            });
+        } catch (e) { console.warn('Leaderboard update skipped:', e); }
+    }
 
     // Once per visit: read the owner-only record back, and only if it matches
     // exactly what was just saved, count towards removing the old public copy.
@@ -539,6 +555,7 @@ function showUsernamePrompt(onComplete) {
                 friends:        []
             }, { merge: true });
             await batch.commit();
+            _myLbUsername = name;
 
             overlay.style.display = 'none';
             onComplete();
@@ -553,8 +570,415 @@ function showUsernamePrompt(onComplete) {
     };
 }
 
+// ── Age and terms ────────────────────────────────────────────────────────────
+// One step asking for month + year of birth and acceptance of the Terms and
+// Privacy Policy, stored in users/{uid}/private/account. The database rules
+// lock the birth date once given and use it to gate social features.
+//   - Under 13, new account: Draft Punk can't be used (UK/EU consent age).
+//   - Under 13, account from before the age step: treated as under 16 for now
+//     (writing kept); Ross to decide what happens next.
+//   - Under 16: no groups, messages, friend requests or chapter sharing.
+//   - 16 and over: everything.
+// Writing, the dashboard, Word Runner, the Writing Record and export are never
+// blocked for anyone who already has an account.
+const TERMS_VERSION = '2026-11';
+const MIN_AGE = 16;            // social features
+const MIN_AGE_ACCOUNT = 13;    // any new account
+// Accounts created on or after this moment must answer before using the app.
+// SET TO THE LIVE RELEASE DATE when this ships.
+const AGE_STEP_START = Date.parse('2026-11-22T17:02:00Z');
+const SOCIAL_PAGES = ['groups.html', 'messages.html'];
+function isSocialPage() { return SOCIAL_PAGES.includes(location.pathname.split('/').pop()); }
+function ageFromYM(y, m) {
+    // Month precision only: during the birth month the birthday counts as not
+    // yet reached (errs towards younger). The database rules use the same sum.
+    const now = new Date();
+    let a = now.getFullYear() - y;
+    if (now.getMonth() + 1 <= m) a--;
+    return a;
+}
+function isNewAccount(user) {
+    const t = user && user.metadata && Date.parse(user.metadata.creationTime);
+    return !!t && t >= AGE_STEP_START;
+}
+function readAccountCache() { try { return JSON.parse(localStorage.getItem('dpAccount') || 'null'); } catch (e) { return null; } }
+window.dpAccount = {
+    MIN_AGE: MIN_AGE,
+    info() { return readAccountCache(); },
+    accepted() { const a = readAccountCache(); return !!(a && a.birthYear && a.termsVersion === TERMS_VERSION); },
+    age() { const a = readAccountCache(); return a && a.birthYear ? ageFromYM(a.birthYear, a.birthMonth) : null; },
+    band() {
+        const age = this.age();
+        if (age === null) return null;
+        return age < MIN_AGE ? 'under-min' : age < 18 ? 'teen' : 'adult';
+    },
+    blocked() { const a = readAccountCache(); const age = this.age(); return !!(a && a.newAccount && age !== null && age < MIN_AGE_ACCOUNT); },
+    open() { showAccountPrompt({ dismissible: !isSocialPage() && !isNewAccount(currentUser) }); }
+};
+function cacheAccount(rec, user) {
+    localStorage.setItem('dpAccount', JSON.stringify(rec
+        ? { birthYear: rec.birthYear, birthMonth: rec.birthMonth, termsVersion: rec.termsVersion, newAccount: isNewAccount(user) }
+        : null));
+}
+function applyAgeBand() {
+    const under = window.dpAccount.band() === 'under-min';
+    document.body.classList.toggle('dp-under-min', under);
+    if (under) { updateRequestBadge(0); updateMessageBadge(0); }
+    if (window.dpAccount.blocked()) showAccountBlocked();
+}
+document.addEventListener('DOMContentLoaded', () => { try { applyAgeBand(); } catch (e) {} });
+async function checkAccount(user) {
+    let acc = readAccountCache();
+    try {
+        const snap = await getDoc(doc(db, 'users', user.uid, 'private', 'account'));
+        acc = snap.exists() ? snap.data() : null;
+        cacheAccount(acc, user);
+    } catch (e) {
+        console.warn('Account check skipped (offline?):', e);
+        if (!acc) return;   // can't tell; don't nag offline
+    }
+    applyAgeBand();
+    if (window.dpAccount.blocked()) return;
+    if (!window.dpAccount.accepted()) {
+        // New accounts and the social pages must answer; existing writers
+        // elsewhere can put it off for the session.
+        const must = isSocialPage() || isNewAccount(user);
+        if (must) showAccountPrompt({ dismissible: false });
+        else if (!sessionStorage.getItem('dpAccountLater')) showAccountPrompt({ dismissible: true });
+    } else if (isSocialPage() && window.dpAccount.band() === 'under-min') {
+        showSocialClosed();
+    }
+}
+function showSocialClosed() {
+    if (document.getElementById('dpSocialClosed')) return;
+    const o = document.createElement('div');
+    o.id = 'dpSocialClosed';
+    o.className = 'dp-acct-overlay';
+    o.innerHTML = `<div class="dp-acct-box">
+        <h2>Writing groups, messages and sharing are for writers ${MIN_AGE} and over</h2>
+        <p>Everything else in Draft Punk works as normal: your projects, the dashboard, Word Runner and your Writing Record.</p>
+        <a class="dp-acct-btn" href="write.html">BACK TO WRITING</a>
+    </div>`;
+    document.body.appendChild(o);
+}
+function showAccountBlocked() {
+    if (document.getElementById('dpAcctBlocked')) return;
+    const p = document.getElementById('dpAcctOverlay'); if (p) p.remove();
+    const o = document.createElement('div');
+    o.id = 'dpAcctBlocked';
+    o.className = 'dp-acct-overlay';
+    o.innerHTML = `<div class="dp-acct-box">
+        <h2>Sorry, Draft Punk is for writers aged ${MIN_AGE_ACCOUNT} and over</h2>
+        <p>You can't use this account. If you think this is a mistake, contact us through the details in our <a href="privacy.html">Privacy Policy</a>.</p>
+        <button type="button" class="dp-acct-btn" id="dpAcctBlockedOut">SIGN OUT</button>
+    </div>`;
+    document.body.appendChild(o);
+    o.querySelector('#dpAcctBlockedOut').onclick = async () => {
+        try { await signOut(auth); } catch (e) {}
+        location.href = 'index.html';
+    };
+}
+function showAccountPrompt(opts) {
+    if (document.getElementById('dpAcctOverlay') || document.getElementById('dpAcctBlocked')) return;
+    const dismissible = !!(opts && opts.dismissible);
+    const now = new Date();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    let years = '';
+    for (let y = now.getFullYear(); y >= now.getFullYear() - 110; y--) years += `<option value="${y}">${y}</option>`;
+    const o = document.createElement('div');
+    o.id = 'dpAcctOverlay';
+    o.className = 'dp-acct-overlay';
+    o.setAttribute('role', 'dialog');
+    o.setAttribute('aria-modal', 'true');
+    o.setAttribute('aria-labelledby', 'dpAcctTitle');
+    o.innerHTML = `<div class="dp-acct-box">
+        <h2 id="dpAcctTitle">One quick thing</h2>
+        <p>To finish setting up your account, tell us the month and year you were born and accept our terms.</p>
+        <div class="dp-acct-row">
+            <label>Month<select id="dpAcctMonth"><option value="">—</option>${months.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('')}</select></label>
+            <label>Year<select id="dpAcctYear"><option value="">—</option>${years}</select></label>
+        </div>
+        <label class="dp-acct-tick"><input type="checkbox" id="dpAcctTerms">
+            <span>I accept the <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a></span></label>
+        <p class="dp-acct-err" id="dpAcctErr" aria-live="polite"></p>
+        <button type="button" class="dp-acct-btn" id="dpAcctSave" disabled>CONTINUE</button>
+        ${dismissible
+            ? '<button type="button" class="dp-acct-later" id="dpAcctLater">NOT NOW</button>'
+            : (isSocialPage() ? '<a class="dp-acct-later" href="write.html">BACK TO WRITING</a>' : '')}
+    </div>`;
+    document.body.appendChild(o);
+    const m = o.querySelector('#dpAcctMonth'), y = o.querySelector('#dpAcctYear'), t = o.querySelector('#dpAcctTerms');
+    const save = o.querySelector('#dpAcctSave'), err = o.querySelector('#dpAcctErr');
+    const known = !!(readAccountCache() || {}).birthYear;   // terms update only
+    if (known) {
+        o.querySelector('.dp-acct-row').style.display = 'none';
+        o.querySelector('#dpAcctTitle').textContent = 'Our terms have changed';
+        o.querySelector('.dp-acct-box > p').textContent = 'Please read and accept the updated terms to carry on.';
+    }
+    const ready = () => { save.disabled = !((known || (m.value && y.value)) && t.checked); };
+    [m, y, t].forEach(el => el.addEventListener('change', ready));
+    const later = o.querySelector('#dpAcctLater');
+    if (later) later.onclick = () => { sessionStorage.setItem('dpAccountLater', '1'); o.remove(); };
+    save.onclick = async () => {
+        if (!currentUser) { err.textContent = 'Sign in first, then try again.'; return; }
+        save.disabled = true; save.textContent = 'SAVING...'; err.textContent = '';
+        // Keep an existing birth date (it's locked); only the terms are re-accepted
+        const prev = readAccountCache();
+        const keep = prev && prev.birthYear;
+        const rec = {
+            birthYear:  keep ? prev.birthYear  : parseInt(y.value, 10),
+            birthMonth: keep ? prev.birthMonth : parseInt(m.value, 10),
+            termsVersion: TERMS_VERSION,
+            acceptedAt: Date.now()
+        };
+        try {
+            await setDoc(doc(db, 'users', currentUser.uid, 'private', 'account'), rec, { merge: true });
+            cacheAccount(rec, currentUser);
+            o.remove();
+            applyAgeBand();
+            if (window.dpAccount.blocked()) return;
+            if (window.dpAccount.band() === 'under-min' && isSocialPage()) showSocialClosed();
+            else if (isSocialPage()) location.reload();
+        } catch (e) {
+            console.error('Account save error:', e);
+            err.textContent = 'Could not save, please try again.';
+            save.disabled = false; save.textContent = 'CONTINUE';
+        }
+    };
+}
+
+// ── Block and report ─────────────────────────────────────────────────────────
+// Blocks live in users/{uid}/private/blocks: { uids: [...], names: {uid: username} }.
+// Blocking removes the friend, deletes friend requests between you, and the
+// database rules stop them sending you messages or friend requests. Anything
+// they sent before is hidden in the app.
+// Reports go to reports/{id}; a server function emails them to Sulk Media.
+let _blocks = null;
+function blocksRef(uid) { return doc(db, 'users', uid, 'private', 'blocks'); }
+async function loadBlocks(force) {
+    if (!currentUser) return { uids: [], names: {} };
+    if (_blocks && !force) return _blocks;
+    try {
+        const snap = await getDoc(blocksRef(currentUser.uid));
+        const d = snap.exists() ? snap.data() : {};
+        _blocks = { uids: d.uids || [], names: d.names || {} };
+    } catch (e) { _blocks = _blocks || { uids: [], names: {} }; }
+    return _blocks;
+}
+function isBlocked(uid) { return !!(_blocks && uid && _blocks.uids.includes(uid)); }
+window.dpIsBlocked = isBlocked;
+window.getBlocked = async function() {
+    const b = await loadBlocks(true);
+    return b.uids.map(uid => ({ uid, username: b.names[uid] || '?' }));
+};
+window.blockWriter = async function(uid, username) {
+    if (!currentUser || !uid || uid === currentUser.uid) return { error: 'Not possible.' };
+    try {
+        await setDoc(blocksRef(currentUser.uid), { uids: arrayUnion(uid), names: { [uid]: username || '' } }, { merge: true });
+        await setDoc(doc(db, 'users', currentUser.uid), { friends: arrayRemove(uid) }, { merge: true });
+        for (const id of [`${uid}_${currentUser.uid}`, `${currentUser.uid}_${uid}`]) {
+            try { await deleteDoc(doc(db, 'friendRequests', id)); } catch (e) { /* none */ }
+        }
+        await loadBlocks(true);
+        return { success: true };
+    } catch (err) { return { error: err.message }; }
+};
+window.unblockWriter = async function(uid) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        await setDoc(blocksRef(currentUser.uid), { uids: arrayRemove(uid), names: { [uid]: deleteField() } }, { merge: true });
+        await loadBlocks(true);
+        return { success: true };
+    } catch (err) { return { error: err.message }; }
+};
+const REPORT_REASONS = [
+    ['harassment', 'Bullying or harassment'],
+    ['sexual', 'Sexual content or unwanted advances'],
+    ['child-safety', 'I think this person may be a risk to children'],
+    ['underage', 'I think this person is under 16'],
+    ['hate', 'Hate or abuse'],
+    ['spam', 'Spam or scams'],
+    ['other', 'Something else']
+];
+// what: { type: 'message'|'groupMessage'|'friendRequest'|'share'|'writer', uid, username, path, excerpt }
+window.reportContent = async function(what, reason, note) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try {
+        await setDoc(doc(collection(db, 'reports')), {
+            from: currentUser.uid,
+            type: String(what.type || 'writer').slice(0, 20),
+            targetUid: String(what.uid || '').slice(0, 128),
+            targetUsername: String(what.username || '').slice(0, 40),
+            path: String(what.path || '').slice(0, 300),
+            excerpt: String(what.excerpt || '').slice(0, 600),
+            reason: String(reason || 'other').slice(0, 20),
+            note: String(note || '').slice(0, 1000),
+            createdAt: Date.now()
+        });
+        return { success: true };
+    } catch (err) { return { error: err.message }; }
+};
+// One dialog for reporting (and optionally blocking) a writer or something they sent.
+window.openReportDialog = function(what) {
+    if (document.getElementById('dpReportOverlay')) return;
+    const esc = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const o = document.createElement('div');
+    o.id = 'dpReportOverlay';
+    o.className = 'dp-acct-overlay';
+    o.setAttribute('role', 'dialog');
+    o.setAttribute('aria-modal', 'true');
+    o.setAttribute('aria-labelledby', 'dpReportTitle');
+    o.innerHTML = `<div class="dp-acct-box">
+        <h2 id="dpReportTitle">Report ${esc(what.username || 'this writer')}</h2>
+        <p>Reports go to the Draft Punk team, not to the writer.</p>
+        <fieldset class="dp-report-reasons"><legend class="dp-report-legend">WHAT'S WRONG?</legend>
+            ${REPORT_REASONS.map(([v, l], i) => `<label class="dp-acct-tick"><input type="radio" name="dpReportReason" value="${v}"${i === 0 ? '' : ''}><span>${l}</span></label>`).join('')}
+        </fieldset>
+        <label class="dp-report-legend" for="dpReportNote">ANYTHING ELSE? (OPTIONAL)</label>
+        <textarea id="dpReportNote" class="dp-report-note" maxlength="1000" rows="3"></textarea>
+        <label class="dp-acct-tick"><input type="checkbox" id="dpReportBlock" checked><span>Also block ${esc(what.username || 'them')}</span></label>
+        <p class="dp-acct-err" id="dpReportErr" aria-live="polite"></p>
+        <button type="button" class="dp-acct-btn" id="dpReportSend" disabled>SEND REPORT</button>
+        <button type="button" class="dp-acct-later" id="dpReportCancel">CANCEL</button>
+    </div>`;
+    document.body.appendChild(o);
+    const send = o.querySelector('#dpReportSend'), err = o.querySelector('#dpReportErr');
+    o.querySelectorAll('input[name=dpReportReason]').forEach(r => r.addEventListener('change', () => { send.disabled = false; }));
+    o.querySelector('#dpReportCancel').onclick = () => o.remove();
+    send.onclick = async () => {
+        const reason = (o.querySelector('input[name=dpReportReason]:checked') || {}).value;
+        send.disabled = true; send.textContent = 'SENDING...'; err.textContent = '';
+        const r = await window.reportContent(what, reason, o.querySelector('#dpReportNote').value);
+        if (r.error) { err.textContent = 'Could not send, please try again.'; send.disabled = false; send.textContent = 'SEND REPORT'; return; }
+        if (o.querySelector('#dpReportBlock').checked && what.uid) await window.blockWriter(what.uid, what.username);
+        o.querySelector('.dp-acct-box').innerHTML = `<h2>Thanks, we've got it</h2>
+            <p>We'll look into it. If someone is in danger right now, contact the police.</p>
+            <button type="button" class="dp-acct-btn" id="dpReportDone">DONE</button>`;
+        o.querySelector('#dpReportDone').onclick = () => { o.remove(); if (typeof window.onDpBlockChange === 'function') window.onDpBlockChange(); };
+    };
+};
+window.confirmBlock = async function(uid, username) {
+    if (!confirm(`Block ${username || 'this writer'}? They'll be removed from your friends and won't be able to message you or send you friend requests. They aren't told.`)) return false;
+    const r = await window.blockWriter(uid, username);
+    if (r.error) { alert('Could not block, please try again.'); return false; }
+    if (typeof window.onDpBlockChange === 'function') window.onDpBlockChange();
+    return true;
+};
+
+// Account panel: blocked writers, shown only when there are any
+async function renderBlockedSection() {
+    const el = document.getElementById('dpBlockedSection');
+    if (!el) return;
+    const list = await window.getBlocked();
+    if (!list.length) { el.innerHTML = ''; return; }
+    const esc = t => String(t || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    el.innerHTML = `<div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 12px;"></div>
+        <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px;">BLOCKED WRITERS</div>
+        ${list.map(b => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="flex:1;font-size:0.85rem;">${esc(b.username)}</span>
+            <button type="button" class="btn-secondary" data-uid="${esc(b.uid)}" style="width:auto;min-width:unset;padding:4px 10px;font-size:0.75rem;">UNBLOCK</button>
+        </div>`).join('')}`;
+    el.querySelectorAll('button[data-uid]').forEach(btn => btn.onclick = async () => {
+        btn.disabled = true;
+        await window.unblockWriter(btn.dataset.uid);
+        renderBlockedSection();
+    });
+}
+
+// ── Suspension ───────────────────────────────────────────────────────────────
+// A suspended writer can sign in, read and export their writing, but not add
+// to it or use social features. Set and lifted in the admin area.
+let _suspended = localStorage.getItem('dpSuspended') === '1';
+function applySuspended() {
+    document.body.classList.toggle('dp-suspended', _suspended);
+    let bar = document.getElementById('dpSuspendedBar');
+    if (!_suspended) { if (bar) bar.remove(); return; }
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'dpSuspendedBar';
+        bar.setAttribute('role', 'status');
+        bar.innerHTML = `Your account is suspended. You can read and export your writing, but not add to it.
+            Questions: <a href="mailto:support@draft-punk.com">support@draft-punk.com</a>`;
+        document.body.appendChild(bar);
+    }
+    lockEditing();
+}
+function lockEditing() {
+    document.querySelectorAll('[contenteditable="true"]').forEach(el => { if (!el.closest('.dp-acct-overlay')) el.setAttribute('contenteditable', 'false'); });
+    document.querySelectorAll('textarea').forEach(el => { if (!el.closest('.dp-acct-overlay')) el.readOnly = true; });
+}
+let _lockObserver = null;
+function watchForEditors() {
+    if (_lockObserver || !_suspended) return;
+    _lockObserver = new MutationObserver(() => { if (_suspended) lockEditing(); });
+    _lockObserver.observe(document.body, { childList: true, subtree: true });
+}
+async function checkSuspended(user) {
+    try {
+        const snap = await getDoc(doc(db, 'suspended', user.uid));
+        _suspended = snap.exists();
+        localStorage.setItem('dpSuspended', _suspended ? '1' : '0');
+    } catch (e) { return; }   // offline: keep what we knew
+    applySuspended();
+    watchForEditors();
+}
+window.dpIsSuspended = () => _suspended;
+document.addEventListener('DOMContentLoaded', () => { if (_suspended) { applySuspended(); watchForEditors(); } });
+
+// ── Admin area ───────────────────────────────────────────────────────────────
+// Used by admin.html only. The database rules decide what the admin can do;
+// these helpers just call it.
+window.dpAdmin = {
+    async check() {
+        if (!currentUser) return false;
+        const has = async force => { try { const t = await currentUser.getIdTokenResult(force); return !!(t.claims && t.claims.admin); } catch (e) { return false; } };
+        if (await has(false)) return true;
+        try { const r = await callFn('claimAdmin', {}); if (!r || !r.admin) return false; } catch (e) { return false; }
+        return has(true);
+    },
+    async reports() {
+        const snap = await getDocs(query(collection(db, 'reports'), orderBy('createdAt', 'desc'), limit(300)));
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    },
+    async markReport(id, status, adminNote) {
+        await setDoc(doc(db, 'reports', id), { status, adminNote: String(adminNote || '').slice(0, 1000), handledAt: Date.now() }, { merge: true });
+    },
+    async item(path) {
+        if (!/^(messages\/[\w-]+|groups\/[\w-]+\/messages\/[\w-]+|shares\/[\w-]+)$/.test(path || '')) return null;
+        const snap = await getDoc(doc(db, ...path.split('/')));
+        return snap.exists() ? snap.data() : null;
+    },
+    async deleteItem(path) {
+        if (!/^(messages\/[\w-]+|groups\/[\w-]+\/messages\/[\w-]+|shares\/[\w-]+)$/.test(path || '')) throw new Error('Not allowed');
+        await deleteDoc(doc(db, ...path.split('/')));
+    },
+    async suspended() {
+        const snap = await getDocs(collection(db, 'suspended'));
+        return snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+    },
+    async suspend(uid, username, reason, reportId) {
+        await setDoc(doc(db, 'suspended', uid), { at: Date.now(), username: username || '', reason: String(reason || '').slice(0, 500), reportId: reportId || '' });
+    },
+    async unsuspend(uid) { await deleteDoc(doc(db, 'suspended', uid)); },
+    async username(uid) {
+        try { const s = await getDoc(doc(db, 'leaderboard', uid)); return s.exists() ? (s.data().username || '') : ''; } catch (e) { return ''; }
+    },
+    async weekly() {
+        try { const s = await getDoc(doc(db, 'ops', 'weeklyNumbers')); return s.exists() ? s.data() : null; } catch (e) { return null; }
+    }
+};
+
+// A writer's leaderboard record (username and word counts). Until the
+// Nov 2026 database rules are live it can't be read, so fall back to their
+// profile record, which other writers could read under the old rules.
+async function readLeaderboardDoc(uid) {
+    try { return await getDoc(doc(db, 'leaderboard', uid)); }
+    catch (e) { return getDoc(doc(db, 'users', uid)); }
+}
+
 // ── Friend request badge ──────────────────────────────────────────────────────
 function updateRequestBadge(count) {
+    if (document.body.classList.contains('dp-under-min')) count = 0;
     const btn = document.querySelector('[onclick*="toggleDraftMenu"]');
     if (!btn) return;
     let badge = btn.querySelector('.nav-badge');
@@ -614,6 +1038,9 @@ async function handleSignedIn(user) {
         localStorage.removeItem('dpLastUpdated');
         localStorage.removeItem(BASE_KEY);
         localStorage.removeItem('dpRecovered');
+        localStorage.removeItem('dpAccount');
+        localStorage.removeItem('dpSuspended');
+        _suspended = false;
     }
     localStorage.setItem('dpUserId', user.uid);
     loadPush().then(m => { if (m) m.initPush(app, () => auth.currentUser); });
@@ -622,6 +1049,7 @@ async function handleSignedIn(user) {
     try {
         const userSnap = await getDoc(doc(db, 'users', user.uid));
         hasUsername = userSnap.exists() && userSnap.data().username;
+        if (hasUsername) _myLbUsername = userSnap.data().username;
     } catch (e) {
         console.warn('Could not check username (Firestore unavailable):', e);
         // Fall through — treat as if username exists so we don't block the user
@@ -665,6 +1093,8 @@ async function continueAfterAuth(user) {
         } catch (e) {
             console.warn('Non-critical post-auth check failed:', e);
         }
+        checkAccount(user);
+        checkSuspended(user);
     }
 }
 
@@ -1045,6 +1475,7 @@ async function showAccountOverlay() {
                 <button type="button" class="dp-font-opt" data-font="georgia" onclick="window.dpSetEditorFont('georgia')" style="flex:1;font-family:Georgia,'Times New Roman',serif;text-transform:none;letter-spacing:0;font-size:1rem;">Georgia</button>
             </div>
             <div id="dpRecoverySection"></div>
+            <div id="dpBlockedSection"></div>
 
             <div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 16px;"></div>
             <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:12px;">DANGER ZONE</div>
@@ -1075,6 +1506,7 @@ async function showAccountOverlay() {
     overlay.style.display = 'flex';
     if (window.dpMarkEditorFont) window.dpMarkEditorFont();
     renderRecoverySection(user).catch(err => console.warn('Recovered copies not listed:', err));
+    renderBlockedSection().catch(err => console.warn('Blocked list not shown:', err));
     loadPush().then(m => {
         if (!m) return;
         m.initPush(app, () => auth.currentUser);
@@ -1086,8 +1518,9 @@ async function showAccountOverlay() {
         const btn = document.getElementById('dpResetBtn');
         btn.disabled = true; btn.textContent = 'RESETTING...';
         try {
-            // Delete chapters, Writing Record figures and share links
-            const owned = await collectOwnedDocRefs(user.uid);
+            // Delete chapters, Writing Record figures and share links. The
+            // birth date and blocked list stay (a reset isn't a new account).
+            const owned = await collectOwnedDocRefs(user.uid, { keep: ['account', 'blocks'] });
             await deleteShareLinks(owned.shareIds);
             await deleteInBatches(owned.refs);
             const batch = writeBatch(db);
@@ -1210,8 +1643,11 @@ window.getLeaderboard = async function(field = 'totalWords') {
     try {
         // Query directly by the requested field so period leaderboards
         // aren't limited to users who happen to have high total words.
-        const q    = query(collection(db, 'users'), orderBy(field, 'desc'), limit(50));
-        const snap = await getDocs(q);
+        // Until the Nov 2026 database rules are live, the leaderboard
+        // collection can't be read yet: fall back to the old profile records
+        let snap;
+        try { snap = await getDocs(query(collection(db, 'leaderboard'), orderBy(field, 'desc'), limit(50))); }
+        catch (e) { snap = await getDocs(query(collection(db, 'users'), orderBy(field, 'desc'), limit(50))); }
         // Counts from a period that has already ended show as 0 (and drop off),
         // even if that writer hasn't opened the app since to reset them.
         return snap.docs
@@ -1232,7 +1668,7 @@ window.getFriends = async function() {
         if (!userSnap.exists()) return [];
         const friends = userSnap.data().friends || [];
         if (friends.length === 0) return [];
-        const results = await Promise.all(friends.map(uid => getDoc(doc(db, 'users', uid))));
+        const results = await Promise.all(friends.map(uid => readLeaderboardDoc(uid)));
         return results.filter(s => s.exists())
                       .map(s => ({ uid: s.id, ...s.data() }))
                       .filter(u => u.username);
@@ -1245,8 +1681,12 @@ window.getFriends = async function() {
 window.addFriend = async function(username) {
     if (!currentUser) return { error: 'Not signed in.' };
     try {
+        // The same answer whether the name doesn't exist or the database
+        // refuses the request (blocked, or a writer who can't receive
+        // requests), so it never reveals anything about the other writer
+        const NOPE = { error: 'No writer you can add with that username.' };
         const unameSnap = await getDoc(doc(db, 'usernames', username));
-        if (!unameSnap.exists()) return { error: 'User not found.' };
+        if (!unameSnap.exists()) return NOPE;
 
         const toUid = unameSnap.data().uid;
         if (toUid === currentUser.uid) return { error: "That's you!" };
@@ -1271,6 +1711,7 @@ window.addFriend = async function(username) {
         });
         return { success: true };
     } catch (err) {
+        if (err && err.code === 'permission-denied') return { error: 'No writer you can add with that username.' };
         return { error: err.message };
     }
 };
@@ -1280,7 +1721,8 @@ window.getPendingRequests = async function() {
     try {
         const q    = query(collection(db, 'friendRequests'), where('to', '==', currentUser.uid));
         const snap = await getDocs(q);
-        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        await loadBlocks();
+        return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => !isBlocked(r.from));
     } catch (err) {
         return { error: err.message };
     }
@@ -1346,6 +1788,7 @@ window.removeFriend = async function(friendUid) {
 
 // ── Writing subcollection sync ─────────────────────────────────────────────────
 window.pushWritingChapterToCloud = async function(chapter) {
+    if (_suspended) return;
     if (!currentUser) return;
     try {
         await setDoc(doc(db, 'users', currentUser.uid, 'writing', chapter.id), chapter, { merge: true });
@@ -1417,8 +1860,9 @@ window.deleteEvidenceShare = async function(id) {
 
 // Every cloud document belonging to this writer that sits outside the user doc:
 // chapters, Writing Record figures, and Writing Record share links.
-async function collectOwnedDocRefs(uid) {
-    const refs = [];
+async function collectOwnedDocRefs(uid, opts) {
+    const keep = (opts && opts.keep) || [];
+    const refs = [doc(db, 'leaderboard', uid)];
     const writingSnap  = await getDocs(collection(db, 'users', uid, 'writing'));
     writingSnap.docs.forEach(d => refs.push(d.ref));
     // Private copy of notes/projects (privacy migration) and the version index
@@ -1426,7 +1870,7 @@ async function collectOwnedDocRefs(uid) {
     const chapterIds   = new Set(writingSnap.docs.map(d => d.id));
     privateSnap.docs.forEach(d => {
         if (d.id === 'versionIndex') (d.data().chapterIds || []).forEach(c => chapterIds.add(c));
-        refs.push(d.ref);
+        if (!keep.includes(d.id)) refs.push(d.ref);
     });
     // Saved versions of every chapter, including chapters since deleted
     for (const cid of chapterIds) {
@@ -1679,11 +2123,11 @@ window.markGroupRead = async function(groupId, time) {
     try { await setDoc(doc(db, 'users', currentUser.uid, 'private', 'groupReads'), { [groupId]: time }, { merge: true }); } catch (err) {}
 };
 
-// Word counts for each member (profile totals are already public to signed-in writers)
+// Word counts for each member, from their leaderboard record
 window.getGroupStats = async function(group) {
     const rows = await Promise.all((group.members || []).map(async uid => {
         try {
-            const s = await getDoc(doc(db, 'users', uid));
+            const s = await readLeaderboardDoc(uid);
             const d = s.exists() ? s.data() : {};
             return { uid, username: d.username || (group.memberNames || {})[uid] || '?',
                      totalWords: d.totalWords || 0,
@@ -1749,7 +2193,8 @@ window.getInbox = async function() {
     try {
         const q    = query(collection(db, 'messages'), where('to', '==', currentUser.uid));
         const snap = await getDocs(q);
-        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        await loadBlocks();
+        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(m => !isBlocked(m.from));
         return msgs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     } catch (err) {
         return { error: err.message };
@@ -1777,12 +2222,13 @@ window.watchMessages = function(callback, onError) {
     let incoming = [], outgoing = [], ready = { in: false, out: false };
     const emit = () => {
         if (!ready.in || !ready.out) return;
-        const all = [...incoming, ...outgoing];
+        const all = [...incoming.filter(m => !isBlocked(m.from)), ...outgoing];
         all.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
         callback(all);
     };
     const asList = snap => snap.docs.map(d => ({ id: d.id, ...d.data() }));
     const fail = err => { if (onError) onError(err); };
+    loadBlocks().then(emit);
     const stopIn  = onSnapshot(query(collection(db, 'messages'), where('to', '==', uid)),
         snap => { incoming = asList(snap); ready.in = true; emit(); }, fail);
     const stopOut = onSnapshot(query(collection(db, 'messages'), where('from', '==', uid)),
@@ -1816,6 +2262,7 @@ async function checkUnreadMessages(user) {
 }
 
 function updateMessageBadge(count) {
+    if (document.body.classList.contains('dp-under-min')) count = 0;
     document.querySelectorAll('a[href="messages.html"]').forEach(link => {
         link.textContent = count > 0 ? `MESSAGES (${count})` : 'MESSAGES';
         link.style.color = count > 0 ? 'var(--neon)' : '';
@@ -1857,7 +2304,8 @@ window.getSharedWithMe = async function() {
     try {
         const q    = query(collection(db, 'shares'), where('sharedWith', 'array-contains', currentUser.uid));
         const snap = await getDocs(q);
-        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        await loadBlocks();
+        return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(sh => !isBlocked(sh.ownerId));
     } catch (err) {
         return { error: err.message };
     }

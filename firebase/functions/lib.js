@@ -276,7 +276,73 @@ function weeklySummary(users, days, now = new Date()) {
     return { title: 'DRAFT PUNK · WEEK IN NUMBERS', body, newWriters: fresh.length, kinds, total: users.length, codes, busiest };
 }
 
+// ── Age (Nov 2026) ───────────────────────────────────────────────────────────
+// Accounts created on or after this moment had to give a birth date at
+// sign-up. SET TO THE LIVE RELEASE DATE (same as AGE_STEP_START in sync.js).
+const AGE_STEP_START = Date.parse('2026-11-22T17:02:00Z');
+// Same sum as the app and the database rules: whole months, rounding down,
+// so during the birth month the birthday counts as not yet reached.
+function ageFromYM(birthYear, birthMonth, now) {
+    const d = new Date(now);
+    let a = d.getUTCFullYear() - birthYear;
+    if (d.getUTCMonth() + 1 <= birthMonth) a--;
+    return a;
+}
+// Should this account be deleted as an under-13 sign-up? Every condition must
+// hold, so a writer who had an account before the age step can never match:
+//  - created on or after the age step went live
+//  - gave a birth date that makes them under 13 now
+//  - gave it within 2 days of creating the account (i.e. at sign-up)
+function underageDeletionDue(authCreated, account, now) {
+    if (!account || !Number.isInteger(account.birthYear) || !Number.isInteger(account.birthMonth)) return false;
+    const created = typeof authCreated === 'number' ? authCreated : Date.parse(authCreated);
+    if (!created || created < AGE_STEP_START) return false;
+    if (!account.acceptedAt || account.acceptedAt - created > 2 * 24 * 60 * 60 * 1000) return false;
+    return ageFromYM(account.birthYear, account.birthMonth, now) < 13;
+}
+const LEADERBOARD_FIELDS = ['username', 'totalWords', 'wordsThisWeek', 'wordsThisMonth', 'wordsThisYear', 'weekEndsAt', 'monthEndsAt', 'yearEndsAt'];
+function leaderboardRecord(profile) {
+    if (!profile || typeof profile.username !== 'string' || !profile.username) return null;
+    const out = {};
+    LEADERBOARD_FIELDS.forEach(k => { out[k] = k === 'username' ? profile.username : (Number(profile[k]) || 0); });
+    return out;
+}
+const REPORT_REASONS = {
+    harassment: 'Bullying or harassment', sexual: 'Sexual content or unwanted advances',
+    'child-safety': 'May be a risk to children', underage: 'May be under 16',
+    hate: 'Hate or abuse', spam: 'Spam or scams', other: 'Something else'
+};
+// Only these paths may be looked up for a report (never anyone's writing)
+function reportPathAllowed(path) {
+    return /^messages\/[A-Za-z0-9_-]+$/.test(path) ||
+           /^groups\/[A-Za-z0-9_-]+\/messages\/[A-Za-z0-9_-]+$/.test(path) ||
+           /^shares\/[A-Za-z0-9_-]+$/.test(path);
+}
+function reportEmail(r, reporterName, item) {
+    const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const reason = REPORT_REASONS[r.reason] || r.reason || 'Not given';
+    const urgent = r.reason === 'child-safety';
+    const lines = [
+        ['Reason', reason],
+        ['Type', r.type],
+        ['Reported writer', `${r.targetUsername || '?'} (${r.targetUid || '?'})`],
+        ['Reported by', `${reporterName || '?'} (${r.from})`],
+        ['When', new Date(r.createdAt || Date.now()).toUTCString()],
+        ['Item', r.path || '—'],
+        ['Text as the reporter saw it', r.excerpt || '—'],
+        ['Text now in the database', item ? item : (r.path ? '(no longer there, or not found)' : '—')],
+        ['Reporter\'s note', r.note || '—']
+    ];
+    const subject = `${urgent ? 'URGENT · ' : ''}Draft Punk report: ${reason} · ${r.targetUsername || '?'}`;
+    const text = lines.map(([k, v]) => `${k}: ${v}`).join('\n');
+    const html = `<table cellpadding="6" style="font-family:sans-serif;font-size:14px;border-collapse:collapse">` +
+        lines.map(([k, v]) => `<tr><td style="vertical-align:top;color:#666;white-space:nowrap">${esc(k)}</td><td style="white-space:pre-wrap">${esc(v)}</td></tr>`).join('') + `</table>`;
+    return { subject, text, html };
+}
+
 module.exports = {
+    AGE_STEP_START, ageFromYM, underageDeletionDue, LEADERBOARD_FIELDS, leaderboardRecord,
+    REPORT_REASONS, reportPathAllowed, reportEmail,
     DEFAULT_REMINDER_TIME, REMINDER_WINDOW_MIN, QUIET_START, QUIET_END,
     localParts, parseTime, inQuietHours, writingStatus, reminderDecision, reminderMessage,
     socialMessage, groupRecipients, isDeadTokenError,
