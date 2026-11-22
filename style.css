@@ -5,6 +5,7 @@
 @font-face { font-family: 'Literata'; src: url('fonts/literata-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Literata'; src: url('fonts/literata-latin-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 @font-face { font-family: 'Literata'; src: url('fonts/literata-latin-600-normal.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Bangers'; src: url('fonts/bangers-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }   /* comic pop-ups; SIL OFL, see fonts/BANGERS-OFL.txt */
 @font-face { font-family: 'Anton'; src: url('fonts/anton-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 
 /* ── Tokens ──────────────────────────────────────────────────────────────────
@@ -2451,3 +2452,142 @@ input.dp-signin-code {
     .dp-signin { padding: 28px 18px 20px; }
     .dp-signin-row { flex-direction: column; }
 }
+
+/* ── Comic pop-ups (fx.js) ─────────────────────────────────────────────────
+   Big ones sit in the middle of the screen; small ones pop over a stage-map
+   node. Never block taps: pointer-events off throughout. */
+.dp-comic {
+    position: fixed;
+    left: 50%; top: 42%;
+    z-index: 9000;
+    pointer-events: none;
+    display: grid; place-items: center;
+    width: min(78vw, 420px); aspect-ratio: 1.6;
+    transform: translate(-50%, -50%) rotate(var(--tilt, -6deg)) scale(0);
+    animation: dpComicPop 1.45s cubic-bezier(.2, .9, .3, 1.3) forwards;
+}
+.dp-comic-small {
+    width: 120px;
+    transform: translate(-50%, -100%) rotate(var(--tilt, -8deg)) scale(0);
+    animation-name: dpComicPopSmall;
+    animation-duration: 1.05s;
+}
+.dp-comic-burst { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.dp-comic-burst polygon { stroke: #0d0d0d; stroke-width: 2.2; stroke-linejoin: miter; vector-effect: non-scaling-stroke; }
+.dp-comic-text {
+    position: relative;
+    font-family: Bangers, var(--font-display);
+    font-size: clamp(2.8rem, 12vw, 4.8rem);
+    line-height: 1;
+    letter-spacing: 1px;
+    color: #fff;
+    -webkit-text-stroke: 3px #0d0d0d;
+    paint-order: stroke fill;
+    text-shadow: 4px 5px 0 #0d0d0d;
+    white-space: nowrap;
+}
+.dp-comic-small .dp-comic-text { font-size: 1.5rem; -webkit-text-stroke: 2px #0d0d0d; text-shadow: 2px 3px 0 #0d0d0d; }
+.dp-comic-red   polygon { fill: var(--signal-red); }
+.dp-comic-green polygon { fill: var(--punk-green); }
+.dp-comic-green .dp-comic-text { color: #0d0d0d; -webkit-text-stroke: 0; text-shadow: 2px 3px 0 #fff; }
+.dp-comic-ink   polygon { fill: #f2f2f2; }
+.dp-comic-ink   .dp-comic-text { color: #0d0d0d; -webkit-text-stroke: 0; text-shadow: 3px 4px 0 var(--signal-red); }
+/* the burst is drawn a touch drop-shadowed so it lifts off busy backgrounds */
+.dp-comic-burst { filter: drop-shadow(6px 7px 0 rgba(0,0,0,0.55)); }
+@keyframes dpComicPop {
+    0%   { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(0.15); opacity: 0; }
+    14%  { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1.18); opacity: 1; }
+    24%  { transform: translate(-50%, -50%) rotate(calc(var(--tilt) + 3deg)) scale(0.96); }
+    32%  { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1); }
+    78%  { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) rotate(var(--tilt)) scale(1.12); opacity: 0; }
+}
+@keyframes dpComicPopSmall {
+    0%   { transform: translate(-50%, -100%) rotate(var(--tilt)) scale(0.2); opacity: 0; }
+    20%  { transform: translate(-50%, -100%) rotate(var(--tilt)) scale(1.15); opacity: 1; }
+    35%  { transform: translate(-50%, -100%) rotate(var(--tilt)) scale(1); }
+    75%  { transform: translate(-50%, -110%) rotate(var(--tilt)) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -135%) rotate(var(--tilt)) scale(0.9); opacity: 0; }
+}
+/* Reduced motion: no bounce, just appear and fade */
+.dp-comic-still { animation-name: dpComicFade; animation-timing-function: ease; }
+.dp-comic-still.dp-comic-small { animation-name: dpComicFadeSmall; }
+@keyframes dpComicFade {
+    0%, 100% { transform: translate(-50%, -50%) rotate(var(--tilt)); opacity: 0; }
+    10%, 75% { transform: translate(-50%, -50%) rotate(var(--tilt)); opacity: 1; }
+}
+@keyframes dpComicFadeSmall {
+    0%, 100% { transform: translate(-50%, -100%) rotate(var(--tilt)); opacity: 0; }
+    10%, 75% { transform: translate(-50%, -100%) rotate(var(--tilt)); opacity: 1; }
+}
+
+/* ── Dashboard life ──────────────────────────────────────────────────────── */
+/* Replay of words written since the last visit: the marker and line glide */
+.sm-track.sm-replaying .sm-line,
+.sm-track.sm-replaying .sm-you,
+.sm-track.sm-replaying .sm-you-dot {
+    transition: left var(--sm-dur, 1.4s) cubic-bezier(.45, 0, .2, 1), width var(--sm-dur, 1.4s) cubic-bezier(.45, 0, .2, 1);
+}
+#hpBar.dp-slow, #bossHPBar.dp-slow { transition: width var(--sm-dur, 1.4s) cubic-bezier(.45, 0, .2, 1); }
+/* A node beaten during the replay: hidden X until the marker reaches it,
+   then the X slams on and the node shakes */
+.sm-fresh .sm-x { opacity: 0; animation: smXIn 0.28s ease-out var(--d, 0s) forwards; }
+.sm-fresh { animation: smNodeShake 0.4s ease-in-out calc(var(--d, 0s) + 0.15s); }
+@keyframes smNodeShake {
+    0%, 100% { transform: translate(-50%, -50%); }
+    20% { transform: translate(calc(-50% - 4px), calc(-50% + 1px)) rotate(-4deg); }
+    40% { transform: translate(calc(-50% + 4px), calc(-50% - 1px)) rotate(3deg); }
+    60% { transform: translate(calc(-50% - 3px), -50%) rotate(-2deg); }
+    80% { transform: translate(calc(-50% + 2px), -50%); }
+}
+.sm-fresh img { opacity: 1; animation: smDim 0.3s ease-out var(--d, 0s) forwards; }
+@keyframes smXIn { 0% { opacity: 0; transform: scale(1.8); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes smDim { to { opacity: 0.4; } }
+
+/* Idle movement while the page is just being looked at */
+.sm-boss-sprite { display: block; width: 100%; height: 100%; background-repeat: no-repeat; }
+.sm-boss-next .sm-boss-sprite { animation: smBob 2.6s ease-in-out infinite; }
+.sm-minion.sm-is-next { animation: smNextPulse 2s ease-in-out infinite; }
+@keyframes smBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes smNextPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(242,242,242,0); } 50% { box-shadow: 0 0 0 5px rgba(242,242,242,0.18); } }
+body.light-mode .sm-minion.sm-is-next { animation-name: smNextPulseLight; }
+@keyframes smNextPulseLight { 0%, 100% { box-shadow: 0 0 0 0 rgba(20,20,20,0); } 50% { box-shadow: 0 0 0 5px rgba(20,20,20,0.15); } }
+
+/* The boss gets restless when you're close */
+.stage-map.sm-boss-close .sm-boss-next { animation: smBossRage 1.1s ease-in-out infinite; }
+.stage-map.sm-boss-close .sm-boss-next .sm-boss-sprite { animation: smBossTwitch 0.9s steps(2, end) infinite; }
+.stage-map.sm-boss-close .sm-tag-next { color: var(--red-ink); }
+.stage-map.sm-boss-close #smBossToGo { color: var(--red-ink); font-weight: 700; }
+@keyframes smBossRage {
+    0%, 100% { box-shadow: 0 0 10px rgba(224, 50, 43, 0.5); }
+    50%      { box-shadow: 0 0 24px 4px rgba(224, 50, 43, 0.85); }
+}
+@keyframes smBossTwitch { 0% { transform: translate(0, 0); } 50% { transform: translate(-1px, 1px); } 100% { transform: translate(1px, -1px); } }
+
+/* A buddy in the collection occasionally hops */
+.buddy-relic.buddy-hop { animation: buddyHop 0.6s ease-out; }
+@keyframes buddyHop { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-9px) rotate(-6deg); } 60% { transform: translateY(0) rotate(3deg); } 80% { transform: translateY(-3px); } }
+
+/* Damage number over the stage-map boss */
+.sm-track .damage-number { top: 40px; right: 12px; }
+
+/* Words added since last visit, under the big count */
+.wc-display-gain {
+    font-size: 0.8rem; letter-spacing: 2px; font-weight: 700;
+    color: var(--green-ink);
+    margin-top: 6px; min-height: 1em;
+    opacity: 0; transition: opacity 0.4s;
+}
+.wc-display-gain.show { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+    .sm-boss-next .sm-boss-sprite, .sm-minion.sm-is-next,
+    .stage-map.sm-boss-close .sm-boss-next, .stage-map.sm-boss-close .sm-boss-next .sm-boss-sprite,
+    .buddy-relic.buddy-hop, .sm-fresh { animation: none; }
+    .sm-fresh .sm-x { opacity: 1; animation: none; }
+    .sm-fresh img { opacity: 0.4; animation: none; }
+}
+
+/* Boss in the 'beat defeated' and boss-info pop-ups (same art as the map) */
+.dp-boss-pop { display: block; filter: drop-shadow(0 0 10px var(--neon)); }
+.write-toast-sprite[src*="stagemap/"], .write-toast-sprite[src*="bosses-anim/"] { image-rendering: auto; }

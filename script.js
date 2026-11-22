@@ -14,6 +14,8 @@ window.getBossImgSrc = function(oneBased) {
 
 // Re-run updateUI once game manifest loads so boss sprite updates from emoji→sprite
 window.onGameManifestReady = function() {
+    // Don't cut short the dashboard replay; redraw once it has finished
+    if (window._dpReplaying) { window._dpRedrawAfterReplay = true; return; }
     if (typeof updateUI === 'function') updateUI();
 };
 
@@ -209,14 +211,18 @@ window.deleteProject = function(id) {
 
 // ── Floating damage number ────────────────────────────────────────────────────
 function showDamageNumber(val) {
-    const zone = document.querySelector('.boss-zone');
+    // Word Runner has a .boss-zone; the dashboard shows it over the stage map
+    const zone = document.querySelector('.boss-zone') || document.getElementById('smTrack');
     if (!zone) return;
+    const onMap = zone.id === 'smTrack';
     const isCrit = Math.random() < 0.2;
     const el = document.createElement('div');
     el.className = 'damage-number' + (isCrit ? ' damage-crit' : '');
     el.textContent = isCrit ? `CRITICAL! -${val.toLocaleString()}` : `-${val.toLocaleString()}`;
-    el.style.left = (15 + Math.random() * 55) + '%';
-    el.style.bottom = '10px';
+    if (!onMap) {
+        el.style.left = (15 + Math.random() * 55) + '%';
+        el.style.bottom = '10px';
+    }
     zone.appendChild(el);
     setTimeout(() => el.remove(), 1200);
 }
@@ -228,7 +234,7 @@ function showCombatToast(label, name, emoji, taunt, spriteUrl) {
     const toast = document.createElement('div');
     toast.className = 'combat-toast';
     const iconHtml = spriteUrl
-        ? `<img src="${spriteUrl}" style="height:40px;width:auto;image-rendering:pixelated;display:block;flex-shrink:0;">`
+        ? `<img src="${spriteUrl}" style="height:40px;width:auto;image-rendering:${/stagemap\/|bosses-anim\//.test(spriteUrl) ? 'auto' : 'pixelated'};display:block;flex-shrink:0;">`
         : (emoji ? `<span class="toast-emoji">${emoji}</span>` : '');
     toast.innerHTML = `
         <div class="toast-label">${label}</div>
@@ -246,6 +252,7 @@ function showCombatToast(label, name, emoji, taunt, spriteUrl) {
 window.addWords = function() {
     const val = parseInt(document.getElementById('wordIn').value) || 0;
     if (val <= 0) return;
+    const totalBefore = state.total;
 
     // Writer streak + freezes (all projects together); recorded before the
     // project is updated so a first-time carry-over isn't counted twice
@@ -260,7 +267,8 @@ window.addWords = function() {
     // ── Boss beat defeated ────────────────────────────────────────────────────
     if (ev.beat) {
         document.getElementById('bossBeatTitle').innerText = ev.beat.name;
-        document.getElementById('defeatedBossSprite').src = window.getBossImgSrc(ev.beat.idx + 1);
+        const deadEl = document.getElementById('defeatedBossSprite');
+        if (deadEl && window.DPBossSprite) { const c = DPBossSprite.attach(deadEl, ev.beat.idx + 1, { full: true }); if (c) setTimeout(() => c.die(), 350); }
         document.getElementById('levelOverlay').style.display = 'flex';
         if (window.SFX) SFX.bossDefeated();
         const app = document.querySelector('.app');
@@ -284,6 +292,7 @@ window.addWords = function() {
         sprite.classList.add('hit-shake');
     }
     if (window.SFX) SFX.bossHit();
+    if (window._dpBoss && !ev.beat) setTimeout(() => window._dpBoss && window._dpBoss.hurt(), 50);
 
     // 1–3% chance of floating damage number
     if (Math.random() < (0.01 + Math.random() * 0.02)) showDamageNumber(val);
@@ -306,14 +315,16 @@ window.addWords = function() {
     if (ev.minion) {
         const labels = ['HENCHMAN DEFEATED', 'MINION SUBDUED', 'FOE VANQUISHED', 'OBSTACLE CRUSHED'];
         const label  = labels[ev.minion.idx % labels.length];
-        const mKey   = 'MonsterV' + (ev.minion.idx + 1);
-        const mData  = window.gameManifest && window.gameManifest.monsters[mKey];
-        const mSprite = mData && mData.Idle && mData.Idle[0] ? mData.Idle[0] : null;
+        // Same art as the minion on the stage map
+        const mSprite = `stagemap/minion${ev.minion.idx + 1}.png`;
         showCombatToast(label, ev.minion.name, ev.minion.emoji, ev.minion.taunt, mSprite);
         if (window.SFX) SFX.minionDefeated();
     }
 
     save(); updateUI(); updateGraph();
+    // Play the words in on the stage map. A beaten boss already has its own
+    // full-screen moment, so only the smaller pop-ups run here.
+    dashReplay(totalBefore, { bossComic: !ev.beat, levelComic: false });
     const wordInBox = document.getElementById('wordIn');
     if (wordInBox) wordInBox.value = '';
     if (sev) {
@@ -454,7 +465,7 @@ function updateUI() {
     const progressInBeat = progress - curB.pct;
     const hp = Math.max(0, 100 - (progressInBeat / (beatSpan || 1) * 100));
 
-    document.getElementById('wcMain').innerText = state.total.toLocaleString();
+    if (!window._dpReplaying) document.getElementById('wcMain').innerText = state.total.toLocaleString();
     document.getElementById('wipDisplay').innerText = state.title;
     document.getElementById('lvlName').innerText = `STAGE ${curIdx + 1} — ${curB.name.toUpperCase()}`;
     document.getElementById('bossHPBar').style.width = hp + '%';
@@ -469,6 +480,7 @@ function updateUI() {
     ).join('');
 
     renderStageMap(progress, curIdx);
+    rememberSeen();
 
     // Show project count indicator if more than one project
     const projects = Object.keys(dpData.projects || {});
@@ -482,6 +494,8 @@ function updateUI() {
 // where the writer is, and a small strip of the bosses already defeated.
 // Display only: reads state, never changes or saves it.
 const SM_X = '<svg class="sm-x" aria-hidden="true" viewBox="0 0 100 100" fill="none" stroke-linecap="square"><path class="sm-x-under" d="M14 14L86 86M86 14L14 86"/><path class="sm-x-over" d="M14 14L86 86M86 14L14 86"/></svg>';
+// Stage-map boss art: animated sheets in bosses-anim/ (falls back to the old stills)
+function bossStill(n) { return window.DPBossSprite ? DPBossSprite.still(n) : `stagemap/boss${n}.png`; }
 function smPos(f) { return `calc(var(--sm-pad) + (100% - 2 * var(--sm-pad)) * ${Math.max(0, Math.min(1, f)).toFixed(4)})`; }
 function renderStageMap(progress, curIdx) {
     const track = document.getElementById('smTrack');
@@ -516,7 +530,7 @@ function renderStageMap(progress, curIdx) {
 
     // Left end: the boss beaten to open this stage (or the start line)
     if (leftIdx >= 0) {
-        html += `<div class="sm-node sm-boss-node sm-defeated-node" style="left:${smPos(0)}"><img src="stagemap/boss${leftIdx + 1}.png" alt="${BOSS_BEATS[leftIdx].name}, defeated">${SM_X}</div>`;
+        html += `<div class="sm-node sm-boss-node sm-defeated-node sm-left-boss" style="left:${smPos(0)}"><img src="${bossStill(leftIdx + 1)}" alt="${BOSS_BEATS[leftIdx].name}, defeated">${SM_X}</div>`;
         html += `<div class="sm-tag sm-tag-boss" style="left:${smPos(0)}">${BOSS_BEATS[leftIdx].name.toUpperCase()}<br><span>${fmt(words(p0))}</span></div>`;
     } else {
         html += `<div class="sm-node sm-start" style="left:${smPos(0)}"></div>`;
@@ -530,16 +544,16 @@ function renderStageMap(progress, curIdx) {
         const beaten = done(m.pct);
         const isNext = !beaten && !nextMinion;
         if (isNext) nextMinion = { m: m, i: i };
-        html += `<div class="sm-node sm-minion${beaten ? ' sm-defeated-node' : ''}${isNext ? ' sm-is-next' : ''}" style="left:${smPos(frac(m.pct))}"><img src="stagemap/minion${i + 1}.png" alt="${m.name}${beaten ? ', defeated' : ''}">${beaten ? SM_X : ''}</div>`;
+        html += `<div class="sm-node sm-minion${beaten ? ' sm-defeated-node' : ''}${isNext ? ' sm-is-next' : ''}" data-pct="${m.pct}" data-idx="${i}" style="left:${smPos(frac(m.pct))}"><img src="stagemap/minion${i + 1}.png" alt="${m.name}${beaten ? ', defeated' : ''}">${beaten ? SM_X : ''}</div>`;
         html += `<div class="sm-tag sm-tag-minion" style="left:${smPos(frac(m.pct))}">${fmt(words(m.pct))}</div>`;
     });
 
     // Right end: the boss that closes this stage
     const rightBeaten = done(p1);
     if (rightBeaten) {
-        html += `<div class="sm-node sm-boss-node sm-defeated-node" style="left:${smPos(1)}"><img src="stagemap/boss${rightIdx + 1}.png" alt="${BOSS_BEATS[rightIdx].name}, defeated">${SM_X}</div>`;
+        html += `<div class="sm-node sm-boss-node sm-defeated-node sm-right-boss" style="left:${smPos(1)}"><img src="${bossStill(rightIdx + 1)}" alt="${BOSS_BEATS[rightIdx].name}, defeated">${SM_X}</div>`;
     } else {
-        html += `<button type="button" class="sm-node sm-boss-node sm-boss-next" style="left:${smPos(1)}" onclick="showBossZoom()" aria-label="${BOSS_BEATS[rightIdx].name}: boss info"><img id="bossSprite" src="stagemap/boss${rightIdx + 1}.png" alt=""></button>`;
+        html += `<button type="button" class="sm-node sm-boss-node sm-boss-next" style="left:${smPos(1)}" onclick="showBossZoom()" aria-label="${BOSS_BEATS[rightIdx].name}: boss info"><span id="bossSprite" class="sm-boss-sprite" data-boss="${rightIdx + 1}"></span></button>`;
     }
     html += `<div class="sm-tag sm-tag-boss sm-tag-next" style="left:${smPos(1)}">${BOSS_BEATS[rightIdx].name.toUpperCase()}<br><span>${fmt(words(p1))}</span></div>`;
 
@@ -549,6 +563,18 @@ function renderStageMap(progress, curIdx) {
         html += `<div class="sm-you" style="left:${smPos(you)}"><span class="sm-you-tag">YOU</span><span class="sm-you-stem"></span></div>`;
     }
     track.innerHTML = html;
+    const spriteEl = track.querySelector('.sm-boss-sprite');
+    window._dpBoss = (spriteEl && window.DPBossSprite) ? DPBossSprite.attach(spriteEl, rightIdx + 1) : null;
+
+    // The boss gets restless in the last stretch: the final 500 words, or the
+    // last quarter of a short stage
+    const stageWords = words(p1) - words(p0);
+    const leftToBoss = words(p1) - state.total;
+    const map = track.closest('.stage-map');
+    if (map) map.classList.toggle('sm-boss-close', !rightBeaten && leftToBoss > 0 && leftToBoss <= Math.min(500, stageWords * 0.25));
+
+    // Positions for dashReplay
+    track._sm = { p0: p0, p1: p1, frac: frac, leftIdx: leftIdx, rightIdx: rightIdx, you: you };
 
     document.getElementById('smRange').textContent = `${p0}% → ${p1}%`;
 
@@ -559,7 +585,7 @@ function renderStageMap(progress, curIdx) {
     } else {
         nextBox.style.display = '';
         const toGo = nextMinion ? words(nextMinion.m.pct) - state.total : words(p1) - state.total;
-        document.getElementById('smNextSprite').src = nextMinion ? `stagemap/minion${nextMinion.i + 1}.png` : `stagemap/boss${rightIdx + 1}.png`;
+        document.getElementById('smNextSprite').src = nextMinion ? `stagemap/minion${nextMinion.i + 1}.png` : bossStill(rightIdx + 1);
         document.getElementById('smNextName').textContent = (nextMinion ? nextMinion.m.name : BOSS_BEATS[rightIdx].name).toUpperCase();
         document.getElementById('smNextToGo').textContent = fmt(Math.max(0, toGo));
     }
@@ -572,7 +598,7 @@ function renderStageMap(progress, curIdx) {
     strip.style.display = beatenCount ? '' : 'none';
     document.getElementById('smDefeatedLabel').textContent = `DEFEATED ${beatenCount}/${BOSS_BEATS.length}`;
     document.getElementById('smDefeatedList').innerHTML = BOSS_BEATS.slice(0, beatenCount).map((b, i) =>
-        `<span class="sm-mini" title="${b.name}"><img src="stagemap/boss${i + 1}.png" alt="${b.name}">${SM_X}</span>`
+        `<span class="sm-mini" title="${b.name}"><img src="${bossStill(i + 1)}" alt="${b.name}">${SM_X}</span>`
     ).join('');
 
     // Threshold ticks on the total progress bar
@@ -581,6 +607,161 @@ function renderStageMap(progress, curIdx) {
         ticks.innerHTML = BOSS_BEATS.map(b => `<i class="sm-tick sm-tick-boss" style="left:${b.pct}%"></i>`).join('')
                         + MINIONS.map(m => `<i class="sm-tick" style="left:${m.pct}%"></i>`).join('');
     }
+}
+
+// ── Dashboard replay ─────────────────────────────────────────────────────────
+// When the dashboard opens with more words than last time it was seen on this
+// device (usually words synced from the Write page), play them in: the
+// marker glides along the map, minions passed get their X, a beaten boss gets
+// a DEFEATED! pop-up, and the numbers count up.
+// Display only. The "last seen" total is kept in its own key on this device
+// (dpDashSeen); it is not part of the project data, isn't synced or backed up,
+// and losing it only means one replay is skipped.
+const SEEN_KEY = 'dpDashSeen';
+function readSeen() {
+    try {
+        const m = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}');
+        const v = m && activeId ? m[activeId] : undefined;
+        return typeof v === 'number' ? v : null;
+    } catch (e) { return null; }
+}
+function rememberSeen() {
+    if (!activeId || !state || typeof state.total !== 'number') return;
+    try {
+        const m = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}') || {};
+        if (m[activeId] === state.total) return;
+        m[activeId] = state.total;
+        localStorage.setItem(SEEN_KEY, JSON.stringify(m));
+    } catch (e) { /* storage full or blocked: the replay just won't run */ }
+}
+
+function bossHpAt(progress) {
+    const i = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
+    const cur = BOSS_BEATS[i] || BOSS_BEATS[0];
+    const nxt = BOSS_BEATS[i + 1] || { pct: 100 };
+    return { idx: i, hp: Math.max(0, 100 - ((progress - cur.pct) / ((nxt.pct - cur.pct) || 1) * 100)) };
+}
+
+function dashReplay(fromTotal, opts) {
+    opts = Object.assign({ bossComic: true, levelComic: true, gainLabel: false }, opts || {});
+    const track = document.getElementById('smTrack');
+    const sm = track && track._sm;
+    if (!sm || !(state.goal > 0) || fromTotal >= state.total) return;
+    const fx = window.DPFx;
+    const still = fx ? fx.reduced() : false;
+
+    const toTotal  = state.total;
+    const fromProg = (fromTotal / state.goal) * 100;
+    const toProg   = (toTotal / state.goal) * 100;
+    const youFrom  = fromProg >= sm.p0 ? sm.frac(fromProg) : 0;
+    const youTo    = sm.you;
+    // Longer journeys take a little longer, within limits
+    const dur = still ? 0 : Math.round(Math.max(900, Math.min(1800, 900 + (youTo - youFrom) * 1400)));
+    track.style.setProperty('--sm-dur', dur + 'ms');
+    if (map()) map().style.setProperty('--sm-dur', dur + 'ms');
+    function map() { return track.closest('.stage-map'); }
+
+    window._dpReplaying = true;
+
+    // 1. Put the moving parts back where they were
+    const doneLine = track.querySelector('.sm-line-done');
+    const todoLine = track.querySelector('.sm-line-todo');
+    const movers   = [track.querySelector('.sm-you-dot'), track.querySelector('.sm-you')].filter(Boolean);
+    const pos = f => smPos(f);
+    const width = f => `calc((100% - 2 * var(--sm-pad)) * ${Math.max(0, Math.min(1, f)).toFixed(4)})`;
+    if (doneLine) doneLine.style.width = width(youFrom);
+    if (todoLine) todoLine.style.left = pos(youFrom);
+    movers.forEach(m => { m.style.left = pos(youFrom); });
+
+    const hpBar   = document.getElementById('hpBar');
+    const bossBar = document.getElementById('bossHPBar');
+    const hpFrom  = bossHpAt(fromProg);
+    const hpTo    = bossHpAt(toProg);
+    [hpBar, bossBar].forEach(b => b && b.classList.add('dp-slow'));
+    if (hpBar)   { hpBar.style.transition = 'none'; hpBar.style.width = Math.min(100, fromProg) + '%'; }
+    if (bossBar) { bossBar.style.transition = 'none'; bossBar.style.width = (hpFrom.idx === hpTo.idx ? hpFrom.hp : 100) + '%'; }
+
+    // Nodes beaten on the way: hold their X back until the marker arrives
+    const span = Math.max(0.0001, youTo - youFrom);
+    const fresh = [];
+    track.querySelectorAll('.sm-minion.sm-defeated-node').forEach(n => {
+        const pct = parseFloat(n.dataset.pct);
+        if (!(pct > fromProg)) return;
+        const at = Math.max(0, (sm.frac(pct) - youFrom) / span) * dur;
+        n.classList.add('sm-fresh');
+        n.style.setProperty('--d', at + 'ms');
+        fresh.push({ node: n, at: at, idx: parseInt(n.dataset.idx, 10) || 0 });
+    });
+    const leftBoss  = track.querySelector('.sm-left-boss');
+    const rightBoss = track.querySelector('.sm-right-boss');
+    const bossFell  = leftBoss && fromProg < sm.p0;
+    const finalFell = rightBoss && fromProg < sm.p1;
+    if (bossFell)  { leftBoss.classList.add('sm-fresh');  leftBoss.style.setProperty('--d', '0ms'); }
+    if (finalFell) { rightBoss.classList.add('sm-fresh'); rightBoss.style.setProperty('--d', dur + 'ms'); }
+
+    // Numbers: start from the old total
+    const wc = document.getElementById('wcMain');
+    if (wc) wc.textContent = fromTotal.toLocaleString();
+
+    void track.offsetWidth;     // commit the starting positions
+
+    // 2. Go
+    track.classList.add('sm-replaying');
+    if (hpBar)   hpBar.style.transition = '';
+    if (bossBar) bossBar.style.transition = '';
+    requestAnimationFrame(() => {
+        if (doneLine) doneLine.style.width = width(youTo);
+        if (todoLine) todoLine.style.left = pos(youTo);
+        movers.forEach(m => { m.style.left = pos(youTo); });
+        if (hpBar)   hpBar.style.width = Math.min(100, toProg) + '%';
+        if (bossBar) bossBar.style.width = hpTo.hp + '%';
+    });
+    if (fx) fx.countUp(wc, fromTotal, toTotal, Math.max(dur, 600));
+
+    if (opts.gainLabel) {
+        const gain = document.getElementById('wcGain');
+        if (gain) {
+            gain.textContent = `+${(toTotal - fromTotal).toLocaleString()} SINCE YOUR LAST VISIT`;
+            gain.classList.add('show');
+            clearTimeout(gain._t);
+            gain._t = setTimeout(() => gain.classList.remove('show'), 6000);
+        }
+    }
+
+    // Pop-ups, timed to the marker
+    if (fx && bossFell && opts.bossComic) fx.comic(fx.WORDS.boss, { tone: 'red' });
+    fresh.forEach(f => setTimeout(() => {
+        if (!f.node.isConnected) return;
+        if (fx) fx.comic(fx.minionWord(f.idx), { tone: 'green', at: f.node });
+        if (window.SFX && opts.bossComic !== false) { try { SFX.minionDefeated(); } catch (e) {} }
+    }, f.at + 120));
+    if (fx && finalFell && opts.bossComic) setTimeout(() => fx.comic(fx.WORDS.victory, { tone: 'red' }), dur + 150);
+    setTimeout(() => {
+        if (track.isConnected) showDamageNumber(toTotal - fromTotal);
+        if (window._dpBoss) window._dpBoss.hurt();
+    }, Math.max(0, dur - 250));
+
+    // 3. Tidy up so later redraws behave normally
+    setTimeout(() => {
+        track.classList.remove('sm-replaying');
+        [hpBar, bossBar].forEach(b => b && b.classList.remove('dp-slow'));
+        if (wc) wc.textContent = state.total.toLocaleString();
+        window._dpReplaying = false;
+        if (window._dpRedrawAfterReplay) { window._dpRedrawAfterReplay = false; updateUI(); }
+    }, dur + 700);
+}
+
+// A buddy in the collection hops now and then
+let _buddyHopTimer = null;
+function startBuddyHops() {
+    if (_buddyHopTimer || (window.DPFx && DPFx.reduced())) return;
+    _buddyHopTimer = setInterval(() => {
+        if (document.hidden) return;
+        const all = document.querySelectorAll('#buddyGallery .buddy-relic');
+        if (!all.length) return;
+        const b = all[Math.floor(Math.random() * all.length)];
+        b.classList.remove('buddy-hop'); void b.offsetWidth; b.classList.add('buddy-hop');
+    }, 6500);
 }
 
 // ── Overlays ──────────────────────────────────────────────────────────────────
@@ -599,7 +780,7 @@ window.showBossZoom = function() {
     const curBeatIdx = BOSS_BEATS.findLastIndex(b => progress >= b.pct);
     const nextBeat   = BOSS_BEATS[curBeatIdx + 1] || BOSS_BEATS[curBeatIdx];
     const wordsNeeded = Math.ceil((nextBeat.pct / 100) * state.goal) - state.total;
-    document.getElementById('bossZoomSprite').src = window.getBossImgSrc(curBeatIdx + 2);
+    if (window.DPBossSprite) DPBossSprite.attach(document.getElementById('bossZoomSprite'), Math.min(BOSS_BEATS.length, curBeatIdx + 2));
     document.getElementById('bossZoomName').innerText = `STAGE ${curBeatIdx + 2} — ${nextBeat.name.toUpperCase()}`;
     document.getElementById('bossZoomBeat').innerText = wordsNeeded > 0
         ? `${wordsNeeded.toLocaleString()} WORDS TO DEFEAT`
@@ -695,7 +876,13 @@ window.showDashboard = function() {
     if (nav) nav.style.display = '';
     checkPeriodResets();
     backfillBuddies();
+    const seenBefore = readSeen();      // read before updateUI records the new total
     updateUI();
+    if (seenBefore != null && seenBefore < state.total) {
+        // Let the page settle for a moment so the starting point is seen
+        setTimeout(() => dashReplay(seenBefore, { gainLabel: true }), 450);
+    }
+    startBuddyHops();
     initGraph();
 };
 
