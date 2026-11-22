@@ -963,6 +963,22 @@ window.dpAdmin = {
     async username(uid) {
         try { const s = await getDoc(doc(db, 'leaderboard', uid)); return s.exists() ? (s.data().username || '') : ''; } catch (e) { return ''; }
     },
+    async notices() {
+        const snap = await getDocs(query(collection(db, 'announcements'), orderBy('startAt', 'desc'), limit(100)));
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    },
+    async saveNotice(n) {
+        const ref = n.id ? doc(db, 'announcements', n.id) : doc(collection(db, 'announcements'));
+        const rec = {
+            type: ['update', 'competition', 'offer'].includes(n.type) ? n.type : 'update',
+            title: String(n.title || '').slice(0, 120), body: String(n.body || '').slice(0, 1500),
+            buttonText: String(n.buttonText || '').slice(0, 40), buttonUrl: String(n.buttonUrl || '').slice(0, 300),
+            startAt: Number(n.startAt) || Date.now(), endAt: Number(n.endAt) || 0, createdAt: n.createdAt || Date.now()
+        };
+        await setDoc(ref, rec);
+        return ref.id;
+    },
+    async deleteNotice(id) { await deleteDoc(doc(db, 'announcements', id)); },
     async weekly() {
         try { const s = await getDoc(doc(db, 'ops', 'weeklyNumbers')); return s.exists() ? s.data() : null; } catch (e) { return null; }
     }
@@ -974,6 +990,93 @@ window.dpAdmin = {
 async function readLeaderboardDoc(uid) {
     try { return await getDoc(doc(db, 'leaderboard', uid)); }
     catch (e) { return getDoc(doc(db, 'users', uid)); }
+}
+
+// ── Notices ──────────────────────────────────────────────────────────────────
+// Short announcements written in the admin area (updates, competitions,
+// offers). Each shows once per account, the next time the app opens, and
+// never while the writer is typing. Seen notices and the "no offers" choice
+// live in users/{uid}/private/notices.
+let _lastKeyAt = 0;
+const _loadedAt = Date.now();
+['keydown', 'input'].forEach(ev => window.addEventListener(ev, () => { _lastKeyAt = Date.now(); }, true));
+// Wait until the writer hasn't typed for 8 seconds. If they're in a text box
+// (the Write page puts the cursor in the editor), also wait 8 seconds from
+// page load, so a notice never lands just as they start typing.
+function whenNotTyping(cb) {
+    const ok = () => {
+        const a = document.activeElement;
+        const inText = a && (a.isContentEditable || /^(TEXTAREA|INPUT)$/.test(a.tagName));
+        const since = Math.max(_lastKeyAt, inText ? _loadedAt : 0);
+        return Date.now() - since > 8000 && !document.querySelector('.dp-acct-overlay');
+    };
+    if (ok()) return cb();
+    const t = setInterval(() => { if (ok()) { clearInterval(t); cb(); } }, 2000);
+}
+function noticesRef(uid) { return doc(db, 'users', uid, 'private', 'notices'); }
+async function checkNotices(user) {
+    let prefs = { seen: [], offersOff: false };
+    try { const s = await getDoc(noticesRef(user.uid)); if (s.exists()) prefs = { seen: [], ...s.data() }; } catch (e) { return; }
+    let list;
+    try {
+        const snap = await getDocs(query(collection(db, 'announcements'), orderBy('startAt', 'desc'), limit(20)));
+        list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) { return; }   // not available yet (e.g. before the rules are live)
+    const now = Date.now();
+    const due = list
+        .filter(n => n.startAt <= now && (!n.endAt || n.endAt > now))
+        .filter(n => !(prefs.seen || []).includes(n.id))
+        .filter(n => !(n.type === 'offer' && prefs.offersOff))
+        .sort((a, b) => a.startAt - b.startAt);
+    if (!due.length) return;
+    const showNext = () => {
+        const n = due.shift();
+        if (!n) return;
+        whenNotTyping(() => showNotice(n, () => {
+            setDoc(noticesRef(user.uid), { seen: arrayUnion(n.id) }, { merge: true }).catch(() => {});
+            if (due.length) setTimeout(showNext, 400);
+        }));
+    };
+    showNext();
+}
+function showNotice(n, done) {
+    const esc = t => String(t || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const kicker = { update: 'WHAT’S NEW', competition: 'COMPETITION', offer: 'OFFER' }[n.type] || 'NEWS';
+    const safeUrl = /^(https:\/\/|[a-z0-9-]+\.html)/i.test(n.buttonUrl || '') ? n.buttonUrl : '';
+    const o = document.createElement('div');
+    o.className = 'dp-acct-overlay';
+    o.setAttribute('role', 'dialog');
+    o.setAttribute('aria-modal', 'true');
+    o.setAttribute('aria-labelledby', 'dpNoticeTitle');
+    o.innerHTML = `<div class="dp-acct-box dp-notice">
+        <p class="dp-notice-kicker">${kicker}</p>
+        <h2 id="dpNoticeTitle">${esc(n.title)}</h2>
+        <p class="dp-notice-body">${esc(n.body)}</p>
+        ${n.buttonText && safeUrl ? `<a class="dp-acct-btn" id="dpNoticeGo" href="${esc(safeUrl)}">${esc(n.buttonText).toUpperCase()}</a>` : ''}
+        <button type="button" class="${n.buttonText && safeUrl ? 'dp-acct-later' : 'dp-acct-btn'}" id="dpNoticeOk">GOT IT</button>
+        ${n.type === 'offer' ? '<p class="dp-notice-small">You can turn off offers in Account.</p>' : ''}
+    </div>`;
+    document.body.appendChild(o);
+    const close = () => { o.remove(); done(); };
+    o.querySelector('#dpNoticeOk').onclick = close;
+    const go = o.querySelector('#dpNoticeGo');
+    if (go) go.addEventListener('click', () => { done(); });
+    o.querySelector('#dpNoticeOk').focus();
+}
+window.dpShowNotice = showNotice;   // used by the admin area's preview
+// Account panel: the one notice setting
+async function renderNoticePrefs() {
+    const el = document.getElementById('dpNoticePrefs');
+    if (!el || !currentUser) return;
+    let off = false;
+    try { const s = await getDoc(noticesRef(currentUser.uid)); off = s.exists() && !!s.data().offersOff; } catch (e) { return; }
+    el.innerHTML = `<div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 12px;"></div>
+        <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px;">NOTICES</div>
+        <label class="dp-acct-tick" style="font-size:0.85rem;"><input type="checkbox" id="dpOffersOn"${off ? '' : ' checked'}>
+            <span>Show offers from Draft Punk. Updates and competition news always show.</span></label>`;
+    el.querySelector('#dpOffersOn').onchange = e => {
+        setDoc(noticesRef(currentUser.uid), { offersOff: !e.target.checked }, { merge: true }).catch(() => { e.target.checked = !e.target.checked; });
+    };
 }
 
 // ── Friend request badge ──────────────────────────────────────────────────────
@@ -1084,8 +1187,12 @@ async function continueAfterAuth(user) {
                           dpData.projects &&
                           dpData.projects[dpData.activeProjectId] &&
                           dpData.projects[dpData.activeProjectId].active;
-        if (hasActive && (window.goHome || window.showDashboard)) (window.goHome || window.showDashboard)();
-        else if (!hasActive && window.showProjectForm) window.showProjectForm();
+        // A failure drawing the page (e.g. the chart library not loading)
+        // mustn't stop the account checks below
+        try {
+            if (hasActive && (window.goHome || window.showDashboard)) (window.goHome || window.showDashboard)();
+            else if (!hasActive && window.showProjectForm) window.showProjectForm();
+        } catch (e) { console.warn('Showing the page failed:', e); }
         try {
             checkPendingRequests(user);
             processFriendAcceptances(user);
@@ -1095,6 +1202,7 @@ async function continueAfterAuth(user) {
         }
         checkAccount(user);
         checkSuspended(user);
+        checkNotices(user);
     }
 }
 
@@ -1476,6 +1584,7 @@ async function showAccountOverlay() {
             </div>
             <div id="dpRecoverySection"></div>
             <div id="dpBlockedSection"></div>
+            <div id="dpNoticePrefs"></div>
 
             <div style="border-top:1px solid var(--border,#2a2a2a);margin:20px 0 16px;"></div>
             <div style="font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:12px;">DANGER ZONE</div>
@@ -1507,6 +1616,7 @@ async function showAccountOverlay() {
     if (window.dpMarkEditorFont) window.dpMarkEditorFont();
     renderRecoverySection(user).catch(err => console.warn('Recovered copies not listed:', err));
     renderBlockedSection().catch(err => console.warn('Blocked list not shown:', err));
+    renderNoticePrefs().catch(err => console.warn('Notice settings not shown:', err));
     loadPush().then(m => {
         if (!m) return;
         m.initPush(app, () => auth.currentUser);

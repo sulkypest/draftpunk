@@ -141,6 +141,13 @@ service cloud.firestore {
       allow list, write: if isAdmin();
     }
 
+    // Notices (announcements) written in the admin area. Any signed-in
+    // writer can read them; only the admin can write them.
+    match /announcements/{noticeId} {
+      allow get, list: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
     // Weekly numbers, written by the server for the admin page
     match /ops/{docId} {
       allow get: if isAdmin() && docId == 'weeklyNumbers';

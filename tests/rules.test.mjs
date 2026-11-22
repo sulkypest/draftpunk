@@ -136,6 +136,16 @@ await t('admin can lift it', () => assertSucceeds(deleteDoc(doc(admin, 'suspende
 await t('writing works again after', () => assertSucceeds(setDoc(doc(as('adult'), 'users/adult/writing/ch2'), { text: 'back' })));
 await t('other writers unaffected throughout', () => assertSucceeds(setDoc(doc(as('teen'), 'users/teen/writing/ch1'), { text: 'x' })));
 
+// Notices
+const note = { type: 'update', title: 'Hello', body: 'News', buttonText: '', buttonUrl: '', startAt: 1, endAt: 0, createdAt: 1 };
+await t('admin can post a notice', () => assertSucceeds(setDoc(doc(admin, 'announcements/n1'), note)));
+await t('writers can read notices', () => assertSucceeds(getDoc(doc(as('teen'), 'announcements/n1'))));
+await t('writers can\'t post notices', () => assertFails(setDoc(doc(as('adult'), 'announcements/n2'), note)));
+await t('writers can\'t edit notices', () => assertFails(setDoc(doc(as('adult'), 'announcements/n1'), { ...note, title: 'x' })));
+await t('signed-out can\'t read notices', () => assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'announcements/n1'))));
+await t('writer can record seen notices', () => assertSucceeds(setDoc(doc(as('adult'), 'users/adult/private/notices'), { seen: ['n1'], offersOff: true })));
+await t('admin can delete a notice', () => assertSucceeds(deleteDoc(doc(admin, 'announcements/n1'))));
+
 console.log(`\n${n} passed, ${failed} failed`);
 await env.cleanup();
 process.exit(failed ? 1 : 0);
