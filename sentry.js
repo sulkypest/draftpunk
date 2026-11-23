@@ -6,11 +6,12 @@ const SENTRY_DSN = 'https://f663d78c5f2fba08ba41cc3ccf663cbc@o4511132389670912.i
 
 if (SENTRY_DSN !== 'YOUR_SENTRY_DSN_HERE') {
     const script    = document.createElement('script');
-    script.src      = 'https://browser.sentry-cdn.com/8.28.0/bundle.min.js';
+    script.src      = 'https://browser.sentry-cdn.com/10.78.0/bundle.min.js';
     script.crossOrigin = 'anonymous';
     script.onload   = function() {
         Sentry.init({
             dsn:              SENTRY_DSN,
+            sendDefaultPii:   false,   // keep collection minimal (SDK 11+ changes this default)
             tracesSampleRate: 0.1,
             environment:      (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
                               ? 'development' : 'production',
