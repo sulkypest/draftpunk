@@ -36,10 +36,27 @@
             .replace(/<br\s*\/?>/gi, '\n').replace(/<\/(div|p|li|h[1-6])>/gi, '\n')
             .replace(/<[^>]+>/g, ''));
     }
-    // Word count exactly as the record page has always counted it
+    // Word count: the same rules as wordcount.js in the app (Nov 2026), so a
+    // record shows the same figure as the Write page. tests/wordcount.test.js
+    // checks the two agree.
+    const WC_NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', hellip: '\u2026', mdash: '\u2014', ndash: '\u2013',
+                       lsquo: '\u2018', rsquo: '\u2019', ldquo: '\u201C', rdquo: '\u201D' };
+    const WC_BLOCK = /<\s*\/?\s*(br|p|div|h[1-6]|li|ul|ol|blockquote|tr|td|th|table|hr|section|article)\b[^>]*>/gi;
     function countWordsHtml(html) {
-        const t = String(html || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&[a-z]+;/gi, ' ').trim();
-        return t ? t.split(/\s+/).length : 0;
+        if (!html) return 0;
+        const t = String(html).replace(WC_BLOCK, ' ').replace(/<[^>]*>/g, '')
+            .replace(/&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]*);/gi, (m, e) => {
+                if (e[0] === '#') {
+                    const n = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+                    try { return String.fromCodePoint(n); } catch (err) { return ' '; }
+                }
+                const k = e.toLowerCase();
+                return Object.prototype.hasOwnProperty.call(WC_NAMED, k) ? WC_NAMED[k] : '\u00A4';
+            });
+        if (!t.trim()) return 0;
+        let n = 0;
+        t.split(/[\s\u2013\u2014\u2026\u2015]+/u).forEach(w => { if (w && /[\p{L}\p{N}]/u.test(w)) n++; });
+        return n;
     }
     // Words for fingerprinting: forgiving of formatting, curly quotes, dashes,
     // capitals and apostrophes, so a story copied out of Word or a PDF still

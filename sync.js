@@ -251,6 +251,11 @@ async function syncNow(user) {
         DATA_KEYS.forEach(k => { expected[k] = result[k]; });
         try { await verifyPrivateCopy(user, expected); }
         catch (err) { console.warn('Private copy check failed (nothing removed):', err); }
+        // Already in step: make sure the leaderboard shows these figures
+        if (!leaderboardChecked) {
+            leaderboardChecked = true;
+            await updateLeaderboard(user, wordFigures(result), true);
+        }
     }
     setSyncStatus('synced');
     return localChanged.length > 0;
@@ -272,9 +277,30 @@ async function writeCloud(user, data, stamp) {
     // friends need: word totals, period counts, name and photo. It no longer
     // carries updatedAt, so a cleared profile can never look newer than the
     // owner-only copy (to this code or to an older cached copy of the app).
-    const payload = {};
-    // Compute totals across all projects for leaderboard fields
-    const dpData   = data.draftPunkData || {};
+    const payload = wordFigures(data);
+    payload.displayName    = user.displayName || '';
+    payload.photoURL       = user.photoURL    || '';
+    await setDoc(doc(db, 'users', user.uid), payload, { merge: true });
+
+    // Leaderboard record: username and word counts only, the one thing other
+    // writers can read (Nov 2026; the profile above is now owner-only).
+    // Never allowed to fail the save.
+    await updateLeaderboard(user, payload, false);
+
+    // Once per visit: read the owner-only record back, and only if it matches
+    // exactly what was just saved, count towards removing the old public copy.
+    try {
+        await verifyPrivateCopy(user, privatePayload);
+    } catch (err) {
+        console.warn('Private copy check failed (nothing removed):', err);
+    }
+}
+
+// Word totals and this week/month/year's words across all projects, as shown
+// on the leaderboard, in groups and to friends.
+function wordFigures(data) {
+    const payload  = {};
+    const dpData   = (data && data.draftPunkData) || {};
     const projects = Object.values(dpData.projects || {});
     payload.totalWords     = projects.reduce((s, p) => s + (p.total          || 0), 0);
     // Only count a project's period words if they belong to the current period
@@ -288,31 +314,38 @@ async function writeCloud(user, data, stamp) {
     payload.weekEndsAt     = bounds.wordsThisWeek.end;
     payload.monthEndsAt    = bounds.wordsThisMonth.end;
     payload.yearEndsAt     = bounds.wordsThisYear.end;
-    payload.displayName    = user.displayName || '';
-    payload.photoURL       = user.photoURL    || '';
-    await setDoc(doc(db, 'users', user.uid), payload, { merge: true });
+    return payload;
+}
 
-    // Leaderboard record: username and word counts only, the one thing other
-    // writers can read (Nov 2026; the profile above is now owner-only).
-    // Never allowed to fail the save.
-    if (_myLbUsername) {
-        try {
-            await setDoc(doc(db, 'leaderboard', user.uid), {
-                username: _myLbUsername,
-                totalWords: payload.totalWords, wordsThisWeek: payload.wordsThisWeek,
-                wordsThisMonth: payload.wordsThisMonth, wordsThisYear: payload.wordsThisYear,
-                weekEndsAt: payload.weekEndsAt, monthEndsAt: payload.monthEndsAt, yearEndsAt: payload.yearEndsAt
-            });
-        } catch (e) { console.warn('Leaderboard update skipped:', e); }
-    }
-
-    // Once per visit: read the owner-only record back, and only if it matches
-    // exactly what was just saved, count towards removing the old public copy.
+// Write the leaderboard record (Nov 2026 fix). Previously it was only written
+// when this device changed the cloud copy, and skipped without a word if the
+// username hadn't been looked up yet, so one missed write left groups and the
+// leaderboard showing old figures until the writer next added words.
+// Now the username is looked up if needed, and once per visit the record is
+// checked against the (in-step) figures and rewritten if it's out of date.
+// It only ever writes the figures already in the writer's own data; it never
+// changes that data. Never throws.
+let leaderboardChecked = false;
+async function updateLeaderboard(user, figures, onlyIfDifferent) {
+    if (_suspended) return;
     try {
-        await verifyPrivateCopy(user, privatePayload);
-    } catch (err) {
-        console.warn('Private copy check failed (nothing removed):', err);
-    }
+        if (!_myLbUsername) {
+            const s = await getDoc(doc(db, 'users', user.uid));
+            if (s.exists() && s.data().username) _myLbUsername = s.data().username;
+        }
+        if (!_myLbUsername) return;            // no username yet: not on the leaderboard
+        const rec = {
+            username: _myLbUsername,
+            totalWords: figures.totalWords, wordsThisWeek: figures.wordsThisWeek,
+            wordsThisMonth: figures.wordsThisMonth, wordsThisYear: figures.wordsThisYear,
+            weekEndsAt: figures.weekEndsAt, monthEndsAt: figures.monthEndsAt, yearEndsAt: figures.yearEndsAt
+        };
+        if (onlyIfDifferent) {
+            const cur = await getDoc(doc(db, 'leaderboard', user.uid));
+            if (cur.exists() && canonical(cur.data()) === canonical(rec)) return;
+        }
+        await setDoc(doc(db, 'leaderboard', user.uid), rec);
+    } catch (e) { console.warn('Leaderboard update skipped:', e); }
 }
 
 // Once per visit, read the private copy back and check it matches exactly what
