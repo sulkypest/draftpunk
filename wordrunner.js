@@ -23,6 +23,7 @@ let selectedBuddy = null;
 function wrSave() { localStorage.setItem('wordRunnerData', JSON.stringify(wrState)); }
 
 function countWords(text) {
+    if (window.DPWordCount) return window.DPWordCount.countWordsText(text);
     if (!text.trim()) return 0;
     return text.trim().split(/\s+/).length;
 }

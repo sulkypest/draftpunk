@@ -31,6 +31,7 @@
         return h ? `${h}h ${r}m` : `${r}m`;
     }
     function countWordsHtml(html) {
+        if (window.DPWordCount) return window.DPWordCount.countWordsHtml(html);
         const t = String(html || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&[a-z]+;/gi, ' ').trim();
         return t ? t.split(/\s+/).length : 0;
     }

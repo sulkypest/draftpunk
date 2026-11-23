@@ -27,6 +27,7 @@ function init() {
         writingData = { projectId: activeProjectId, chapters: [] };
     }
 
+    recountChapters();
     reconcileSyncLedger();
     renderAll();
     updateFooter();
@@ -704,15 +705,49 @@ function sanitizeHtml(html) {
 }
 
 // ── Word counting ─────────────────────────────────────────────────────────────
+// The rules live in wordcount.js (shared with the rest of the app and the server).
 function countWords(html) {
-    if (!html) return 0;
-    const text = html
-        .replace(/<br\s*\/?>/gi, ' ')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&[a-z]+;/gi, ' ')
-        .trim();
-    return text ? text.split(/\s+/).filter(w => w.length > 0).length : 0;
+    return window.DPWordCount ? window.DPWordCount.countWordsHtml(html) : 0;
+}
+
+// Bring each chapter's word count up to date with the current counting rules
+// (Nov 2026 fix: formatting used to split words and stray punctuation counted
+// as words). Runs on load and when chapters arrive from another device.
+//
+// The words waiting to be added to the tracker (wordCount − syncedWords) are
+// kept exactly as they were, so a corrected count never swallows new words
+// and never offers words again. The tracker total, XP and streaks are not
+// touched. Returns true if anything changed.
+function recountChapters() {
+    if (!writingData || !writingData.chapters.length || !window.DPWordCount) return false;
+    let lowered = 0, changed = false;
+    writingData.chapters.forEach(ch => {
+        const fresh = countWords(ch.content || '');
+        const old   = ch.wordCount || 0;
+        if (fresh === old) return;
+        const waiting = Math.max(0, old - (ch.syncedWords || 0));
+        const synced  = Math.max(0, fresh - waiting);
+        if (synced < (ch.syncedWords || 0)) lowered += (ch.syncedWords || 0) - synced;
+        ch.syncedWords = synced;
+        ch.wordCount   = fresh;          // updatedAt left alone: the text hasn't changed
+        changed = true;
+    });
+    if (!changed) return false;
+    // proj.writeWords is the ledger total that reconcileSyncLedger() raises
+    // chapters up to, so it must come down by the same amount or the lowered
+    // figures would be pushed straight back up. It is only ever lowered here:
+    // a figure that's too low is corrected on the next sync, one that's too
+    // high would hide new words.
+    if (lowered > 0) {
+        const dpData = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
+        const proj   = dpData.projects && dpData.projects[activeProjectId];
+        if (proj && proj.writeWords !== undefined) {
+            proj.writeWords = Math.max(0, proj.writeWords - lowered);
+            localStorage.setItem('draftPunkData', JSON.stringify(dpData));
+        }
+    }
+    saveMeta();
+    return true;
 }
 
 // ── Footer ────────────────────────────────────────────────────────────────────
@@ -1275,6 +1310,7 @@ document.addEventListener('dpAuthChanged', async function(e) {
     if (result.changed) {
         writingData.chapters = result.chapters;
         saveMeta();
+        recountChapters();
         reconcileSyncLedger();
         renderAll();
         updateFooter();
