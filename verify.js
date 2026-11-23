@@ -22,11 +22,15 @@
     const fmtDay = k => { const [y, m, d] = String(k).split('-').map(Number); return new Date(y, (m || 1) - 1, d || 1).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
     function fmtMins(m) { m = Math.round(num(m)); const h = Math.floor(m / 60), r = m % 60; return h ? `${h}h ${r}m` : `${r}m`; }
 
-    // A record link, or just its code (24 letters and numbers)
-    function parseShareInput(s) {
+    // A record link, its id (24 letters and numbers), or a record code
+    // (DP-7K3F-9QXM). Returns { share } or { code }, or null.
+    function parseRecordInput(s, normalise) {
         const t = String(s || '').trim();
         const m = t.match(/[?&]share=([a-f0-9]{24})\b/i) || t.match(/^([a-f0-9]{24})$/i);
-        return m ? m[1].toLowerCase() : null;
+        if (m) return { share: m[1].toLowerCase() };
+        const c = t.match(/[?&]code=([^&#\s]+)/i);
+        const code = normalise && normalise(c ? decodeURIComponent(c[1]) : t);
+        return code ? { code } : null;
     }
 
     // What a check result means, in plain words
@@ -78,7 +82,7 @@
             .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
     }
 
-    const api = { parseShareInput, verdict, docxToText };
+    const api = { parseRecordInput, verdict, docxToText };
     if (typeof module === 'object' && module.exports) { module.exports = api; return; }
     window.DPVerify = api;
 
@@ -96,7 +100,7 @@
         const issued = snap.issuedBy === 'draft-punk';
         let html = `<div class="verify-card">
             <div class="verify-card-title">${esc(snap.title || 'Untitled')}</div>
-            <div class="record-meta">${snap.author ? esc(snap.author) + ' · ' : ''}${issued ? 'Issued' : 'Shared'} ${esc(fmtDateTime(snap.issuedAt || snap.generatedAt))}</div>
+            <div class="record-meta">${snap.code ? esc(snap.code) + ' · ' : ''}${snap.author ? esc(snap.author) + ' · ' : ''}${issued ? 'Issued' : 'Shared'} ${esc(fmtDateTime(snap.issuedAt || snap.generatedAt))}${snap.chapterScope && snap.chapterScope.included < snap.chapterScope.total ? ` · covers ${fmt(snap.chapterScope.included)} of ${fmt(snap.chapterScope.total)} chapters` : ''}</div>
             ${issued
                 ? `<div class="record-issued"><b>✓ ISSUED BY DRAFT PUNK</b><span>Draft Punk built this report from the record saved in the writer’s account. The writer couldn’t edit it.</span></div>`
                 : `<div class="record-issued older"><b>EARLIER SHARE LINK</b><span>This link was made before Draft Punk began issuing reports itself (November 2026). Its figures were sent by the writer’s own device, and it can’t be checked against a story. Ask the writer to update the link.</span></div>`}
@@ -116,20 +120,25 @@
 
     function say(where, text) { $(where).innerHTML = `<p class="record-muted">${esc(text)}</p>`; }
 
-    async function load(id) {
+    async function load(what) {
         record = null;
         $('vfStorySection').style.display = 'none';
-        if (!id) { say('vfRecord', 'That doesn’t look like a Writing Record link. It should contain “share=” followed by 24 letters and numbers.'); return; }
+        if (!what) { say('vfRecord', 'That doesn’t look like a Writing Record link or code. A code looks like DP-7K3F-9QXM; a link contains “share=”.'); return; }
         say('vfRecord', 'LOADING…');
         // sync.js (a module) provides getEvidenceShare; wait briefly for it
         for (let i = 0; i < 50 && !window.getEvidenceShare; i++) await new Promise(r => setTimeout(r, 100));
         if (!window.getEvidenceShare) { say('vfRecord', 'Couldn’t connect. Check your connection and reload.'); return; }
         try {
+            let id = what.share;
+            if (!id) {
+                id = window.getShareIdForCode && await window.getShareIdForCode(what.code);
+                if (!id) { say('vfRecord', `There’s no record with the code ${what.code}. Check the code, or ask the writer for their link. The writer may have stopped sharing it.`); return; }
+            }
             const snap = await window.getEvidenceShare(id);
             if (!snap) { say('vfRecord', 'There’s no record at that link. The writer may have stopped sharing it.'); return; }
             record = { id, snap };
             renderRecord(id, snap);
-            try { history.replaceState(null, '', 'verify.html?share=' + id); } catch (e) {}
+            try { history.replaceState(null, '', snap.code ? 'verify?code=' + snap.code : 'verify?share=' + id); } catch (e) {}
         } catch (e) {
             say('vfRecord', 'Couldn’t load the record. Check your connection and try again.');
         }
@@ -147,7 +156,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        $('vfLinkForm').addEventListener('submit', e => { e.preventDefault(); load(parseShareInput($('vfLink').value)); });
+        const parse = v => parseRecordInput(v, window.DPRecordCore && window.DPRecordCore.normaliseCode);
+        $('vfLinkForm').addEventListener('submit', e => { e.preventDefault(); load(parse($('vfLink').value)); });
         $('vfCheck').addEventListener('click', check);
         $('vfStory').addEventListener('input', () => { $('vfResult').innerHTML = ''; });
         $('vfFile').addEventListener('change', async () => {
@@ -165,7 +175,10 @@
             }
             $('vfFile').value = '';
         });
-        const id = parseShareInput(location.search);
-        if (id) { $('vfLink').value = location.origin + location.pathname.replace(/verify\.html$/, 'record.html') + '?share=' + id; load(id); }
+        const first = parse(location.search);
+        if (first) {
+            $('vfLink').value = first.code || (location.origin + location.pathname.replace(/verify(\.html)?$/, 'record.html') + '?share=' + first.share);
+            load(first);
+        }
     });
 })();

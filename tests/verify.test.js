@@ -5,18 +5,23 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const zlib = require('node:zlib');
 const path = require('node:path');
-const { parseShareInput, verdict, docxToText } = require('../verify.js');
+const { parseRecordInput, verdict, docxToText } = require('../verify.js');
 const core = require('../firebase/functions/record-core.js');
 
-test('reads a record link or a bare code, and nothing else', () => {
+test('reads a record link, its id or a record code, and nothing else', () => {
     const id = 'ca7d115fe0e369ada8daf2c1';
-    assert.strictEqual(parseShareInput('https://www.draft-punk.com/record.html?share=' + id), id);
-    assert.strictEqual(parseShareInput('  draft-punk.com/verify.html?share=' + id.toUpperCase() + '  '), id);
-    assert.strictEqual(parseShareInput(id), id);
-    assert.strictEqual(parseShareInput('?share=' + id), id);
-    assert.strictEqual(parseShareInput('https://example.com/?share=abc'), null);
-    assert.strictEqual(parseShareInput(id + 'ff'), null);
-    assert.strictEqual(parseShareInput(''), null);
+    const P = v => parseRecordInput(v, core.normaliseCode);
+    assert.deepStrictEqual(P('https://www.draft-punk.com/record.html?share=' + id), { share: id });
+    assert.deepStrictEqual(P('  draft-punk.com/verify.html?share=' + id.toUpperCase() + '  '), { share: id });
+    assert.deepStrictEqual(P(id), { share: id });
+    assert.deepStrictEqual(P('?share=' + id), { share: id });
+    assert.deepStrictEqual(P('DP-7K3F-9QXM'), { code: 'DP-7K3F-9QXM' });
+    assert.deepStrictEqual(P('dp 7k3f 9qxm'), { code: 'DP-7K3F-9QXM' });
+    assert.deepStrictEqual(P('https://www.draft-punk.com/verify?code=DP-7K3F-9QXM'), { code: 'DP-7K3F-9QXM' });
+    assert.deepStrictEqual(P('?code=DP-7K3F-9QXM'), { code: 'DP-7K3F-9QXM' });
+    assert.strictEqual(P('https://example.com/?share=abc'), null);
+    assert.strictEqual(P(id + 'ff'), null);
+    assert.strictEqual(P(''), null);
 });
 
 test('verdicts: exact, match, mostly, partly, none, too short', () => {

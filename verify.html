@@ -6,7 +6,7 @@
     <title>CHECK A WRITING RECORD — Draft Punk</title>
     <meta name="description" content="Check a Draft Punk Writing Record, and whether a submitted story matches it.">
     <link rel="icon" href="DRAFTPUNK.png" type="image/png">
-    <link rel="stylesheet" href="style.css?v=20261123a">
+    <link rel="stylesheet" href="style.css?v=20261123f">
     <!-- No error monitoring on this page: the story pasted here must never leave the browser. -->
 </head>
 <body class="record-page verify-page sb-ready">
@@ -24,9 +24,9 @@
 
         <h2 class="record-h2">1. THE RECORD</h2>
         <form id="vfLinkForm" class="verify-row" autocomplete="off">
-            <label for="vfLink" class="record-muted">Paste the Writing Record link the writer sent you</label>
+            <label for="vfLink" class="record-muted">Enter the record code (like DP-7K3F-9QXM) or paste the link the writer sent you</label>
             <div class="verify-inline">
-                <input id="vfLink" type="text" inputmode="url" spellcheck="false" placeholder="https://www.draft-punk.com/record.html?share=…">
+                <input id="vfLink" type="text" inputmode="url" spellcheck="false" placeholder="DP-XXXX-XXXX or a record link">
                 <button type="submit" id="vfLoad">LOAD</button>
             </div>
         </form>
@@ -54,9 +54,9 @@
         </div>
     </div>
 
-    <script src="theme.js?v=20261123a"></script>
-    <script src="firebase/functions/record-core.js?v=20261123a"></script>
-    <script src="verify.js?v=20261123a"></script>
-    <script type="module" src="sync.js?v=20261123e"></script>
+    <script src="theme.js?v=20261123f"></script>
+    <script src="firebase/functions/record-core.js?v=20261123f"></script>
+    <script src="verify.js?v=20261123f"></script>
+    <script type="module" src="sync.js?v=20261123f"></script>
 </body>
 </html>

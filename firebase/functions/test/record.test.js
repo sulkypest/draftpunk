@@ -15,6 +15,10 @@ function docRef(path) {
         path, id: path.split('/').pop(),
         collection: c => colRef(path + '/' + c),
         async get() { const d = store.get(path); return { exists: !!d, id: path.split('/').pop(), data: () => (d ? JSON.parse(JSON.stringify(d)) : undefined) }; },
+        async create(obj) {
+            if (store.has(path)) { const e = new Error('6 ALREADY_EXISTS: Document already exists'); e.code = 6; throw e; }
+            writes.push(path); store.set(path, JSON.parse(JSON.stringify(obj)));
+        },
         async set(obj, opts) {
             writes.push(path);
             const prev = (opts && opts.merge && store.get(path)) || {};
@@ -72,7 +76,13 @@ test('builds the share from the cloud copy, not from anything the browser sends'
     const res = await call('w', { projectId: 'p1', snapshot: { totals: { typed: 1e9 } }, totals: { typed: 1e9 } });
     const share = store.get('evidenceShares/' + res.id);
     assert.match(res.id, /^[a-f0-9]{24}$/);
-    assert.strictEqual(share.uid, 'w');
+    assert.strictEqual(share.uid, undefined, 'no account ID in the public report');
+    assert.ok(!JSON.stringify(share).includes(':"w"'), 'account ID appears nowhere as a value');
+    assert.match(res.code, /^DP-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/);
+    assert.strictEqual(share.code, res.code);
+    assert.deepStrictEqual(store.get('recordCodes/' + res.code).shareId, res.id);
+    assert.strictEqual(store.get('recordOwners/' + res.id).uid, 'w');
+    assert.deepStrictEqual(share.chapterScope, { included: 1, total: 1 });
     assert.strictEqual(share.issuedBy, 'draft-punk');
     assert.strictEqual(share.title, 'THE KEEPER');
     assert.strictEqual(share.author, 'writer_w');
@@ -83,8 +93,8 @@ test('builds the share from the cloud copy, not from anything the browser sends'
     assert.strictEqual(share.pastes.length, 1);
     assert.ok(!JSON.stringify(share).includes('lighthouse'), 'no text in the share');
     assert.deepStrictEqual(store.get('users/w/evidence/_shares').ids, [res.id]);
-    // Only the share and the private list of share ids are written
-    assert.deepStrictEqual(writes.sort(), ['evidenceShares/' + res.id, 'users/w/evidence/_shares'].sort());
+    // Only the report, its owner, its code and the private list of share ids are written
+    assert.deepStrictEqual(writes.sort(), ['evidenceShares/' + res.id, 'recordOwners/' + res.id, 'recordCodes/' + res.code, 'users/w/evidence/_shares'].sort());
 });
 
 test('the fingerprint recognises the story, even copied out of a word processor', async () => {
@@ -102,12 +112,14 @@ test('the fingerprint recognises the story, even copied out of a word processor'
     assert.strictEqual(other.found, 0);
 });
 
-test('updating a link keeps its address; another writer cannot update it', async () => {
+test('updating a link keeps its address and code; another writer cannot update it', async () => {
     seed();
-    const { id } = await call('w', { projectId: 'p1' });
+    const { id, code } = await call('w', { projectId: 'p1' });
     const first = store.get('evidenceShares/' + id).fingerprint.salt;
     const again = await call('w', { projectId: 'p1', shareId: id });
     assert.strictEqual(again.id, id);
+    assert.strictEqual(again.code, code);
+    assert.strictEqual([...store.keys()].filter(k => k.startsWith('recordCodes/')).length, 1);
     assert.notStrictEqual(store.get('evidenceShares/' + id).fingerprint.salt, first);
     await assert.rejects(call('x', { projectId: 'p1', shareId: id }), e => e.code === 'permission-denied');
     await assert.rejects(call('w', { projectId: 'p1', shareId: 'f'.repeat(24) }), e => e.code === 'permission-denied');
@@ -145,4 +157,41 @@ test('fingerprint of a very long text is sampled and stays small', () => {
     const r = core.compare(fp, excerpt);
     assert.ok(r.checked > 50, 'a 2,000-word excerpt is still checked');
     assert.strictEqual(r.share, 1);
+});
+
+test('only the chosen chapters are in the report and the fingerprint', async () => {
+    seed();
+    store.set('users/w/writing/c3', { projectId: 'p1', title: 'Notes', order: 1, content: 'Private planning notes that should not be in the record at all, kept apart from the story.' });
+    const res = await call('w', { projectId: 'p1', chapterIds: ['c1'] });
+    const share = store.get('evidenceShares/' + res.id);
+    assert.deepStrictEqual(share.chapters.map(c => c.title), ['One']);
+    assert.deepStrictEqual(share.chapterScope, { included: 1, total: 2 });
+    assert.strictEqual(core.compare(share.fingerprint, 'Private planning notes that should not be in the record at all').found, 0);
+    assert.deepStrictEqual(store.get('recordOwners/' + res.id).chapterIds, ['c1']);
+    await assert.rejects(call('w', { projectId: 'p1', chapterIds: ['c2'] }), e => e.code === 'invalid-argument', 'a chapter from another project gives nothing');
+    await assert.rejects(call('w', { projectId: 'p1', chapterIds: ['../x'] }), e => e.code === 'invalid-argument');
+});
+
+test('a link made before codes existed gets a code and loses its account ID when updated', async () => {
+    seed();
+    const old = 'a'.repeat(24);
+    store.set('evidenceShares/' + old, { uid: 'w', title: 'OLD', totals: {} });
+    const res = await call('w', { projectId: 'p1', shareId: old });
+    assert.strictEqual(res.id, old);
+    assert.match(res.code, /^DP-/);
+    assert.strictEqual(store.get('evidenceShares/' + old).uid, undefined);
+    assert.strictEqual(store.get('recordOwners/' + old).uid, 'w');
+    store.set('evidenceShares/' + 'b'.repeat(24), { uid: 'x', title: 'NOT MINE' });
+    await assert.rejects(call('w', { projectId: 'p1', shareId: 'b'.repeat(24) }), e => e.code === 'permission-denied');
+});
+
+test('record codes: unambiguous, and typed variations are read correctly', () => {
+    const code = core.makeCode([0, 1, 2, 3, 28, 29, 30, 31]);
+    assert.strictEqual(code, 'DP-0123-WXYZ');
+    assert.strictEqual(core.normaliseCode('dp 0123 wxyz'), 'DP-0123-WXYZ');
+    assert.strictEqual(core.normaliseCode('DP-O1L3-WXYZ'), 'DP-0113-WXYZ');
+    assert.strictEqual(core.normaliseCode('0123WXYZ'), 'DP-0123-WXYZ');
+    assert.strictEqual(core.normaliseCode('DP-0123-WXY'), null);
+    assert.strictEqual(core.normaliseCode('https://example.com'), null);
+    for (let i = 0; i < 200; i++) assert.match(core.makeCode(require('crypto').randomBytes(8)), /^DP-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/);
 });

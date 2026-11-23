@@ -37,16 +37,16 @@
     }
 
     // ── Build the report data from this device ───────────────────────────────
-    function buildSnapshot(author) {
+    // pid: the project; list: its chapters; excluded: ids left out of the record
+    function buildSnapshot(author, pid, list, excluded) {
         const dp   = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
-        const pid  = dp.activeProjectId;
         const proj = (dp.projects && dp.projects[pid]) || {};
-        const wd   = JSON.parse(localStorage.getItem('writingData') || '{}');
-        const chapters = (wd.projectId === pid && Array.isArray(wd.chapters)) ? wd.chapters.slice() : [];
-        chapters.sort((a, b) => (a.order || 0) - (b.order || 0));
+        const all  = (list || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        const chapters = all.filter(ch => !(excluded && excluded.has(ch.id)));
 
         const snap = {
             v: 1, title: proj.title || 'UNTITLED PROJECT', author: author || '',
+            chapterScope: { included: chapters.length, total: all.length },
             generatedAt: Date.now(), chapters: [], days: {}, pastes: [],
             totals: { typed: 0, pasted: 0, dropped: 0, imported: 0, deleted: 0, untrackedWords: 0, words: 0, earlierPastes: 0, earlierPastedChars: 0 },
             startedAt: 0
@@ -95,11 +95,14 @@
         const importedWords = pastes.filter(p => p.k === 'imported').reduce((s, p) => s + (num(p.w) || charsToWords(p.c)), 0);
         const maxMins = days.reduce((m, [, d]) => Math.max(m, num(d.min)), 1);
 
+        const sc = snap.chapterScope;
+        const scope = sc && sc.total && sc.included < sc.total ? ` · Covers ${fmt(sc.included)} of ${fmt(sc.total)} chapters` : '';
         let html = '';
         html += `<div class="record-head">
             <div class="record-kicker">WRITING RECORD</div>
             <h1 class="record-title">${esc(snap.title)}</h1>
-            <div class="record-meta">${snap.author ? esc(snap.author) + ' · ' : ''}${opts.shared ? (snap.issuedBy === 'draft-punk' ? 'Issued' : 'Shared') : 'Generated'} ${esc(fmtDateTime(snap.issuedAt || snap.generatedAt))}</div>
+            <div class="record-meta">${snap.author ? esc(snap.author) + ' · ' : ''}${opts.shared ? (snap.issuedBy === 'draft-punk' ? 'Issued' : 'Shared') : 'Generated'} ${esc(fmtDateTime(snap.issuedAt || snap.generatedAt))}${scope}</div>
+            ${opts.shared && snap.code ? `<div class="record-code">RECORD CODE <b>${esc(snap.code)}</b> · check it at ${esc(verifyAddress())}</div>` : ''}
         </div>`;
         if (opts.shared) {
             html += `<p class="record-whatis">This is a Writing Record from Draft Punk, a writing app. It shows how the text of this project was entered as it was written: typed, pasted or imported.${snap.fingerprint && shareId
@@ -205,32 +208,41 @@
     function verifyAddress() {
         return (location.host.replace(/^www\./, '') + location.pathname.replace(/[^/]*$/, '') + 'verify');
     }
-    function shareKey() {
-        const dp = JSON.parse(localStorage.getItem('draftPunkData') || '{}');
-        return 'dpRecordShare_' + (dp.activeProjectId || '');
+    function shareKey(pid) { return 'dpRecordShare_' + (pid || ''); }
+    function copyText(text, btn) {
+        (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
+            .catch(() => { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); });
+        if (btn) btn.textContent = 'COPIED';
     }
-    function renderShareBox(snapRef) {
+
+    // st: { pid, chapters, excluded, author } — see showOwn
+    function renderShareBox(st) {
         const box = document.getElementById('recordShareBox');
         if (!box) return;
         const user = window.getCurrentUser && window.getCurrentUser();
-        const existing = localStorage.getItem(shareKey());
+        const key = shareKey(st.pid);
+        const existing = localStorage.getItem(key);
+        const snapRef = () => buildSnapshot(st.author, st.pid, st.chapters, st.excluded);
         if (!user) {
             box.innerHTML = `<button onclick="dpOpenSignIn()">⊕ SIGN IN TO CREATE A SHARE LINK</button>
                 <p class="record-muted">A share link lets anyone you send it to view this report (not your writing).</p>`;
             return;
         }
-        const pid = (JSON.parse(localStorage.getItem('draftPunkData') || '{}')).activeProjectId;
+        const chosen = () => st.excluded.size ? st.chapters.filter(c => !st.excluded.has(c.id)).map(c => c.id) : null;
         // Send this device's latest figures, ask the server to issue the
         // report, then say if the saved text differs from this device's.
         async function issue(btn, shareId, busyText) {
             const label = btn.textContent;
             btn.disabled = true; btn.textContent = busyText;
             try {
-                if (window.DPEvidence) await window.DPEvidence.pushAll(pid);
-                const res = await window.issueEvidenceShare(pid, shareId);
-                localStorage.setItem(shareKey(), res.id);
+                if (window.DPEvidence) await window.DPEvidence.pushAll(st.pid);
+                const ids = chosen();
+                const res = await window.issueEvidenceShare(st.pid, shareId, ids);
+                localStorage.setItem(key, res.id);
+                if (res.code) localStorage.setItem(key + '_code', res.code);
+                localStorage.setItem(key + '_sel', JSON.stringify(ids));
                 const here = snapRef().totals.words;
-                localStorage.setItem(shareKey() + '_note', res.words !== here
+                localStorage.setItem(key + '_note', !st.cloud && res.words !== here
                     ? `The link shows ${Math.round(res.words).toLocaleString()} words, the version saved in your account. This device has ${Math.round(here).toLocaleString()}. To include the latest, open Write, press SYNC AND SAVE, then come back and press UPDATE TO LATEST.`
                     : '');
                 return true;
@@ -244,12 +256,17 @@
             box.innerHTML = `<button id="recShareBtn">⤴ CREATE SHARE LINK</button>
                 <p class="record-muted">Draft Punk issues the report from the record saved in your account. Anyone with the link can view it: the figures only, never your writing.</p>`;
             document.getElementById('recShareBtn').onclick = async () => {
-                if (await issue(document.getElementById('recShareBtn'), null, 'ISSUING…')) renderShareBox(snapRef);
+                if (await issue(document.getElementById('recShareBtn'), null, 'ISSUING…')) renderShareBox(st);
             };
             return;
         }
         const url = location.origin + location.pathname + '?share=' + existing;
-        const note = localStorage.getItem(shareKey() + '_note') || '';
+        const note = localStorage.getItem(key + '_note') || '';
+        const code = localStorage.getItem(key + '_code') || '';
+        let changed = false;
+        try { changed = JSON.stringify(chosen()) !== (localStorage.getItem(key + '_sel') || 'null'); } catch (e) {}
+        const check = location.origin + location.pathname.replace(/[^/]*$/, '') + 'verify?code=' + code;
+        const statement = code ? `Draft Punk Writing Record: ${code}\nSee it, and check this story against it: ${check}` : '';
         box.innerHTML = `<label class="record-muted" for="recShareUrl">SHARE LINK</label>
             <input id="recShareUrl" type="text" readonly value="${esc(url)}">
             <div class="record-share-btns">
@@ -257,27 +274,81 @@
                 <button id="recUpdate">UPDATE TO LATEST</button>
                 <button id="recStop" class="record-stop">STOP SHARING</button>
             </div>
+            ${changed ? `<p class="record-share-note">You’ve changed which chapters this record covers. Press UPDATE TO LATEST to issue the link with them.</p>` : ''}
             ${note ? `<p class="record-share-note">${esc(note)}</p>` : ''}
+            ${code ? `<div class="record-submit">
+                <div class="record-muted">RECORD CODE</div>
+                <div class="record-code-big">${esc(code)}</div>
+                <label class="record-muted" for="recStatement">FOR A SUBMISSION: copy this into your entry form, email or cover letter</label>
+                <textarea id="recStatement" readonly rows="3">${esc(statement)}</textarea>
+                <div class="record-share-btns">
+                    <button id="recCopyStatement">COPY FOR A SUBMISSION</button>
+                    <a class="record-open-shared" href="${esc(url)}" target="_blank" rel="noopener">OPEN THE SHARED RECORD ↗</a>
+                </div>
+                <p class="record-muted">To attach a PDF, open the shared record and use PRINT / SAVE AS PDF there: it includes the record code.</p>
+            </div>` : `<p class="record-share-note">Press UPDATE TO LATEST to get a short record code for submissions.</p>`}
             <p class="record-muted">Whoever you send this to can check your story against it at <a href="verify" target="_blank" rel="noopener">${esc(verifyAddress())}</a>.</p>
             <p class="record-muted">The link shows the report as Draft Punk issued it. Use UPDATE TO LATEST to issue it again with your latest writing. The link also holds a fingerprint of your text, so a copy of your story can be checked against it later. The fingerprint can’t be turned back into your writing.</p>`;
-        document.getElementById('recCopy').onclick = () => {
-            const inp = document.getElementById('recShareUrl'); inp.select();
-            (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).catch(() => document.execCommand('copy'));
-            document.getElementById('recCopy').textContent = 'COPIED';
-        };
+        document.getElementById('recCopy').onclick = () => copyText(url, document.getElementById('recCopy'));
+        if (code) document.getElementById('recCopyStatement').onclick = () => copyText(statement, document.getElementById('recCopyStatement'));
         document.getElementById('recUpdate').onclick = async () => {
             if (await issue(document.getElementById('recUpdate'), existing, 'UPDATING…')) {
-                renderShareBox(snapRef);
+                renderShareBox(st);
                 document.getElementById('recUpdate').textContent = 'UPDATED';
             }
         };
         document.getElementById('recStop').onclick = async () => {
-            if (!confirm('Stop sharing? The link will stop working.')) return;
+            if (!confirm('Stop sharing? The link and its record code will stop working.')) return;
             try { await window.deleteEvidenceShare(existing); } catch (e) { alert('Could not remove the link: ' + e.message); return; }
-            localStorage.removeItem(shareKey());
-            localStorage.removeItem(shareKey() + '_note');
-            renderShareBox(snapRef);
+            ['', '_note', '_code', '_sel'].forEach(k => localStorage.removeItem(key + k));
+            renderShareBox(st);
         };
+        // Links made on another device: fetch the code from the account
+        if (!code && window.getOwnShareDetails) {
+            window.getOwnShareDetails(existing).then(o => {
+                if (o && o.code && !localStorage.getItem(key + '_code')) {
+                    localStorage.setItem(key + '_code', o.code);
+                    localStorage.setItem(key + '_sel', JSON.stringify(o.chapterIds || null));
+                    renderShareBox(st);
+                }
+            });
+        }
+    }
+
+    // ── Which project and chapters the record covers (writer's own page) ─────
+    function exclKey(pid) { return 'dpRecordExcl_' + pid; }
+    function loadExcluded(pid) {
+        try { return new Set(JSON.parse(localStorage.getItem(exclKey(pid)) || '[]')); } catch (e) { return new Set(); }
+    }
+    function saveExcluded(pid, set) {
+        try { set.size ? localStorage.setItem(exclKey(pid), JSON.stringify([...set])) : localStorage.removeItem(exclKey(pid)); } catch (e) {}
+    }
+    function renderScope(st, dp, onChange) {
+        const box = document.getElementById('recordScope');
+        if (!box) return;
+        const projects = Object.entries(dp.projects || {});
+        const list = st.chapters.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+        const inc = list.filter(c => !st.excluded.has(c.id)).length;
+        box.innerHTML = `<div class="record-scope">
+            ${projects.length > 1 ? `<label class="record-muted" for="recProject">PROJECT</label>
+                <select id="recProject">${projects.map(([id, p]) => `<option value="${esc(id)}"${id === st.pid ? ' selected' : ''}>${esc((p && p.title) || 'Untitled')}${id === dp.activeProjectId ? ' (open now)' : ''}</option>`).join('')}</select>` : ''}
+            ${st.message ? `<p class="record-muted">${esc(st.message)}</p>` : ''}
+            ${list.length > 1 ? `<details class="record-chapter-pick"${st.excluded.size ? ' open' : ''}>
+                <summary>CHAPTERS IN THIS RECORD: ${inc} of ${list.length}</summary>
+                <p class="record-muted">Untick chapters you don’t want in the record, such as notes or a different story. The share link only covers the ticked ones.</p>
+                ${list.map(c => `<label class="record-chapter"><input type="checkbox" data-ch="${esc(c.id)}"${st.excluded.has(c.id) ? '' : ' checked'}> ${esc(c.title || 'Untitled')}</label>`).join('')}
+            </details>` : ''}
+        </div>`;
+        const sel = document.getElementById('recProject');
+        if (sel) sel.onchange = () => onChange({ pid: sel.value });
+        box.querySelectorAll('input[data-ch]').forEach(cb => cb.onchange = () => {
+            const id = cb.getAttribute('data-ch');
+            if (cb.checked) st.excluded.delete(id);
+            else if (inc <= 1) { cb.checked = true; alert('A record needs at least one chapter.'); return; }
+            else st.excluded.add(id);
+            saveExcluded(st.pid, st.excluded);
+            onChange({});
+        });
     }
 
     // ── Start ────────────────────────────────────────────────────────────────
@@ -305,24 +376,53 @@
         if (!dp.activeProjectId || !dp.projects || !dp.projects[dp.activeProjectId]) {
             location.replace('index.html'); return;
         }
-        let author = '';
-        const snapRef = () => buildSnapshot(author);
-        const draw = () => { render(snapRef(), { shared: false }); renderShareBox(snapRef); };
+        // The open project's chapters come from this device. Another project's
+        // are read from the writer's account (read-only): the open project and
+        // this device's saved writing are never changed from this page.
+        const st = { pid: dp.activeProjectId, chapters: [], excluded: new Set(), author: '', cloud: false, message: '' };
+        function localChapters() {
+            const wd = JSON.parse(localStorage.getItem('writingData') || '{}');
+            return (wd.projectId === dp.activeProjectId && Array.isArray(wd.chapters)) ? wd.chapters : [];
+        }
+        async function loadProject(pid) {
+            st.pid = pid; st.excluded = loadExcluded(pid); st.message = '';
+            const user = window.getCurrentUser && window.getCurrentUser();
+            if (pid === dp.activeProjectId) { st.chapters = localChapters(); st.cloud = false; }
+            else {
+                st.cloud = true; st.chapters = [];
+                if (!user) st.message = 'Sign in to see this project’s record.';
+                else {
+                    st.message = 'LOADING…'; draw();
+                    const list = window.pullWritingFromCloud && await window.pullWritingFromCloud(pid);
+                    st.chapters = Array.isArray(list) ? list : [];
+                    st.message = Array.isArray(list) ? (list.length ? '' : 'This project has no chapters saved to your account yet.') : 'Couldn’t load this project. Check your connection.';
+                }
+            }
+            // Bring in this project's figures from the writer's other devices
+            if (user) {
+                try {
+                    const docs = window.pullEvidenceFromCloud && await window.pullEvidenceFromCloud(pid);
+                    if (docs && window.DPEvidence) window.DPEvidence.mergeFromCloud(docs);
+                } catch (err) { console.warn('Writing Record pull failed:', err); }
+            }
+            draw();
+        }
+        function draw() {
+            render(buildSnapshot(st.author, st.pid, st.chapters, st.excluded), { shared: false });
+            renderScope(st, dp, ch => { if (ch.pid && ch.pid !== st.pid) loadProject(ch.pid); else draw(); });
+            renderShareBox(st);
+        }
+        st.chapters = localChapters(); st.excluded = loadExcluded(st.pid);
         draw();
         document.getElementById('recordActions').style.display = '';
 
         document.addEventListener('dpAuthChanged', async e => {
             const user = e.detail && e.detail.user;
             if (user) {
-                author = user.displayName || '';
-                try { const u = window.getCurrentUsername && await window.getCurrentUsername(); if (u) author = u; } catch (err) {}
-                // Bring in this project's figures from the writer's other devices
-                try {
-                    const docs = window.pullEvidenceFromCloud && await window.pullEvidenceFromCloud(dp.activeProjectId);
-                    if (docs && window.DPEvidence) window.DPEvidence.mergeFromCloud(docs);
-                } catch (err) { console.warn('Writing Record pull failed:', err); }
+                st.author = user.displayName || '';
+                try { const u = window.getCurrentUsername && await window.getCurrentUsername(); if (u) st.author = u; } catch (err) {}
             }
-            draw();
+            await loadProject(st.pid);
         });
     }
 

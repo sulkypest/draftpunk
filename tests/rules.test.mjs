@@ -159,6 +159,30 @@ await t('writer can stop sharing', () => assertSucceeds(deleteDoc(doc(as('adult'
 await t('writer can still save Writing Record figures', () => assertSucceeds(setDoc(doc(as('teen'), 'users/teen/evidence/ch1'), { projectId: 'p', devices: { d: { typed: 1 } } }, { merge: true })));
 await t('writer can still read their share list', () => assertSucceeds(getDoc(doc(as('teen'), 'users/teen/evidence/_shares'))));
 
+// Record codes and owners (Nov 2026): no account ID in the public report
+await env.withSecurityRulesDisabled(async ctx => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'evidenceShares/cccccccccccccccccccccccc'), { title: 'T', code: 'DP-0000-AAAA', issuedBy: 'draft-punk' });
+    await setDoc(doc(db, 'recordOwners/cccccccccccccccccccccccc'), { uid: 'adult', code: 'DP-0000-AAAA' });
+    await setDoc(doc(db, 'recordCodes/DP-0000-AAAA'), { shareId: 'cccccccccccccccccccccccc' });
+});
+await t('anyone can look up a record code', () => assertSucceeds(getDoc(doc(anon, 'recordCodes/DP-0000-AAAA'))));
+await t('nobody can make a record code', () => assertFails(setDoc(doc(as('adult'), 'recordCodes/DP-1111-BBBB'), { shareId: 'cccccccccccccccccccccccc' })));
+await t('nobody can repoint a record code', () => assertFails(setDoc(doc(as('adult'), 'recordCodes/DP-0000-AAAA'), { shareId: 'x' })));
+await t('owner can read their record owner entry', () => assertSucceeds(getDoc(doc(as('adult'), 'recordOwners/cccccccccccccccccccccccc'))));
+await t('others can\'t read who owns a record', () => assertFails(getDoc(doc(as('teen'), 'recordOwners/cccccccccccccccccccccccc'))));
+await t('signed-out can\'t read who owns a record', () => assertFails(getDoc(doc(anon, 'recordOwners/cccccccccccccccccccccccc'))));
+await t('nobody can claim a record', () => assertFails(setDoc(doc(as('teen'), 'recordOwners/cccccccccccccccccccccccc'), { uid: 'teen' })));
+await t('others can\'t delete the code', () => assertFails(deleteDoc(doc(as('teen'), 'recordCodes/DP-0000-AAAA'))));
+await t('others can\'t delete the report', () => assertFails(deleteDoc(doc(as('teen'), 'evidenceShares/cccccccccccccccccccccccc'))));
+await t('owner can delete the code', () => assertSucceeds(deleteDoc(doc(as('adult'), 'recordCodes/DP-0000-AAAA'))));
+await t('owner can delete the report (no account ID in it)', () => assertSucceeds(deleteDoc(doc(as('adult'), 'evidenceShares/cccccccccccccccccccccccc'))));
+await t('owner can delete the owner entry last', () => assertSucceeds(deleteDoc(doc(as('adult'), 'recordOwners/cccccccccccccccccccccccc'))));
+await t('a report with no owner entry and no account ID can\'t be deleted by anyone', async () => {
+    await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), 'evidenceShares/dddddddddddddddddddddddd'), { title: 'T' }));
+    await assertFails(deleteDoc(doc(as('adult'), 'evidenceShares/dddddddddddddddddddddddd')));
+});
+
 console.log(`\n${n} passed, ${failed} failed`);
 await env.cleanup();
 process.exit(failed ? 1 : 0);
