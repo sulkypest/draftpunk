@@ -998,6 +998,7 @@ window.confirmShare = async function() {
         projectTitle:        (proj && proj.title) || 'UNTITLED',
         chapterId:           ch.id,
         chapterTitle:        ch.title,
+        chapterOrder:        writingData.chapters.indexOf(ch),
         content:             ch.content,
         wordCount:           ch.wordCount || 0,
         sharedWithUid:       uid,
@@ -1027,7 +1028,8 @@ async function confirmGroupShare(gid) {
     msg.textContent = 'SHARING...';
     const result = await window.createGroupShare({
         projectId: activeProjectId, projectTitle: (proj && proj.title) || 'UNTITLED',
-        chapterId: ch.id, chapterTitle: ch.title, content: ch.content, wordCount: ch.wordCount || 0, group
+        chapterId: ch.id, chapterTitle: ch.title, chapterOrder: writingData.chapters.indexOf(ch),
+        content: ch.content, wordCount: ch.wordCount || 0, group
     });
     if (result && result.success) {
         msg.style.color = 'var(--neon)';
