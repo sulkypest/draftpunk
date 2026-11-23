@@ -157,7 +157,7 @@ function renderList() {
         let preview = 'No messages yet';
         if (m) {
             const who = m.from === _me ? 'You' : (c.type === 'group' ? (m.fromUsername || '?') : '');
-            preview = (who ? who + ': ' : '') + snippet(m.body);
+            preview = (who ? who + ': ' : '') + (m.about && m.about.kind === 'chapter' ? 'On “' + (m.about.chapterTitle || '') + '”: ' : '') + snippet(m.body);
         }
         const call = c.type === 'group' ? `openGroup('${escapeAttr(c.key)}')` : `openThread('${escapeAttr(c.key)}')`;
         return `<button class="msg-conv${c.unread ? ' unread' : ''}" onclick="${call}">
@@ -298,6 +298,7 @@ function renderThread(scrollToEnd) {
             html += `<div class="msg-bubble-row ${mine ? 'mine' : 'theirs'}">
                 <div class="msg-bubble">
                     ${showName ? `<div class="msg-sender">${escapeHtml(m.fromUsername || (group.memberNames || {})[m.from] || '?')}</div>` : ''}
+                    ${m.about && m.about.kind === 'chapter' ? `<div class="msg-about">FEEDBACK ON “${escapeHtml(m.about.chapterTitle || '')}”${m.about.projectTitle ? ' · ' + escapeHtml(m.about.projectTitle) : ''}</div>` : ''}
                     <div class="msg-text">${escapeHtml(m.body)}</div>
                     <div class="msg-meta">
                         <span>${escapeHtml(timeOnly(m.createdAt))}${status}</span>

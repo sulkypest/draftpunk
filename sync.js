@@ -2272,7 +2272,7 @@ window.getGroupStats = async function(group) {
 
 // Share a chapter with every current member of a group (an ordinary share,
 // labelled with the group; members who join later don't get it automatically)
-window.createGroupShare = async function({ projectId, projectTitle, chapterId, chapterTitle, content, wordCount, group }) {
+window.createGroupShare = async function({ projectId, projectTitle, chapterId, chapterTitle, chapterOrder, content, wordCount, group }) {
     if (!currentUser) return { error: 'Not signed in.' };
     try {
         const others = (group.members || []).filter(u => u !== currentUser.uid);
@@ -2280,6 +2280,7 @@ window.createGroupShare = async function({ projectId, projectTitle, chapterId, c
         await setDoc(doc(db, 'shares', `${currentUser.uid}_${chapterId}_group_${group.id}`), {
             ownerId: currentUser.uid, ownerUsername: await myUsername(),
             projectId, projectTitle, chapterId, chapterTitle, content, wordCount,
+            ...(Number.isFinite(chapterOrder) ? { chapterOrder } : {}),
             sharedWith: others,
             sharedWithUsernames: others.map(u => (group.memberNames || {})[u] || '?'),
             groupId: group.id, groupName: group.name,
@@ -2297,7 +2298,9 @@ window.getCurrentUsername = async function() {
 
 // ── Messaging ─────────────────────────────────────────────────────────────────
 
-window.sendMessage = async function(toUid, toUsername, body) {
+// `about` (optional) ties a message to something, e.g. feedback on a shared
+// chapter: { kind: 'chapter', projectTitle, chapterTitle, chapterId }
+window.sendMessage = async function(toUid, toUsername, body, about) {
     if (!currentUser) return { error: 'Not signed in.' };
     try {
         const snap         = await getDoc(doc(db, 'users', currentUser.uid));
@@ -2309,6 +2312,11 @@ window.sendMessage = async function(toUid, toUsername, body) {
             fromUsername,
             toUsername,
             body:         body.trim().slice(0, 500),
+            ...(about && about.kind === 'chapter' ? { about: {
+                kind: 'chapter',
+                chapterId:    String(about.chapterId || '').slice(0, 100),
+                chapterTitle: String(about.chapterTitle || '').slice(0, 200),
+                projectTitle: String(about.projectTitle || '').slice(0, 200) } } : {}),
             read:         false,
             createdAt:    Date.now()
         });
@@ -2402,7 +2410,7 @@ window.updateMessageBadge = updateMessageBadge;
 
 // ── Chapter sharing ────────────────────────────────────────────────────────────
 
-window.createShare = async function({ projectId, projectTitle, chapterId, chapterTitle, content, wordCount, sharedWithUid, sharedWithUsername }) {
+window.createShare = async function({ projectId, projectTitle, chapterId, chapterTitle, chapterOrder, content, wordCount, sharedWithUid, sharedWithUsername }) {
     if (!currentUser) return { error: 'Not signed in.' };
     try {
         const snap         = await getDoc(doc(db, 'users', currentUser.uid));
@@ -2417,6 +2425,7 @@ window.createShare = async function({ projectId, projectTitle, chapterId, chapte
             projectTitle,
             chapterId,
             chapterTitle,
+            ...(Number.isFinite(chapterOrder) ? { chapterOrder } : {}),
             content,
             wordCount,
             sharedWith:          [sharedWithUid],
@@ -2439,6 +2448,39 @@ window.getSharedWithMe = async function() {
     } catch (err) {
         return { error: err.message };
     }
+};
+
+// What this reader has opened and tidied away in "Shared with me". Kept in the
+// reader's own private area (users/{uid}/private/shareSeen and shareHidden);
+// nothing here touches the share itself, so the writer and other group
+// members are never affected.
+//   shareSeen:   { '<ownerId>|<chapterId>': updatedAt of the version read }
+//   shareReadAt: { '<ownerId>|<chapterId>': when it was last opened }
+//   shareHidden: { '<ownerId>|<projectId>': time hidden (0 = shown again) }
+window.getShareReads = async function() {
+    if (!currentUser) return { seen: {}, readAt: {}, hidden: {}, fresh: false };
+    try {
+        const [s, r, h] = await Promise.all([
+            getDoc(doc(db, 'users', currentUser.uid, 'private', 'shareSeen')),
+            getDoc(doc(db, 'users', currentUser.uid, 'private', 'shareReadAt')),
+            getDoc(doc(db, 'users', currentUser.uid, 'private', 'shareHidden'))
+        ]);
+        return { seen: s.exists() ? s.data() : {}, readAt: r.exists() ? r.data() : {}, hidden: h.exists() ? h.data() : {}, fresh: !s.exists() };
+    } catch (err) { return { seen: {}, readAt: {}, hidden: {}, fresh: false, error: err.message }; }
+};
+// map: { key: updatedAt seen }. Pass openedAt when the reader actually opened
+// the chapter (not for the first-visit baseline).
+window.markSharesSeen = async function(map, openedAt) {
+    if (!currentUser || !map || !Object.keys(map).length) return;
+    try { await setDoc(doc(db, 'users', currentUser.uid, 'private', 'shareSeen'), map, { merge: true }); } catch (err) {}
+    if (!openedAt) return;
+    const at = {}; Object.keys(map).forEach(k => { at[k] = openedAt; });
+    try { await setDoc(doc(db, 'users', currentUser.uid, 'private', 'shareReadAt'), at, { merge: true }); } catch (err) {}
+};
+window.setShareProjectHidden = async function(key, time) {
+    if (!currentUser) return { error: 'Not signed in.' };
+    try { await setDoc(doc(db, 'users', currentUser.uid, 'private', 'shareHidden'), { [key]: time }, { merge: true }); return { success: true }; }
+    catch (err) { return { error: err.message }; }
 };
 
 window.deleteShare = async function(shareId) {
