@@ -525,12 +525,12 @@ function showUsernamePrompt(onComplete) {
         position:fixed;inset:0;z-index:600;
         background:var(--bg,#0a0a0a);
         display:flex;flex-direction:column;
-        align-items:center;justify-content:center;
+        align-items:center;justify-content:flex-start;
         padding:20px;font-family:'Courier New',monospace;
-        color:var(--text,#fff);
+        color:var(--text,#fff);overflow-y:auto;box-sizing:border-box;
     `;
     overlay.innerHTML = `
-        <div style="width:100%;max-width:340px;padding:0 10px;box-sizing:border-box;">
+        <div style="width:100%;max-width:340px;margin:auto 0;padding:0 10px;box-sizing:border-box;">
             <h2 style="color:var(--neon,#e8e8e8);margin:0 0 8px;letter-spacing:2px;font-size:1.1rem;">CHOOSE A USERNAME</h2>
             <p style="font-size:0.875rem;color:var(--text-dim);letter-spacing:1px;margin:0 0 20px;line-height:1.6;">
                 This is how you'll appear on leaderboards and to friends.<br>
@@ -1589,12 +1589,13 @@ async function showAccountOverlay() {
 
     overlay.style.cssText = `
         position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.85);
-        display:flex;align-items:center;justify-content:center;padding:20px;
+        display:flex;align-items:flex-start;justify-content:center;padding:20px;
+        overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;
         font-family:'Courier New',monospace;color:var(--text,#fff);
     `;
 
     overlay.innerHTML = `
-        <div style="width:100%;max-width:360px;background:var(--panel,#161616);
+        <div class="dp-account-box" style="width:100%;max-width:360px;margin:auto 0;background:var(--panel,#161616);
                     border:1px solid var(--border,#2a2a2a);padding:28px 24px;box-sizing:border-box;">
             <div style="text-align:center;margin-bottom:24px;">
                 ${user.photoURL
@@ -1646,6 +1647,15 @@ async function showAccountOverlay() {
     `;
 
     overlay.style.display = 'flex';
+    overlay.scrollTop = 0;
+    // Close on a click outside the panel, or with Escape.
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = 'none'; };
+    if (!overlay._dpEsc) {
+        overlay._dpEsc = true;
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && overlay.style.display !== 'none') overlay.style.display = 'none';
+        });
+    }
     if (window.dpMarkEditorFont) window.dpMarkEditorFont();
     renderRecoverySection(user).catch(err => console.warn('Recovered copies not listed:', err));
     renderBlockedSection().catch(err => console.warn('Blocked list not shown:', err));
