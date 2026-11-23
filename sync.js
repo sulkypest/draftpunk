@@ -2004,21 +2004,41 @@ window.pullEvidenceFromCloud = async function(projectId) {
 // text) that anyone with the link can view. Since Nov 2026 the server builds
 // and stamps the report from the writer's saved cloud copy (Cloud Function
 // issueWritingRecord); the browser can no longer write one itself.
-window.issueEvidenceShare = async function(projectId, shareId) {
+window.issueEvidenceShare = async function(projectId, shareId, chapterIds) {
     if (!currentUser) throw new Error('Sign in to create a share link.');
+    const req = { projectId };
+    if (shareId) req.shareId = shareId;
+    if (chapterIds) req.chapterIds = chapterIds;
     try {
-        return await callFn('issueWritingRecord', shareId ? { projectId, shareId } : { projectId });
+        return await callFn('issueWritingRecord', req);
     } catch (err) {
         const code = (err && err.code) || '';
+        if (err && err.details && err.details.reason === 'no-chapters') throw new Error('None of the chosen chapters have been saved to the cloud yet. Open Write, press SYNC AND SAVE, then try again.');
         if (/not-found/.test(code)) throw new Error('This project hasn’t been saved to the cloud yet. Open Write, press SYNC AND SAVE, then try again.');
         if (/permission-denied/.test(code)) throw new Error('This link belongs to another account.');
         throw new Error('Draft Punk couldn’t issue the record just now. Check your connection and try again.');
     }
 };
+// Remove a share link: its code, the report, then the private owner entry
+// (the report's and code's delete permission depends on the owner entry, so
+// it goes last). Links made before Nov 2026 have no code or owner entry.
+async function removeShareLink(id) {
+    let owner = null;
+    try { const o = await getDoc(doc(db, 'recordOwners', id)); owner = o.exists() ? o.data() : null; } catch (e) { /* none */ }
+    if (owner && owner.code) { try { await deleteDoc(doc(db, 'recordCodes', owner.code)); } catch (e) { /* already gone */ } }
+    await deleteDoc(doc(db, 'evidenceShares', id));
+    if (owner) { try { await deleteDoc(doc(db, 'recordOwners', id)); } catch (e) { /* already gone */ } }
+}
 window.deleteEvidenceShare = async function(id) {
     if (!currentUser) throw new Error('Sign in to stop sharing.');
-    await deleteDoc(doc(db, 'evidenceShares', id));
+    await removeShareLink(id);
     try { await setDoc(doc(db, 'users', currentUser.uid, 'evidence', '_shares'), { ids: arrayRemove(id) }, { merge: true }); } catch (e) {}
+};
+// The private details of one of this writer's own share links (code, chosen
+// chapters), or null
+window.getOwnShareDetails = async function(id) {
+    if (!currentUser) return null;
+    try { const o = await getDoc(doc(db, 'recordOwners', id)); return o.exists() ? o.data() : null; } catch (e) { return null; }
 };
 
 // Every cloud document belonging to this writer that sits outside the user doc:
@@ -2105,7 +2125,7 @@ async function deleteSocialData(uid) {
 // writer's) is refused by the rules, and must not stop everything else.
 async function deleteShareLinks(ids) {
     for (const id of ids) {
-        try { await deleteDoc(doc(db, 'evidenceShares', id)); } catch (e) { /* already gone */ }
+        try { await removeShareLink(id); } catch (e) { /* already gone */ }
     }
 }
 
@@ -2120,6 +2140,11 @@ async function deleteInBatches(refs) {
 window.getEvidenceShare = async function(id) {
     const snap = await getDoc(doc(db, 'evidenceShares', id));
     return snap.exists() ? snap.data() : null;
+};
+// A record code (e.g. DP-7K3F-9QXM) to its share link id, or null
+window.getShareIdForCode = async function(code) {
+    const snap = await getDoc(doc(db, 'recordCodes', code));
+    return snap.exists() ? (snap.data().shareId || null) : null;
 };
 
 // ── Version history (owner-only, under each chapter) ──────────────────────────

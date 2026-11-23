@@ -183,5 +183,22 @@
         return { snapshot: snap, text: texts.join('\n\n') };
     }
 
-    return { buildSnapshot, fingerprint, compare, tokens, htmlToText, countWordsHtml, hash32, summarise };
+    // ── Record codes, e.g. DP-7K3F-9QXM ───────────────────────────────────
+    // Short enough to type into an entry form or read off a printout. Letters
+    // that look alike (I, L, O, U) are never used; typed ones are read as the
+    // digits they look like.
+    const CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+    function makeCode(bytes) {          // bytes: 8 random bytes
+        let out = '';
+        for (let i = 0; i < 8; i++) out += CODE_ALPHABET[bytes[i] & 31];
+        return 'DP-' + out.slice(0, 4) + '-' + out.slice(4);
+    }
+    function normaliseCode(s) {
+        const t = String(s || '').toUpperCase().replace(/^\s*DP[\s-]*/, '').replace(/[\s-]/g, '')
+            .replace(/[O]/g, '0').replace(/[IL]/g, '1').replace(/U/g, 'V');
+        if (!/^[0-9A-HJKMNP-TV-Z]{8}$/.test(t)) return null;
+        return 'DP-' + t.slice(0, 4) + '-' + t.slice(4);
+    }
+
+    return { buildSnapshot, fingerprint, compare, tokens, htmlToText, countWordsHtml, hash32, summarise, makeCode, normaliseCode };
 });

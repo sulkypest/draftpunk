@@ -17,8 +17,9 @@
 //   AUTH   creates an account only when a sign-in code is used by an email
 //          address that no account has yet; marks an address verified once a
 //          code proves the writer owns it.
-//   WRITE  evidenceShares/{id}, users/{uid}/evidence/_shares  (Writing Record
-//          share links: see issueWritingRecord at the end of this file)
+//   WRITE  evidenceShares/{id}, recordOwners/{id}, recordCodes/{code},
+//          users/{uid}/evidence/_shares  (Writing Record share links: see
+//          issueWritingRecord at the end of this file)
 // Nothing else is ever written. No writing, project or word-count data is changed.
 
 'use strict';
@@ -417,8 +418,14 @@ async function deleteWholeAccount(uid) {
     batch.delete(db.collection('leaderboard').doc(uid));
     const names  = await db.collection('usernames').where('uid', '==', uid).get();
     names.forEach(d => batch.delete(d.ref));
-    const links  = await db.collection('evidenceShares').where('uid', '==', uid).get();
+    const links  = await db.collection('evidenceShares').where('uid', '==', uid).get();   // older links
     links.forEach(d => batch.delete(d.ref));
+    const owned  = await db.collection('recordOwners').where('uid', '==', uid).get();
+    owned.forEach(d => {
+        batch.delete(db.collection('evidenceShares').doc(d.id));
+        if (d.data().code) batch.delete(db.collection('recordCodes').doc(d.data().code));
+        batch.delete(d.ref);
+    });
     for (const f of ['from', 'to']) {
         const reqs = await db.collection('friendRequests').where(f, '==', uid).get();
         reqs.forEach(d => batch.delete(d.ref));
@@ -485,7 +492,10 @@ exports.claimAdmin = onCall({ enforceAppCheck: true, secrets: [ADMIN_UID] }, asy
 //   READ   users/{uid}/private/data, users/{uid}    (project title, username)
 //   READ   users/{uid}/writing   (this project's chapters: words + fingerprint)
 //   READ   users/{uid}/evidence  (this project's Writing Record figures)
-//   WRITE  evidenceShares/{id}   (the share link; only the writer's own)
+//   WRITE  evidenceShares/{id}   (the public report: no account ID in it)
+//   WRITE  recordOwners/{id}     (private: whose report it is, its code and
+//                                 chosen chapters; readable by its owner only)
+//   WRITE  recordCodes/{code}    (public: short code -> report, e.g. DP-7K3F-9QXM)
 //   WRITE  users/{uid}/evidence/_shares  (adds the id to the writer's private
 //                                         list, used by account deletion)
 // Nothing in the writer's chapters, projects or Writing Record is changed.
@@ -493,18 +503,34 @@ const recordCore = require('./record-core');
 const crypto = require('crypto');
 const SHARE_MAX_BYTES = 900 * 1024;   // Firestore documents hold up to 1 MiB
 
+// A new, unused record code, reserved for this report
+async function reserveCode(shareId, now) {
+    for (let i = 0; i < 8; i++) {
+        const code = recordCore.makeCode(crypto.randomBytes(8));
+        try { await db.collection('recordCodes').doc(code).create({ shareId, createdAt: now }); return code; }
+        catch (e) { if (!(e && (e.code === 6 || /already exists/i.test(e.message || '')))) throw e; }
+    }
+    throw new HttpsError('internal', 'code');
+}
+
 exports.issueWritingRecord = onCall({ enforceAppCheck: true }, async request => {
     const uid = request.auth && request.auth.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'sign-in');
-    const projectId = request.data && request.data.projectId;
-    const shareId   = request.data && request.data.shareId;
+    const projectId  = request.data && request.data.projectId;
+    const shareId    = request.data && request.data.shareId;
+    const chapterIds = request.data && request.data.chapterIds;
     if (typeof projectId !== 'string' || !/^[\w-]{1,120}$/.test(projectId)) throw new HttpsError('invalid-argument', 'project');
     if (shareId != null && (typeof shareId !== 'string' || !/^[a-f0-9]{24}$/.test(shareId))) throw new HttpsError('invalid-argument', 'share');
+    if (chapterIds != null && (!Array.isArray(chapterIds) || chapterIds.length > 1000 || !chapterIds.every(c => typeof c === 'string' && /^[\w-]{1,120}$/.test(c)))) throw new HttpsError('invalid-argument', 'chapters');
 
     const shareRef = db.collection('evidenceShares').doc(shareId || crypto.randomBytes(12).toString('hex'));
+    const ownerRef = db.collection('recordOwners').doc(shareRef.id);
+    let owner = null;
     if (shareId) {
-        const existing = await shareRef.get();
-        if (!existing.exists || existing.data().uid !== uid) throw new HttpsError('permission-denied', 'not-yours');
+        const [existing, own] = await Promise.all([shareRef.get(), ownerRef.get()]);
+        const mine = (own.exists && own.data().uid === uid) || (existing.exists && existing.data().uid === uid);   // older links kept the owner in the report
+        if (!existing.exists || !mine) throw new HttpsError('permission-denied', 'not-yours');
+        owner = own.exists ? own.data() : null;
     }
 
     const userRef = db.collection('users').doc(uid);
@@ -517,17 +543,24 @@ exports.issueWritingRecord = onCall({ enforceAppCheck: true }, async request => 
     const project = w.draftPunkData && w.draftPunkData.projects && w.draftPunkData.projects[projectId];
     if (!project) throw new HttpsError('not-found', 'project');
 
+    const all = chapters.docs.map(d => ({ ...d.data(), id: d.id }));
+    const chosen = chapterIds ? all.filter(c => chapterIds.includes(c.id)) : all;
+    if (!chosen.length) throw new HttpsError('invalid-argument', 'no-chapters');
+
     const now = Date.now();
     const { snapshot, text } = recordCore.buildSnapshot({
         title: project.title,
         author: (profile.exists && profile.data().username) || '',
-        chapters: chapters.docs.map(d => ({ ...d.data(), id: d.id })),
+        chapters: chosen,
         evidence: evidence.docs.map(d => ({ ...d.data(), id: d.id })),
         now
     });
+    const code = (owner && owner.code) || await reserveCode(shareRef.id, now);
     const share = {
         ...snapshot,
-        uid, createdAt: now,
+        code,
+        chapterScope: { included: chosen.length, total: all.length },
+        createdAt: now,
         issuedBy: 'draft-punk', issuedAt: now,
         fingerprint: recordCore.fingerprint(text, crypto.randomBytes(6).toString('hex'))
     };
@@ -537,8 +570,10 @@ exports.issueWritingRecord = onCall({ enforceAppCheck: true }, async request => 
         share.totals.earlierPastes += old.length;
         share.totals.earlierPastedChars += old.reduce((s, p) => s + p.c, 0);
     }
-    await shareRef.set(share);
+    // Owner first: the report's delete permission depends on it
+    await ownerRef.set({ uid, code, projectId, chapterIds: chapterIds || null, createdAt: (owner && owner.createdAt) || now, updatedAt: now });
+    await shareRef.set(share);     // replaces the whole report, so an older link loses its account ID here
     await userRef.collection('evidence').doc('_shares').set({ ids: FieldValue.arrayUnion(shareRef.id) }, { merge: true });
     logger.info('Writing Record issued', { uid, share: shareRef.id, words: snapshot.totals.words, update: !!shareId });
-    return { id: shareRef.id, words: snapshot.totals.words, issuedAt: now };
+    return { id: shareRef.id, code, words: snapshot.totals.words, issuedAt: now };
 });

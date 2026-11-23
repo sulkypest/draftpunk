@@ -176,7 +176,31 @@ service cloud.firestore {
       allow get: if true;
       allow list: if false;
       allow create, update: if false;
-      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+      // Older links name their owner in the report; newer ones keep the owner
+      // in recordOwners (below), so the public report has no account ID.
+      allow delete: if request.auth != null
+                    && (resource.data.get('uid', '') == request.auth.uid
+                        || (exists(/databases/$(database)/documents/recordOwners/$(shareId))
+                            && get(/databases/$(database)/documents/recordOwners/$(shareId)).data.uid == request.auth.uid));
+    }
+
+    // Who a Writing Record share link belongs to, its code and chosen
+    // chapters (Nov 2026). Written only by the server; the owner can read
+    // theirs and delete it (stop sharing, account deletion).
+    match /recordOwners/{shareId} {
+      allow get, delete: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow list, create, update: if false;
+    }
+
+    // Short record codes (e.g. DP-7K3F-9QXM) pointing to a share link.
+    // Anyone with a code can look it up; nobody can list them. Written only
+    // by the server; the link's owner can delete the code.
+    match /recordCodes/{code} {
+      allow get: if true;
+      allow list, create, update: if false;
+      allow delete: if request.auth != null
+                    && exists(/databases/$(database)/documents/recordOwners/$(resource.data.shareId))
+                    && get(/databases/$(database)/documents/recordOwners/$(resource.data.shareId)).data.uid == request.auth.uid;
     }
 
     // username -> uid reservation. Readable by any signed-in user (availability

@@ -2012,6 +2012,18 @@ body.record-page { display: block; padding: 0 16px 40px; }
 .verify-result.match b { color: var(--neon); }
 .verify-result.nomatch { border-color: #ff4444; }
 .verify-result.nomatch b { color: var(--red-ink, #c00); }
+.record-scope { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 18px; padding: 10px 12px; border: 1px solid var(--border); }
+.record-scope select { max-width: 100%; font-size: 0.85rem; }
+.record-chapter-pick summary { cursor: pointer; font-size: 0.75rem; letter-spacing: 2px; padding: 4px 0; }
+.record-chapter { display: flex; gap: 10px; align-items: center; justify-content: flex-start; font-size: 0.85rem; padding: 6px 0; cursor: pointer; }
+.record-chapter input[type=checkbox] { flex: none; width: 20px; height: 20px; min-height: 0; margin: 0; }
+.record-code { margin-top: 6px; font-size: 0.75rem; letter-spacing: 1px; }
+.record-code b { letter-spacing: 2px; font-size: 0.85rem; }
+.record-submit { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; padding: 12px; border: 1px solid var(--neon); }
+.record-code-big { font-size: 1.6rem; font-weight: 900; letter-spacing: 3px; color: var(--neon); }
+.record-submit textarea { width: 100%; box-sizing: border-box; font-size: 0.8rem; line-height: 1.5; resize: none; }
+.record-open-shared { flex: 1; min-width: 120px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; letter-spacing: 1px; color: var(--neon); border: 1px solid var(--border); padding: 8px; text-decoration: none; }
+@media print { .record-code, .record-code b { color: #000 !important; } }
 .record-whatis { font-size: 0.85rem; line-height: 1.6; max-width: 640px; margin: 14px 0 0; }
 .record-whatis a { color: var(--neon); white-space: nowrap; }
 .record-check-link { display: inline-block; margin-top: 10px; font-size: 0.75rem; letter-spacing: 1px; color: var(--neon); }
