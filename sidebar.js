@@ -34,6 +34,8 @@
         const xpPct       = Math.min(100, ((xpNow - xpThis) / (xpNext - xpThis)) * 100);
         const shieldTier  = Math.min(5, Math.ceil(writerLevel / 5));
         const rankName    = RANKS[writerLevel - 1] || 'AUTHOR';
+        const xpToNext    = Math.max(0, xpNext - xpNow);
+        const nextLine    = `${xpToNext.toLocaleString()} XP TO LEVEL ${writerLevel + 1}`;
 
         let daysLeft = '--';
         if (deadline) {
@@ -51,6 +53,7 @@
         setText('sbRank',  rankName);
         setW('sbXpBar',    xpPct + '%');
         setText('sbXpText', xpNow.toLocaleString() + ' XP');
+        setText('sbXpNext', nextLine);
         setText('sbWords', total.toLocaleString());
         setText('sbDays',  daysLeft);
 
@@ -60,12 +63,59 @@
         setText('mobRank',  rankName);
         setW('mobXpBar',    xpPct + '%');
         setText('mobXpText', xpNow.toLocaleString() + ' XP');
+        setText('mobXpNext', nextLine);
         setText('mobWords', total.toLocaleString());
         setText('mobDays',  daysLeft);
 
         // Level badge on the top-bar logo (phones and tablets)
         setText('navLvlBadge', writerLevel);
+
+        // Level card on the dashboard (phones and tablets; index.html only)
+        setSrc('mlShield', `shields/${shieldTier}.png`);
+        setText('mlLevel', writerLevel);
+        setText('mlRank',  rankName);
+        setW('mlXpBar',    xpPct + '%');
+        setText('mlXpText', xpNow.toLocaleString() + ' XP');
+        setText('mlXpNext', nextLine);
     };
+
+    // ── One-time hint: "tap the logo for your level" (phones and tablets) ──
+    // Remembered in its own device flag, separate from all writing data.
+    const HINT_KEY = 'dpStatsHintSeen';
+    function hintSeen() { try { return localStorage.getItem(HINT_KEY) === '1'; } catch (e) { return true; } }
+    function dismissStatsHint() {
+        try { localStorage.setItem(HINT_KEY, '1'); } catch (e) {}
+        const h = document.getElementById('navStatsHint');
+        if (h) h.remove();
+    }
+    function maybeShowStatsHint() {
+        if (hintSeen() || !getDPState()) return;              // only for writers with a project
+        if (!window.matchMedia('(max-width: 899px)').matches) return;
+        // Wait until no dialog or pop-up is showing (sign-up step, notices,
+        // level-ups...) so the tip never sits on top of one.
+        let tries = 0;
+        setTimeout(function wait() {
+            if (hintSeen() || document.getElementById('navStatsHint')) return;
+            if (modalOpen()) { if (++tries < 120) setTimeout(wait, 1000); return; }
+            showHint();
+        }, 2500);
+    }
+    function modalOpen() {
+        return [...document.querySelectorAll('[role="dialog"], [aria-modal="true"], .overlay, #mobSideOverlay.open')]
+            .some(el => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden');
+    }
+    function showHint() {
+        const nav = document.querySelector('.app-nav');
+        if (!nav || getComputedStyle(nav).display === 'none') return;
+        const h = document.createElement('button');
+        h.id = 'navStatsHint';
+        h.type = 'button';
+        h.className = 'nav-stats-hint';
+        h.innerHTML = 'Tap the logo for your level and stats <span aria-hidden="true">✕</span>';
+        h.setAttribute('aria-label', 'Tip: tap the logo for your level and stats. Dismiss');
+        h.addEventListener('click', dismissStatsHint);
+        document.body.appendChild(h);
+    }
 
     function buildHTML() {
         if (document.getElementById('globalSideLeft')) return;
@@ -106,6 +156,7 @@
                         <div id="sbXpBar" class="bar-fill" style="width:0%;"></div>
                     </div>
                     <div id="sbXpText" style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);text-align:center;"></div>
+                    <div id="sbXpNext" class="sb-xp-next"></div>
                 </div>
             </div>
             <div class="side-box">
@@ -148,6 +199,7 @@
                             <div id="mobXpBar" class="bar-fill" style="width:0%;"></div>
                         </div>
                         <div id="mobXpText" style="font-size:0.75rem;letter-spacing:1px;color:var(--text-dim);text-align:center;"></div>
+                        <div id="mobXpNext" class="sb-xp-next"></div>
                     </div>
                 </div>
                 <div class="side-box" style="margin-bottom:12px;">
@@ -182,12 +234,14 @@
                 logoLink.addEventListener('click', function (e) {
                     if (!STATS_MQ.matches) return;          // desktop: the logo goes home
                     e.preventDefault();
+                    dismissStatsHint();
                     document.getElementById('mobSideOverlay').classList.add('open');
                 });
                 const setLabel = () => logoLink.setAttribute('aria-label', STATS_MQ.matches ? 'Your level and stats' : 'Draft Punk home');
                 setLabel();
                 if (STATS_MQ.addEventListener) STATS_MQ.addEventListener('change', setLabel);
                 nav.appendChild(logoLink);
+                maybeShowStatsHint();
             }
 const writeBtn = nav.querySelector('.nav-center-btn');
             if (writeBtn) writeBtn.style.display = 'none';

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DRAFT PUNK</title>
     <link rel="icon" href="DRAFTPUNK.png" type="image/png">
-    <link rel="stylesheet" href="style.css?v=20261123f">
+    <link rel="stylesheet" href="style.css?v=20261124a">
     <link rel="stylesheet" href="landing.css?v=20261123f">
     <script>
     // Decide the first screen before anything is drawn, using the same test
@@ -280,6 +280,18 @@
                 <div class="wc-display-gain" id="wcGain" aria-live="polite"></div>
             </div>
 
+            <section class="mob-level" aria-label="Your writer level">
+                <div class="mob-level-shield">
+                    <img id="mlShield" src="shields/1.png" alt="">
+                    <span id="mlLevel">1</span>
+                </div>
+                <div class="mob-level-info">
+                    <div class="mob-level-top"><span class="mob-level-label">LEVEL</span><span id="mlRank" class="mob-level-rank">--</span></div>
+                    <div class="bar-container mob-level-bar"><div id="mlXpBar" class="bar-fill" style="width:0%;"></div></div>
+                    <div class="mob-level-foot"><span id="mlXpText"></span><span id="mlXpNext"></span></div>
+                </div>
+            </section>
+
             <section class="stage-map" aria-label="Stage map">
                 <div class="sm-head"><span>STAGE MAP</span><span id="smRange"></span></div>
                 <div class="sm-track" id="smTrack"></div>
@@ -480,7 +492,7 @@
 
     <script src="theme.js?v=20261123f"></script>
     <script src="sounds.js?v=20261123f"></script>
-    <script src="sidebar.js?v=20261123f"></script>
+    <script src="sidebar.js?v=20261124a"></script>
     <script src="period-notice.js?v=20261123f"></script>
     <script src="streak.js?v=20261123f"></script>
     <script src="streak-ui.js?v=20261123f"></script>

@@ -1075,6 +1075,70 @@ body {
 }
 @media (max-width: 899px) { .nav-lvl-badge { display: block; } }
 
+/* XP still needed for the next level (desktop sidebar + phone stats panel) */
+.sb-xp-next {
+    font-size: 0.7rem; letter-spacing: 1px; color: var(--text-dim);
+    text-align: center; margin-top: 2px; text-transform: uppercase;
+}
+
+/* One-time tip under the top-bar logo (phones and tablets) */
+.nav-stats-hint {
+    position: fixed;
+    top: calc(var(--nav-h, 52px) + 8px);
+    left: 50%; transform: translateX(-50%);
+    z-index: 99;                        /* under the top bar and every dialog */
+    max-width: calc(100vw - 32px);
+    padding: 8px 12px;
+    background: var(--panel); color: var(--text);
+    border: 1px solid var(--neon); border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 1px; line-height: 1.4;
+    text-transform: uppercase; text-align: center; cursor: pointer;
+    width: max-content;
+}
+.nav-stats-hint::before {               /* little pointer up to the logo */
+    content: ''; position: absolute; top: -6px; left: 50%;
+    width: 10px; height: 10px; margin-left: -5px;
+    background: var(--panel);
+    border-left: 1px solid var(--neon); border-top: 1px solid var(--neon);
+    transform: rotate(45deg);
+}
+.nav-stats-hint span { margin-left: 8px; color: var(--text-dim); }
+
+/* Writer level card on the dashboard: phones and tablets only (desktop has the sidebar) */
+.mob-level { display: none; }
+@media (max-width: 899px) {
+    .mob-level {
+        display: flex; align-items: center; gap: 12px;
+        margin: 0 0 14px; padding: 10px 12px;
+        border: 1px solid var(--border); border-radius: 6px;
+        background: var(--panel2);
+    }
+}
+.mob-level-shield { position: relative; width: 52px; height: 52px; flex-shrink: 0; }
+.mob-level-shield img {
+    width: 100%; height: 100%; object-fit: contain;
+    image-rendering: pixelated; filter: drop-shadow(0 0 4px var(--neon));
+}
+.mob-level-shield span {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; font-weight: 900; color: #fff;
+    text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000, 0 0 4px #000;
+}
+.mob-level-info { flex: 1; min-width: 0; }
+.mob-level-top {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+    font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase;
+}
+.mob-level-label { color: var(--text-dim); }
+.mob-level-rank { color: var(--neon); font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mob-level-bar { height: 6px; margin: 6px 0 4px; border-color: var(--border); }
+.mob-level-foot {
+    display: flex; justify-content: space-between; gap: 8px;
+    font-size: 0.7rem; letter-spacing: 1px; color: var(--text-dim); text-transform: uppercase;
+}
+
 /* ── Fixed sidebars (desktop only) ──────────────────────────────────────── */
 .sb-fixed {
     display: none;
