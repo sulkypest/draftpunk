@@ -2266,6 +2266,7 @@ body.record-page { display: block; padding: 0 16px 40px; }
 .msg-del { min-height: 0 !important; height: auto !important; line-height: 1 !important; margin: 0 !important; }
 .msg-meta { line-height: 1.2; }
 .msg-text { margin: 0; }
+.msg-text a.msg-url { color: var(--neon); text-decoration: underline; overflow-wrap: anywhere; }
 /* Keep SEND clear of the floating menu button on phones */
 @media (max-width: 700px) {
     #messagesContent { padding-bottom: 90px; }

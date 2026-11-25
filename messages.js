@@ -299,7 +299,7 @@ function renderThread(scrollToEnd) {
                 <div class="msg-bubble">
                     ${showName ? `<div class="msg-sender">${escapeHtml(m.fromUsername || (group.memberNames || {})[m.from] || '?')}</div>` : ''}
                     ${m.about && m.about.kind === 'chapter' ? `<div class="msg-about">FEEDBACK ON “${escapeHtml(m.about.chapterTitle || '')}”${m.about.projectTitle ? ' · ' + escapeHtml(m.about.projectTitle) : ''}</div>` : ''}
-                    <div class="msg-text">${escapeHtml(m.body)}</div>
+                    <div class="msg-text">${linkify(m.body)}</div>
                     <div class="msg-meta">
                         <span>${escapeHtml(timeOnly(m.createdAt))}${status}</span>
                         ${canDelete ? `<button class="msg-del" onclick="doDeleteMessage('${escapeAttr(m.id)}')" title="${delTitle}" aria-label="${delTitle}">✕</button>` : ''}
@@ -513,6 +513,32 @@ function escapeHtml(str) {
     return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 function escapeAttr(str) { return escapeHtml(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+
+// Turn web addresses in a message into clickable links. Every piece of text is
+// still escaped; only http(s):// and www. addresses become links, so nothing
+// like javascript: can ever be produced.
+const URL_RE = /\b(?:https?:\/\/|www\.)[^\s<>"']+/gi;
+function linkify(str) {
+    const text = String(str == null ? '' : str);
+    let out = '', last = 0, m;
+    URL_RE.lastIndex = 0;
+    while ((m = URL_RE.exec(text))) {
+        let url = m[0];
+        // Leave sentence punctuation (and an unmatched closing bracket) outside the link.
+        while (/[.,!?;:)\]}]$/.test(url)) {
+            const ch = url.slice(-1);
+            if (ch === ')' && (url.match(/\(/g) || []).length >= (url.match(/\)/g) || []).length) break;
+            url = url.slice(0, -1);
+        }
+        if (!url || /^(?:https?:\/\/|www\.)$/i.test(url)) continue;
+        const href = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+        out += escapeHtml(text.slice(last, m.index));
+        out += `<a class="msg-url" href="${escapeAttr(href)}" target="_blank" rel="noopener noreferrer nofollow">${escapeHtml(url)}</a>`;
+        last = m.index + url.length;
+        URL_RE.lastIndex = last;
+    }
+    return out + escapeHtml(text.slice(last));
+}
 function snippet(body) { const t = String(body || '').replace(/\s+/g, ' ').trim(); return t.length > 70 ? t.slice(0, 70) + '…' : t; }
 function sameDay(a, b) { return a.toDateString() === b.toDateString(); }
 function dayLabel(t) {
